@@ -1,0 +1,826 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Code\\Gomoku_Game_Project\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\GameLogic\\AI_PvE.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:GameLogic\\AI_PvE.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\GameLogic\\MatchRules.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:GameLogic\\MatchRules.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\GameLogic\\StateUpdater.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:GameLogic\\StateUpdater.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\RenderAPI\\Renderer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:RenderAPI\\Renderer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\RenderAPI\\UIComponents.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:RenderAPI\\UIComponents.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ScreenModules\\AboutScreen.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ScreenModules\\AboutScreen.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ScreenModules\\GuildScreen.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ScreenModules\\GuildScreen.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ScreenModules\\LoadGameScreen.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ScreenModules\\LoadGameScreen.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ScreenModules\\MenuScreen.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ScreenModules\\MenuScreen.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ScreenModules\\PlayScreen.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ScreenModules\\PlayScreen.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ScreenModules\\SettingScreen.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ScreenModules\\SettingScreen.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\SystemModules\\AudioSystem.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:SystemModules\\AudioSystem.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\SystemModules\\ConfigLoader.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:SystemModules\\ConfigLoader.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\SystemModules\\Localization.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:SystemModules\\Localization.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\SystemModules\\SaveLoadSystem.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:SystemModules\\SaveLoadSystem.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\SystemModules\\TimeSystem.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:SystemModules\\TimeSystem.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ApplicationTypes\\GameConfig.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ApplicationTypes\\GameConfig.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\Asset\\config.ini||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:Asset\\config.ini||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\RenderAPI\\Renderer.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:RenderAPI\\Renderer.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\GameLogic\\StateUpdater.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:GameLogic\\StateUpdater.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\GameLogic\\MatchRules.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:GameLogic\\MatchRules.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\GameLogic\\AI_PvE.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:GameLogic\\AI_PvE.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ApplicationTypes\\PlayState.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ApplicationTypes\\PlayState.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ApplicationTypes\\GameState.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ApplicationTypes\\GameState.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ScreenModules\\LoadGameScreen.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ScreenModules\\LoadGameScreen.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ScreenModules\\MenuScreen.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ScreenModules\\MenuScreen.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ScreenModules\\PlayScreen.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ScreenModules\\PlayScreen.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ScreenModules\\GuildScreen.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ScreenModules\\GuildScreen.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ScreenModules\\AboutScreen.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ScreenModules\\AboutScreen.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\RenderAPI\\UIComponents.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:RenderAPI\\UIComponents.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\packages.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:packages.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\Asset\\lang\\en.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:Asset\\lang\\en.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\Asset\\lang\\vi.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:Asset\\lang\\vi.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\ScreenModules\\SettingScreen.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:ScreenModules\\SettingScreen.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\README.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:README.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\SystemModules\\AudioSystem.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:SystemModules\\AudioSystem.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\SystemModules\\SaveLoadSystem.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:SystemModules\\SaveLoadSystem.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\SystemModules\\ConfigLoader.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:SystemModules\\ConfigLoader.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\SystemModules\\Localization.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:SystemModules\\Localization.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|D:\\Code\\Gomoku_Game_Project\\SystemModules\\TimeSystem.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6CDDA145-2AC0-4E0A-ACE7-912A047FD0BA}|Gomoku_Game_Project.vcxproj|solutionrelative:SystemModules\\TimeSystem.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\Gomoku_Game_Project\\RenderAPI.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:RenderAPI.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\Gomoku_Game_Project\\config.ini||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:config.ini||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\Gomoku_Game_Project\\RenderAPI.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:RenderAPI.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\Gomoku_Game_Project\\SystemModules.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:SystemModules.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\Gomoku_Game_Project\\SystemModules.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:SystemModules.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\Gomoku_Game_Project\\ScreenModules.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:ScreenModules.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\Gomoku_Game_Project\\ScreenModules.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:ScreenModules.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\Code\\Gomoku_Game_Project\\ApplicationTypes.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:ApplicationTypes.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 7,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "LoadGameScreen.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\LoadGameScreen.cpp",
+              "RelativeDocumentMoniker": "ScreenModules\\LoadGameScreen.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\LoadGameScreen.cpp",
+              "RelativeToolTip": "ScreenModules\\LoadGameScreen.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAF8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T16:56:30.344Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "GuildScreen.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\GuildScreen.cpp",
+              "RelativeDocumentMoniker": "ScreenModules\\GuildScreen.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\GuildScreen.cpp",
+              "RelativeToolTip": "ScreenModules\\GuildScreen.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-08T06:33:00.275Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "AboutScreen.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\AboutScreen.cpp",
+              "RelativeDocumentMoniker": "ScreenModules\\AboutScreen.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\AboutScreen.cpp",
+              "RelativeToolTip": "ScreenModules\\AboutScreen.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-08T06:32:59.411Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "UIComponents.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\RenderAPI\\UIComponents.cpp",
+              "RelativeDocumentMoniker": "RenderAPI\\UIComponents.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\RenderAPI\\UIComponents.cpp",
+              "RelativeToolTip": "RenderAPI\\UIComponents.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADcAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T16:34:54.664Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Renderer.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\RenderAPI\\Renderer.cpp",
+              "RelativeDocumentMoniker": "RenderAPI\\Renderer.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\RenderAPI\\Renderer.cpp",
+              "RelativeToolTip": "RenderAPI\\Renderer.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T16:43:51.3Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "StateUpdater.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\GameLogic\\StateUpdater.cpp",
+              "RelativeDocumentMoniker": "GameLogic\\StateUpdater.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\GameLogic\\StateUpdater.cpp",
+              "RelativeToolTip": "GameLogic\\StateUpdater.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T16:19:20.748Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "MatchRules.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\GameLogic\\MatchRules.cpp",
+              "RelativeDocumentMoniker": "GameLogic\\MatchRules.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\GameLogic\\MatchRules.cpp",
+              "RelativeToolTip": "GameLogic\\MatchRules.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAA6AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T16:11:13.461Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AI_PvE.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\GameLogic\\AI_PvE.cpp",
+              "RelativeDocumentMoniker": "GameLogic\\AI_PvE.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\GameLogic\\AI_PvE.cpp",
+              "RelativeToolTip": "GameLogic\\AI_PvE.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T16:15:39.198Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "MenuScreen.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\MenuScreen.cpp",
+              "RelativeDocumentMoniker": "ScreenModules\\MenuScreen.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\MenuScreen.cpp",
+              "RelativeToolTip": "ScreenModules\\MenuScreen.cpp",
+              "ViewState": "AgIAACkAAAAAAAAAAAAcwEwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T16:47:39.134Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "PlayScreen.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\PlayScreen.cpp",
+              "RelativeDocumentMoniker": "ScreenModules\\PlayScreen.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\PlayScreen.cpp",
+              "RelativeToolTip": "ScreenModules\\PlayScreen.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGQAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T16:52:07.99Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "SettingScreen.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\SettingScreen.cpp",
+              "RelativeDocumentMoniker": "ScreenModules\\SettingScreen.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\SettingScreen.cpp",
+              "RelativeToolTip": "ScreenModules\\SettingScreen.cpp",
+              "ViewState": "AgIAACMAAAAAAAAAAAAAACwAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T17:11:04.637Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "AudioSystem.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\AudioSystem.cpp",
+              "RelativeDocumentMoniker": "SystemModules\\AudioSystem.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\AudioSystem.cpp",
+              "RelativeToolTip": "SystemModules\\AudioSystem.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-06T16:51:18.101Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "ConfigLoader.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\ConfigLoader.cpp",
+              "RelativeDocumentMoniker": "SystemModules\\ConfigLoader.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\ConfigLoader.cpp",
+              "RelativeToolTip": "SystemModules\\ConfigLoader.cpp",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAACUAAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-06T16:51:49.978Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "Localization.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\Localization.cpp",
+              "RelativeDocumentMoniker": "SystemModules\\Localization.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\Localization.cpp",
+              "RelativeToolTip": "SystemModules\\Localization.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-06T16:52:22.741Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "SaveLoadSystem.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\SaveLoadSystem.cpp",
+              "RelativeDocumentMoniker": "SystemModules\\SaveLoadSystem.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\SaveLoadSystem.cpp",
+              "RelativeToolTip": "SystemModules\\SaveLoadSystem.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T17:03:34.704Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "TimeSystem.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\TimeSystem.cpp",
+              "RelativeDocumentMoniker": "SystemModules\\TimeSystem.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\TimeSystem.cpp",
+              "RelativeToolTip": "SystemModules\\TimeSystem.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-06T16:50:52.057Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "GameConfig.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ApplicationTypes\\GameConfig.h",
+              "RelativeDocumentMoniker": "ApplicationTypes\\GameConfig.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ApplicationTypes\\GameConfig.h",
+              "RelativeToolTip": "ApplicationTypes\\GameConfig.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:00:22.918Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "config.ini",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\Asset\\config.ini",
+              "RelativeDocumentMoniker": "Asset\\config.ini",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\Asset\\config.ini",
+              "RelativeToolTip": "Asset\\config.ini",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002768|",
+              "WhenOpened": "2026-03-06T17:43:09.003Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "Renderer.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\RenderAPI\\Renderer.h",
+              "RelativeDocumentMoniker": "RenderAPI\\Renderer.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\RenderAPI\\Renderer.h",
+              "RelativeToolTip": "RenderAPI\\Renderer.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:33:10.86Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "StateUpdater.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\GameLogic\\StateUpdater.h",
+              "RelativeDocumentMoniker": "GameLogic\\StateUpdater.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\GameLogic\\StateUpdater.h",
+              "RelativeToolTip": "GameLogic\\StateUpdater.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAABdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:03:43.919Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "MatchRules.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\GameLogic\\MatchRules.h",
+              "RelativeDocumentMoniker": "GameLogic\\MatchRules.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\GameLogic\\MatchRules.h",
+              "RelativeToolTip": "GameLogic\\MatchRules.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:03:10.306Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "AI_PvE.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\GameLogic\\AI_PvE.h",
+              "RelativeDocumentMoniker": "GameLogic\\AI_PvE.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\GameLogic\\AI_PvE.h",
+              "RelativeToolTip": "GameLogic\\AI_PvE.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAABLAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:03:23.349Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "PlayState.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ApplicationTypes\\PlayState.h",
+              "RelativeDocumentMoniker": "ApplicationTypes\\PlayState.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ApplicationTypes\\PlayState.h",
+              "RelativeToolTip": "ApplicationTypes\\PlayState.h",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABoAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:00:53.505Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "GameState.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ApplicationTypes\\GameState.h",
+              "RelativeDocumentMoniker": "ApplicationTypes\\GameState.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ApplicationTypes\\GameState.h",
+              "RelativeToolTip": "ApplicationTypes\\GameState.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:01:04.721Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "LoadGameScreen.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\LoadGameScreen.h",
+              "RelativeDocumentMoniker": "ScreenModules\\LoadGameScreen.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\LoadGameScreen.h",
+              "RelativeToolTip": "ScreenModules\\LoadGameScreen.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAABzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:27:41.043Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "GuildScreen.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\GuildScreen.h",
+              "RelativeDocumentMoniker": "ScreenModules\\GuildScreen.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\GuildScreen.h",
+              "RelativeToolTip": "ScreenModules\\GuildScreen.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:29:17.74Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "AboutScreen.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\AboutScreen.h",
+              "RelativeDocumentMoniker": "ScreenModules\\AboutScreen.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\AboutScreen.h",
+              "RelativeToolTip": "ScreenModules\\AboutScreen.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:27:55.994Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "UIComponents.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\RenderAPI\\UIComponents.h",
+              "RelativeDocumentMoniker": "RenderAPI\\UIComponents.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\RenderAPI\\UIComponents.h",
+              "RelativeToolTip": "RenderAPI\\UIComponents.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAA3AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:33:27.862Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "MenuScreen.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\MenuScreen.h",
+              "RelativeDocumentMoniker": "ScreenModules\\MenuScreen.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\MenuScreen.h",
+              "RelativeToolTip": "ScreenModules\\MenuScreen.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAABNAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:27:09.267Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "PlayScreen.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\PlayScreen.h",
+              "RelativeDocumentMoniker": "ScreenModules\\PlayScreen.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\PlayScreen.h",
+              "RelativeToolTip": "ScreenModules\\PlayScreen.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAABRAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:27:21.987Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "main.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\main.cpp",
+              "RelativeDocumentMoniker": "main.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\main.cpp",
+              "RelativeToolTip": "main.cpp",
+              "ViewState": "AgIAAGMAAAAAAAAAAAAAAHkAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T15:58:23.018Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "packages.config",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\packages.config",
+              "RelativeDocumentMoniker": "packages.config",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\packages.config",
+              "RelativeToolTip": "packages.config",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000601|",
+              "WhenOpened": "2026-03-06T17:48:49.015Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
+              "Title": "vi.txt",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\Asset\\lang\\vi.txt",
+              "RelativeDocumentMoniker": "Asset\\lang\\vi.txt",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\Asset\\lang\\vi.txt",
+              "RelativeToolTip": "Asset\\lang\\vi.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2026-03-06T16:54:58.685Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "en.txt",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\Asset\\lang\\en.txt",
+              "RelativeDocumentMoniker": "Asset\\lang\\en.txt",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\Asset\\lang\\en.txt",
+              "RelativeToolTip": "Asset\\lang\\en.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2026-03-06T16:54:59.87Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 34,
+              "Title": "SettingScreen.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\SettingScreen.h",
+              "RelativeDocumentMoniker": "ScreenModules\\SettingScreen.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules\\SettingScreen.h",
+              "RelativeToolTip": "ScreenModules\\SettingScreen.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAABqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:27:32.845Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 35,
+              "Title": "README.md",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\README.md",
+              "RelativeDocumentMoniker": "README.md",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\README.md",
+              "RelativeToolTip": "README.md",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAACYAAABKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2026-03-03T04:25:32.885Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 36,
+              "Title": "AudioSystem.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\AudioSystem.h",
+              "RelativeDocumentMoniker": "SystemModules\\AudioSystem.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\AudioSystem.h",
+              "RelativeToolTip": "SystemModules\\AudioSystem.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:25:13.512Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "SaveLoadSystem.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\SaveLoadSystem.h",
+              "RelativeDocumentMoniker": "SystemModules\\SaveLoadSystem.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\SaveLoadSystem.h",
+              "RelativeToolTip": "SystemModules\\SaveLoadSystem.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T17:03:05.516Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 38,
+              "Title": "ConfigLoader.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\ConfigLoader.h",
+              "RelativeDocumentMoniker": "SystemModules\\ConfigLoader.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\ConfigLoader.h",
+              "RelativeToolTip": "SystemModules\\ConfigLoader.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:25:14.23Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 39,
+              "Title": "Localization.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\Localization.h",
+              "RelativeDocumentMoniker": "SystemModules\\Localization.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\Localization.h",
+              "RelativeToolTip": "SystemModules\\Localization.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:25:16.261Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 40,
+              "Title": "TimeSystem.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\TimeSystem.h",
+              "RelativeDocumentMoniker": "SystemModules\\TimeSystem.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\SystemModules\\TimeSystem.h",
+              "RelativeToolTip": "SystemModules\\TimeSystem.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T16:25:16.776Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 41,
+              "Title": "RenderAPI.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\RenderAPI.cpp",
+              "RelativeDocumentMoniker": "RenderAPI.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\RenderAPI.cpp",
+              "RelativeToolTip": "RenderAPI.cpp",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T15:15:16.674Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 42,
+              "Title": "config.ini",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\config.ini",
+              "RelativeDocumentMoniker": "config.ini",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\config.ini",
+              "RelativeToolTip": "config.ini",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002768|",
+              "WhenOpened": "2026-03-03T15:14:46.935Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 43,
+              "Title": "RenderAPI.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\RenderAPI.h",
+              "RelativeDocumentMoniker": "RenderAPI.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\RenderAPI.h",
+              "RelativeToolTip": "RenderAPI.h",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T15:13:52.895Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 44,
+              "Title": "SystemModules.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\SystemModules.cpp",
+              "RelativeDocumentMoniker": "SystemModules.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\SystemModules.cpp",
+              "RelativeToolTip": "SystemModules.cpp",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T15:08:18.956Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 45,
+              "Title": "SystemModules.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\SystemModules.h",
+              "RelativeDocumentMoniker": "SystemModules.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\SystemModules.h",
+              "RelativeToolTip": "SystemModules.h",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T15:08:05.473Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 46,
+              "Title": "ScreenModules.cpp",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules.cpp",
+              "RelativeDocumentMoniker": "ScreenModules.cpp",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules.cpp",
+              "RelativeToolTip": "ScreenModules.cpp",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-03T15:07:18.613Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 47,
+              "Title": "ScreenModules.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ScreenModules.h",
+              "RelativeDocumentMoniker": "ScreenModules.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ScreenModules.h",
+              "RelativeToolTip": "ScreenModules.h",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T15:07:12.161Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 48,
+              "Title": "ApplicationTypes.h",
+              "DocumentMoniker": "D:\\Code\\Gomoku_Game_Project\\ApplicationTypes.h",
+              "RelativeDocumentMoniker": "ApplicationTypes.h",
+              "ToolTip": "D:\\Code\\Gomoku_Game_Project\\ApplicationTypes.h",
+              "RelativeToolTip": "ApplicationTypes.h",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2026-03-03T15:04:37.128Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
