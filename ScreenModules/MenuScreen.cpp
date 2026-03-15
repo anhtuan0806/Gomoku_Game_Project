@@ -1,39 +1,47 @@
 ﻿#include "MenuScreen.h"
 #include "../RenderAPI/UIComponents.h"
-#include <raylib.h>
-#include <string>
+#include "../RenderAPI/Colours.h"
+#include "../ApplicationTypes/GameState.h"
+// Chú ý bao gồm thư viện chứa Colour nếu cần thiết, ví dụ: #include "Colors.h"
 
 const int TOTAL_MENU_ITEMS = 6;
-// Danh sách các mục trong Menu
-const char* menuItems[TOTAL_MENU_ITEMS] = {
-    "1. Bat Dau Choi (Play Game)",
-    "2. Tai Game (Load Game)",
-    "3. Cai Dat (Settings)",
-    "4. Huong Dan (Guide)",
-    "5. Gioi Thieu (About)",
-    "6. Thoat (Exit)"
+
+// Chuyển sang chuỗi wide-character (L"") để hỗ trợ Unicode tiếng Việt
+const wchar_t* menuItems[TOTAL_MENU_ITEMS] = {
+    L"1. Bắt Đầu Chơi (Play Game)",
+    L"2. Tải Game (Load Game)",
+    L"3. Cài Đặt (Settings)",
+    L"4. Hướng Dẫn (Guide)",
+    L"5. Giới Thiệu (About)",
+    L"6. Thoát (Exit)"
 };
 
-void UpdateMenuScreen(ScreenState& currentState, int& selectedOption) {
-    // Raylib hỗ trợ nhận diện phím rất dễ dàng. 
-    // Ở đây ta cho phép người dùng xài cả W/S hoặc Phím mũi tên Lên/Xuống
+void UpdateMenuScreen(ScreenState& currentState, int& selectedOption, WPARAM wParam) {
+    // Bỏ qua nếu không có sự kiện phím hợp lệ
+    if (wParam == 0) 
+        return;
 
-    if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) {
+    // Ủy quyền xử lý logic phím nhấn. 
+    // Trong tương lai, nếu cần thêm hiệu ứng âm thanh khi chuyển mục menu (chẳng hạn PlaySFX("hover.wav")), 
+    // thầy có thể bắt giá trị trả về (bool) của hàm này để kích hoạt.
+    ProcessMenuInput(wParam, currentState, selectedOption);
+}
+
+bool ProcessMenuInput(WPARAM wParam, ScreenState& currentState, int& selectedOption) {
+    bool hasChanged = false;
+
+    // Loại bỏ hàm IsKeyPressed của Raylib (Polling), sử dụng trực tiếp wParam của Event
+    if (wParam == 'W' || wParam == 'w' || wParam == VK_UP) {
         selectedOption--;
-        if (selectedOption < 0) {
-            selectedOption = TOTAL_MENU_ITEMS - 1; // Cuộn vòng xuống đáy
-        }
+        if (selectedOption < 0) selectedOption = TOTAL_MENU_ITEMS - 1;
+        hasChanged = true;
     }
-
-    if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN)) {
+    else if (wParam == 'S' || wParam == 's' || wParam == VK_DOWN) {
         selectedOption++;
-        if (selectedOption >= TOTAL_MENU_ITEMS) {
-            selectedOption = 0; // Cuộn vòng lên đầu
-        }
+        if (selectedOption >= TOTAL_MENU_ITEMS) selectedOption = 0;
+        hasChanged = true;
     }
-
-    if (IsKeyPressed(KEY_ENTER)) {
-        // Cập nhật trạng thái game dựa trên mục đang chọn
+    else if (wParam == VK_RETURN || wParam == VK_SPACE) {
         switch (selectedOption) {
         case 0: currentState = SCREEN_PLAY; break;
         case 1: currentState = SCREEN_LOAD_GAME; break;
@@ -42,36 +50,48 @@ void UpdateMenuScreen(ScreenState& currentState, int& selectedOption) {
         case 4: currentState = SCREEN_ABOUT; break;
         case 5: currentState = SCREEN_EXIT; break;
         }
+        hasChanged = true;
     }
+
+    return hasChanged; // Trạm điều phối (WndProc) sẽ kiểm tra cờ này để gọi InvalidateRect()
 }
 
-void RenderMenuScreen(int selectedOption, int screenWidth, int screenHeight) {
-    // 1. Vẽ tiêu đề Game nổi bật ở 1/4 phía trên màn hình
+void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHeight) {
+    // 0. Xóa nền màn hình cũ bằng màu xám nhạt
+    RECT rect = { 0, 0, screenWidth, screenHeight };
+    HBRUSH hBg = CreateSolidBrush(Colour::GRAY_LIGHTEST);
+    FillRect(hdc, &rect, hBg);
+    DeleteObject(hBg);
+
+    // 1. Vẽ tiêu đề Game (Áp dụng GlobalFont::Title cho cỡ lớn)
     int titleY = screenHeight / 4 - 60;
 
-    // Sử dụng màu của Raylib (SKYBLUE, BLUE...)
-    DrawTextCentered(titleY, screenWidth, "==================================", 30, SKYBLUE);
-    DrawTextCentered(titleY + 40, screenWidth, "CARO & TIC-TAC-TOE", 50, BLUE);
-    DrawTextCentered(titleY + 100, screenWidth, "==================================", 30, SKYBLUE);
+    // Tham số HFONT cuối cùng bị bỏ trống -> Tự động dùng GlobalFont::Default
+    DrawTextCentered(hdc, L"==================================", titleY, screenWidth, Colour::BLUE_LIGHT);
 
-    // 2. In ra danh sách các mục Menu ở giữa màn hình
-    int startY = screenHeight / 2 - 20; // Điểm bắt đầu vẽ menu
-    int spacing = 50; // Khoảng cách giữa các dòng là 50 pixel
+    // Truyền GlobalFont::Title để hiển thị phông to, đậm
+    DrawTextCentered(hdc, L"CARO & TIC-TAC-TOE", titleY + 40, screenWidth, Colour::BLUE_DARKEST, GlobalFont::Title);
+
+    DrawTextCentered(hdc, L"==================================", titleY + 100, screenWidth, Colour::BLUE_LIGHT);
+
+    // 2. In danh sách các mục Menu
+    int startY = screenHeight / 2 - 20;
+    int spacing = 50;
 
     for (int i = 0; i < TOTAL_MENU_ITEMS; i++) {
         int currentY = startY + i * spacing;
 
         if (i == selectedOption) {
-            // Mục đang được chọn: Thêm mũi tên, phóng to cỡ chữ lên 35 và tô màu Vàng (GOLD)
-            std::string highlightedText = ">>  " + std::string(menuItems[i]) + "  <<";
-            DrawTextCentered(currentY, screenWidth, highlightedText.c_str(), 35, GOLD);
+            // Mục đang chọn: Dùng GlobalFont::Bold và màu cam nổi bật
+            std::wstring highlightedText = L">>  " + std::wstring(menuItems[i]) + L"  <<";
+            DrawTextCentered(hdc, highlightedText, currentY, screenWidth, Colour::ORANGE_NORMAL, GlobalFont::Bold);
         }
         else {
-            // Mục bình thường: Cỡ chữ 30, màu Xám đậm (DARKGRAY)
-            DrawTextCentered(currentY, screenWidth, menuItems[i], 30, DARKGRAY);
+            // Mục bình thường: Dùng GlobalFont::Default và màu xám tối
+            DrawTextCentered(hdc, menuItems[i], currentY, screenWidth, Colour::GRAY_DARK);
         }
     }
 
-    // 3. Vẽ hướng dẫn điều khiển ở sát đáy màn hình
-    DrawTextCentered(screenHeight - 50, screenWidth, "Dung W/S de di chuyen, ENTER de chon", 20, GRAY);
+    // 3. Vẽ hướng dẫn điều khiển
+    DrawTextCentered(hdc, L"Dùng W/S/UP/DOWN để di chuyển, ENTER để chọn", screenHeight - 50, screenWidth, Colour::GRAY_NORMAL);
 }

@@ -46,13 +46,13 @@
     <Filter Include="Resource Files\lang">
       <UniqueIdentifier>{9d9d334d-9d56-4dfc-a08e-dab9e227f8da}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\images">
+      <UniqueIdentifier>{402f836f-01b5-4fa2-a7e6-c8cb60db7954}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
     <None Include="Asset\config.ini">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="packages.config">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
@@ -113,6 +113,9 @@
     </ClInclude>
     <ClInclude Include="SystemModules\SaveLoadSystem.h">
       <Filter>Header Files\SystemModules</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderAPI\Colours.h">
+      <Filter>Header Files\RenderAPI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -175,5 +178,13 @@
     <Text Include="Asset\lang\vi.txt">
       <Filter>Resource Files\lang</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Asset\images\o.png">
+      <Filter>Resource Files\images</Filter>
+    </Image>
+    <Image Include="Asset\images\x.png">
+      <Filter>Resource Files\images</Filter>
+    </Image>
   </ItemGroup>
 </Project>

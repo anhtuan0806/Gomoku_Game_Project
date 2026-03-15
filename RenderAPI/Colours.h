@@ -1,0 +1,70 @@
+﻿#ifndef GAME_COLORS_H
+#define GAME_COLORS_H
+#include <windows.h>
+
+namespace Colour {
+    constexpr COLORREF GRAY_LIGHTEST = RGB(245, 245, 245);
+    constexpr COLORREF GRAY_LIGHT = RGB(224, 224, 224);
+    constexpr COLORREF GRAY_NORMAL = RGB(158, 158, 158);
+    constexpr COLORREF GRAY_DARK = RGB(97, 97, 97);
+    constexpr COLORREF GRAY_DARKEST = RGB(33, 33, 33);
+
+    constexpr COLORREF RED_LIGHTEST = RGB(255, 205, 210);
+    constexpr COLORREF RED_LIGHT = RGB(239, 154, 154);
+    constexpr COLORREF RED_NORMAL = RGB(244, 67, 54);
+    constexpr COLORREF RED_DARK = RGB(211, 47, 47);
+    constexpr COLORREF RED_DARKEST = RGB(183, 28, 28);
+
+    constexpr COLORREF PINK_LIGHTEST = RGB(248, 187, 208);
+    constexpr COLORREF PINK_LIGHT = RGB(240, 98, 146);
+    constexpr COLORREF PINK_NORMAL = RGB(233, 30, 99);
+    constexpr COLORREF PINK_DARK = RGB(194, 24, 91);
+    constexpr COLORREF PINK_DARKEST = RGB(136, 20, 76);
+
+    constexpr COLORREF PURPLE_LIGHTEST = RGB(225, 190, 231);
+    constexpr COLORREF PURPLE_LIGHT = RGB(186, 104, 200);
+    constexpr COLORREF PURPLE_NORMAL = RGB(156, 39, 176);
+    constexpr COLORREF PURPLE_DARK = RGB(123, 31, 162);
+    constexpr COLORREF PURPLE_DARKEST = RGB(74, 20, 140);
+
+    constexpr COLORREF BLUE_LIGHTEST = RGB(187, 222, 251);
+    constexpr COLORREF BLUE_LIGHT = RGB(144, 202, 249);
+    constexpr COLORREF BLUE_NORMAL = RGB(33, 150, 243);
+    constexpr COLORREF BLUE_DARK = RGB(25, 118, 210);
+    constexpr COLORREF BLUE_DARKEST = RGB(13, 71, 161);
+
+    constexpr COLORREF CYAN_LIGHTEST = RGB(178, 235, 242);
+    constexpr COLORREF CYAN_LIGHT = RGB(77, 208, 225);
+    constexpr COLORREF CYAN_NORMAL = RGB(0, 188, 212);
+    constexpr COLORREF CYAN_DARK = RGB(0, 151, 167);
+    constexpr COLORREF CYAN_DARKEST = RGB(0, 96, 100);
+
+    constexpr COLORREF GREEN_LIGHTEST = RGB(200, 230, 201);
+    constexpr COLORREF GREEN_LIGHT = RGB(165, 214, 167);
+    constexpr COLORREF GREEN_NORMAL = RGB(76, 175, 80);
+    constexpr COLORREF GREEN_DARK = RGB(56, 142, 60);
+    constexpr COLORREF GREEN_DARKEST = RGB(27, 94, 32);
+
+    constexpr COLORREF YELLOW_LIGHTEST = RGB(255, 249, 196);
+    constexpr COLORREF YELLOW_LIGHT = RGB(255, 241, 118);
+    constexpr COLORREF YELLOW_NORMAL = RGB(255, 235, 59);
+    constexpr COLORREF YELLOW_DARK = RGB(251, 192, 45);
+    constexpr COLORREF YELLOW_DARKEST = RGB(245, 127, 23);
+
+    constexpr COLORREF ORANGE_LIGHTEST = RGB(255, 224, 178);
+    constexpr COLORREF ORANGE_LIGHT = RGB(255, 183, 77);
+    constexpr COLORREF ORANGE_NORMAL = RGB(255, 152, 0);
+    constexpr COLORREF ORANGE_DARK = RGB(245, 124, 0);
+    constexpr COLORREF ORANGE_DARKEST = RGB(230, 81, 0);
+
+    constexpr COLORREF BROWN_LIGHTEST = RGB(215, 204, 200);
+    constexpr COLORREF BROWN_LIGHT = RGB(161, 136, 126);
+    constexpr COLORREF BROWN_NORMAL = RGB(121, 85, 72);
+    constexpr COLORREF BROWN_DARK = RGB(93, 64, 55);
+    constexpr COLORREF BROWN_DARKEST = RGB(62, 39, 35);
+
+    constexpr COLORREF BLACK = RGB(0, 0, 0);
+    constexpr COLORREF WHITE = RGB(255, 255, 255);
+}
+
+#endif // GAME_COLORS_H

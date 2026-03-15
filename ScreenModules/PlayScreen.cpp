@@ -1,21 +1,33 @@
 ﻿#include "PlayScreen.h"
 #include "../RenderAPI/UIComponents.h"
+#include "../RenderAPI/Colours.h"
 #include "../GameLogic/MatchRules.h"
 #include "../GameLogic/StateUpdater.h"
 #include "../GameLogic/AI_PvE.h"
 #include "../SystemModules/TimeSystem.h"
 #include "../SystemModules/AudioSystem.h"
-#include <raylib.h>
-#include <string>
 
-// Kích thước của mỗi ô vuông trên bàn cờ (tính bằng pixel)
-const int CELL_SIZE = 40;
+static void HandleMoveResult(PlayState* state) {
+    int winStatus = CheckWinCondition(state);
+    if (winStatus != 2) {
+        state->status = MATCH_FINISHED;
+        state->winner = winStatus;
+        if (winStatus == -1) state->player1.score++;
+        else if (winStatus == 1) state->player2.score++;
+    }
+    else {
+        SwitchTurn(state);
+    }
+}
 
-void UpdatePlayScreen(PlayState* state, ScreenState& currentState, double dt) {
+bool UpdatePlayLogic(PlayState* state, double dt) {
+    bool needsRedraw = false;
+
     // 1. Cập nhật đếm ngược nếu đang chơi
     if (state->status == MATCH_PLAYING) {
         if (UpdateCountdown(state, dt)) {
             SwitchTurn(state); // Hết giờ thì mất lượt
+            needsRedraw = true;
         }
     }
 
@@ -25,156 +37,238 @@ void UpdatePlayScreen(PlayState* state, ScreenState& currentState, double dt) {
         CalculateAIMove(state, aiX, aiY);
 
         if (ProcessMove(state, aiX, aiY)) {
-            PlaySFX("Asset/audio/place_piece.wav");
-            int winStatus = CheckWinCondition(state);
-            if (winStatus != 2) {
-                state->status = MATCH_FINISHED;
-                state->winner = winStatus;
-                if (winStatus == 1) state->player2.score++; // Máy thắng
-            }
-            else {
-                SwitchTurn(state);
-            }
+            // PlaySFX(L"Asset/audio/place_piece.wav"); // Đảm bảo thư viện âm thanh dùng wchar_t
+            HandleMoveResult(state);
+            needsRedraw = true;
         }
-        return;
     }
 
-    // 3. Xử lý phím bấm người chơi bằng Raylib
+    return needsRedraw;
+}
 
-    // NẾU ĐANG TẠM DỪNG (PAUSE)
+bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState) {
+    bool hasChanged = false;
+
+    // --- NẾU ĐANG TẠM DỪNG (PAUSE) ---
     if (state->status == MATCH_PAUSED) {
-        if (IsKeyPressed(KEY_ESCAPE)) state->status = MATCH_PLAYING; // Trở lại
-        if (IsKeyPressed(KEY_Q)) currentState = SCREEN_MENU;         // Thoát ra Menu
-        return;
+        if (wParam == VK_ESCAPE) {
+            state->status = MATCH_PLAYING;
+            hasChanged = true;
+        }
+        else if (wParam == 'Q' || wParam == 'q') {
+            currentState = SCREEN_MENU;
+            hasChanged = true;
+        }
+        return hasChanged;
     }
 
-    // NẾU ĐÃ KẾT THÚC (GAME OVER)
+    // --- NẾU ĐÃ KẾT THÚC (GAME OVER) ---
     if (state->status == MATCH_FINISHED) {
-        if (IsKeyPressed(KEY_Y)) {
-            // Chơi lại ván mới 
-            InitNewMatch(state, state->gameMode, state->matchType, state->boardSize, state->countdownTime);
+        if (wParam == 'Y' || wParam == 'y') {
+            // InitNewMatch(state, state->gameMode, state->matchType, state->boardSize, state->countdownTime);
+            hasChanged = true;
         }
-        else if (IsKeyPressed(KEY_N) || IsKeyPressed(KEY_ESCAPE)) {
-            currentState = SCREEN_MENU; // Thoát 
+        else if (wParam == 'N' || wParam == 'n' || wParam == VK_ESCAPE) {
+            currentState = SCREEN_MENU;
+            hasChanged = true;
         }
-        return;
+        return hasChanged;
     }
 
-    // NẾU ĐANG CHƠI (W, A, S, D di chuyển) 
+    // --- NẾU ĐANG CHƠI THÔNG THƯỜNG ---
     if (state->status == MATCH_PLAYING) {
-        if (IsKeyPressed(KEY_W) && state->cursor.y > 0) state->cursor.y--;
-        if (IsKeyPressed(KEY_S) && state->cursor.y < state->boardSize - 1) state->cursor.y++;
-        if (IsKeyPressed(KEY_A) && state->cursor.x > 0) state->cursor.x--;
-        if (IsKeyPressed(KEY_D) && state->cursor.x < state->boardSize - 1) state->cursor.x++;
+        // Di chuyển con trỏ
+        if ((wParam == 'W' || wParam == 'w' || wParam == VK_UP) && state->cursor.y > 0) { state->cursor.y--; hasChanged = true; }
+        if ((wParam == 'S' || wParam == 's' || wParam == VK_DOWN) && state->cursor.y < state->boardSize - 1) { state->cursor.y++; hasChanged = true; }
+        if ((wParam == 'A' || wParam == 'a' || wParam == VK_LEFT) && state->cursor.x > 0) { state->cursor.x--; hasChanged = true; }
+        if ((wParam == 'D' || wParam == 'd' || wParam == VK_RIGHT) && state->cursor.x < state->boardSize - 1) { state->cursor.x++; hasChanged = true; }
 
-        // Nhấn Enter để đánh cờ 
-        if (IsKeyPressed(KEY_ENTER)) {
+        // Nhấn Enter hoặc Space để đánh cờ
+        if (wParam == VK_RETURN || wParam == VK_SPACE) {
             if (ProcessMove(state, state->cursor.x, state->cursor.y)) {
-                PlaySFX("Asset/audio/place_piece.wav");
-
-                int winStatus = CheckWinCondition(state);
-                if (winStatus != 2) {
-                    state->status = MATCH_FINISHED;
-                    state->winner = winStatus;
-                    if (winStatus == -1) state->player1.score++;
-                    else if (winStatus == 1) state->player2.score++;
-                }
-                else {
-                    SwitchTurn(state);
-                }
+                // PlaySFX(L"Asset/audio/place_piece.wav");
+                HandleMoveResult(state);
+                hasChanged = true;
             }
         }
 
-        // Phím Esc để tạm dừng
-        if (IsKeyPressed(KEY_ESCAPE)) {
+        // Tạm dừng
+        if (wParam == VK_ESCAPE) {
             state->status = MATCH_PAUSED;
+            hasChanged = true;
         }
+    }
+
+    return hasChanged;
+}
+
+void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int screenHeight, const Sprite& spriteX, const Sprite& spriteO) {
+    // 0. Phủ nền bàn cờ
+    RECT bgRect = { 0, 0, screenWidth, screenHeight };
+    HBRUSH hBg = CreateSolidBrush(Colour::WHITE);
+    FillRect(hdc, &bgRect, hBg);
+    DeleteObject(hBg);
+
+    // 1. Tính toán tọa độ lưới để căn giữa
+    int boardPixelSize = state->boardSize * CELL_SIZE;
+    int startX = (screenWidth - boardPixelSize) / 2;
+    int startY = (screenHeight - boardPixelSize) / 2 + 30;
+
+    // 2. Vẽ UI bên trên (Chuẩn Unicode)
+    std::wstring modeTitle = (state->gameMode == MODE_CARO) ? L"--- CARO ---" : L"--- TIC-TAC-TOE ---";
+    DrawTextCentered(hdc, modeTitle, 20, screenWidth, Colour::BLUE_DARK);
+
+    // Dùng DrawTextW chuẩn để căn lề Trái/Phải cho điểm số
+    HFONT hOldFont = (HFONT)SelectObject(hdc, GlobalFont::Default);
+    SetBkMode(hdc, TRANSPARENT);
+
+    // P1 (Trái)
+    std::string n1 = state->player1.name;
+    std::wstring p1Text = std::wstring(n1.begin(), n1.end()) + L" (X): " + std::to_wstring(state->player1.score);
+    SetTextColor(hdc, Colour::RED_NORMAL);
+    RECT rLeft = { 50, 60, screenWidth / 2, 100 };
+    DrawTextW(hdc, p1Text.c_str(), -1, &rLeft, DT_LEFT | DT_SINGLELINE);
+
+    // P2 (Phải)
+    std::string n2 = state->player2.name;
+    std::wstring p2Text = std::wstring(n2.begin(), n2.end()) + L" (O): " + std::to_wstring(state->player2.score);
+    SetTextColor(hdc, Colour::BLUE_NORMAL);
+    RECT rRight = { screenWidth / 2, 60, screenWidth - 50, 100 };
+    DrawTextW(hdc, p2Text.c_str(), -1, &rRight, DT_RIGHT | DT_SINGLELINE);
+
+    // Lượt đi & Thời gian
+    std::wstring p1NameW(state->player1.name, state->player1.name + strlen(state->player1.name));
+    std::wstring p2NameW(state->player2.name, state->player2.name + strlen(state->player2.name));
+    std::wstring turnText = L"Lượt của: " + (state->isPlayer1Turn ? p1NameW : p2NameW);
+    COLORREF turnColor = state->isPlayer1Turn ? Colour::RED_NORMAL : Colour::BLUE_NORMAL;
+    DrawTextCentered(hdc, turnText, 60, screenWidth, turnColor);
+
+    std::wstring timeText = L"Thời gian: " + std::to_wstring(state->timeRemaining) + L"s";
+    DrawTextCentered(hdc, timeText, 90, screenWidth, Colour::GRAY_DARK);
+
+    SelectObject(hdc, hOldFont); // Phục hồi Font
+
+    // 3. Vẽ Bàn Cờ
+    DrawGrid(hdc, state->boardSize, CELL_SIZE, startX, startY);
+
+    // 4. Batch Rendering Quân Cờ & Highlight bằng GDI+
+    {
+        Gdiplus::Graphics g(hdc);
+        // Không gọi SetInterpolationMode vì ảnh đã được Pre-scale từ đầu
+
+        for (int y = 0; y < state->boardSize; y++) {
+            for (int x = 0; x < state->boardSize; x++) {
+                if (state->board[y][x].c == 0) continue;
+
+                int cellPx = startX + x * CELL_SIZE;
+                int cellPy = startY + y * CELL_SIZE;
+
+                if (state->board[y][x].c == 1) DrawSprite(g, spriteX, cellPx, cellPy, CELL_SIZE);
+                else if (state->board[y][x].c == 2) DrawSprite(g, spriteO, cellPx, cellPy, CELL_SIZE);
+            }
+        }
+
+        // Vẽ Khung chọn (Highlight)
+        if (state->status == MATCH_PLAYING) {
+            DrawHighlight(hdc, state->cursor.y, state->cursor.x, CELL_SIZE, startX, startY);
+        }
+
+        // 5. Hiệu ứng Overlay Bán trong suốt khi PAUSE / KẾT THÚC
+        if (state->status == MATCH_PAUSED || state->status == MATCH_FINISHED) {
+            // Lớp phủ đen 70% alpha (178/255)
+            Gdiplus::SolidBrush shadowBrush(Gdiplus::Color(178, 0, 0, 0));
+            g.FillRectangle(&shadowBrush, 0, 0, screenWidth, screenHeight);
+
+            // Vẽ hộp thoại Popup
+            int popupW = 500, popupH = 200;
+            int popupX = (screenWidth - popupW) / 2;
+            int popupY = (screenHeight - popupH) / 2;
+
+            Gdiplus::SolidBrush bgBrush(Gdiplus::Color(255, 255, 255, 255));
+            Gdiplus::Pen borderPen(Gdiplus::Color(255, 100, 100, 100), 3);
+            g.FillRectangle(&bgBrush, popupX, popupY, popupW, popupH);
+            g.DrawRectangle(&borderPen, popupX, popupY, popupW, popupH);
+        }
+    } // Đối tượng Graphics bị hủy tại đây, giải phóng ngữ cảnh vẽ an toàn
+
+    // 6. Vẽ Chữ nổi lên trên Hộp thoại Popup
+    if (state->status == MATCH_PAUSED) {
+        int popupY = (screenHeight - 200) / 2;
+        DrawTextCentered(hdc, L"--- GAME TẠM DỪNG ---", popupY + 50, screenWidth, Colour::ORANGE_NORMAL, GlobalFont::Title);
+        DrawTextCentered(hdc, L"ESC: Tiếp tục   |   Q: Về Menu", popupY + 130, screenWidth, Colour::GRAY_DARK, GlobalFont::Default);
+    }
+    else if (state->status == MATCH_FINISHED) {
+        int popupY = (screenHeight - 200) / 2;
+        std::wstring winMsg;
+        COLORREF winColor;
+
+        if (state->winner == -1) { 
+            std::wstring p1NameW(state->player1.name, state->player1.name + strlen(state->player1.name));
+            winMsg = p1NameW + L" CHIẾN THẮNG!"; 
+            winColor = Colour::RED_NORMAL; 
+        }
+        else if (state->winner == 1) { 
+            std::string n2 = state->player2.name;
+            winMsg = std::wstring(n2.begin(), n2.end()) + L" CHIẾN THẮNG!"; 
+            winColor = Colour::BLUE_NORMAL; 
+        }
+        else { winMsg = L"HAI BÊN HÒA NHAU!"; winColor = Colour::ORANGE_NORMAL; }
+
+        DrawTextCentered(hdc, winMsg, popupY + 50, screenWidth, winColor, GlobalFont::Title);
+        DrawTextCentered(hdc, L"Nhấn 'Y' để Chơi lại hoặc 'N' để Về Menu", popupY + 130, screenWidth, Colour::GRAY_DARK, GlobalFont::Default);
+        //if (wParam == 'Y' || wParam == 'y') {
+        //    // Giữ nguyên setting của ván cũ, chỉ làm mới bàn cờ
+        //    InitNewMatch(state, state->gameMode, state->matchType, state->boardSize, state->countdownTime);
+        //    hasChanged = true;
+        //}
     }
 }
 
-void RenderPlayScreen(const PlayState* state, int screenWidth, int screenHeight) {
-    // --- 1. TÍNH TOÁN TỌA ĐỘ BÀN CỜ ĐỂ CĂN GIỮA ---
-    int boardPixelSize = state->boardSize * CELL_SIZE;
-    int startX = (screenWidth - boardPixelSize) / 2;
-    int startY = (screenHeight - boardPixelSize) / 2 + 30; // Đẩy lùi xuống 30px nhường chỗ cho tiêu đề
+void UpdatePlayScreen(PlayState* state, ScreenState& currentState, WPARAM wParam) {
+    // Bỏ qua nếu không có mã phím hợp lệ
+    if (wParam == 0) return;
 
-    // --- 2. VẼ UI THÔNG TIN BÊN TRÊN ---
-    std::string modeTitle = (state->gameMode == MODE_CARO) ? "--- CARO ---" : "--- TIC-TAC-TOE ---";
-    DrawTextCentered(20, screenWidth, modeTitle.c_str(), 30, DARKBLUE);
+    // Ủy quyền xử lý cho hàm ProcessPlayInput. 
+    // Nếu có sự thay đổi trạng thái (hasChanged == true), ta có thể tận dụng để
+    // xử lý thêm các hiệu ứng phụ (ví dụ: phát âm thanh báo lỗi nếu bấm sai chỗ) trong tương lai.
+    ProcessPlayInput(wParam, state, currentState);
+}
 
-    // Điểm số Player 1 (Bên trái)
-    std::string p1Text = std::string(state->player1.name) + " (X): " + std::to_string(state->player1.score);
-    DrawTextNormal(50, 60, p1Text.c_str(), 20, RED);
+void InitNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize, int countdownTime) {
+    if (!state) return;
 
-    // Điểm số Player 2 (Bên phải)
-    std::string p2Text = std::string(state->player2.name) + " (O): " + std::to_string(state->player2.score);
-    int p2Width = MeasureText(p2Text.c_str(), 20);
-    DrawTextNormal(screenWidth - p2Width - 50, 60, p2Text.c_str(), 20, BLUE);
+    // 1. Cài đặt thông số trận đấu
+    state->gameMode = mode;
+    state->matchType = type;
+    state->boardSize = boardSize;
+    state->countdownTime = countdownTime;
+    state->timeRemaining = countdownTime;
 
-    // Lượt đi & Thời gian (Ở giữa)
-    std::string turnText = state->isPlayer1Turn ? "Luot cua: " + std::string(state->player1.name) : "Luot cua: " + std::string(state->player2.name);
-    Color turnColor = state->isPlayer1Turn ? RED : BLUE;
-    DrawTextCentered(60, screenWidth, turnText.c_str(), 25, turnColor);
-
-    std::string timeText = "Thoi gian: " + std::to_string(state->timeRemaining) + "s";
-    DrawTextCentered(90, screenWidth, timeText.c_str(), 20, DARKGRAY);
-
-    // --- 3. VẼ BÀN CỜ VÀ QUÂN CỜ ---
-    DrawGridBoard(startX, startY, state->boardSize, CELL_SIZE, LIGHTGRAY);
-
-    for (int y = 0; y < state->boardSize; y++) {
-        for (int x = 0; x < state->boardSize; x++) {
-            if (state->board[y][x].c != 0) {
-                // Tọa độ pixel của từng ô
-                int cellPx = startX + x * CELL_SIZE;
-                int cellPy = startY + y * CELL_SIZE;
-                DrawPiece(cellPx, cellPy, CELL_SIZE, state->board[y][x].c);
-            }
+    // 2. Làm sạch bàn cờ (Gán toàn bộ ô về giá trị 0 - Trống)
+    for (int y = 0; y < boardSize; ++y) {
+        for (int x = 0; x < boardSize; ++x) {
+            state->board[y][x].c = 0;
         }
     }
 
-    // --- 4. VẼ CON TRỎ (HIGHLIGHT) ---
-    if (state->status == MATCH_PLAYING) {
-        int cursorPx = startX + state->cursor.x * CELL_SIZE;
-        int cursorPy = startY + state->cursor.y * CELL_SIZE;
-        DrawCursorHighlight(cursorPx, cursorPy, CELL_SIZE, YELLOW);
+    // 3. Khởi tạo thông tin người chơi (Có thể mở rộng để nhận tên từ Input sau này)
+    strncpy_s(state->player1.name, "Player 1", sizeof(state->player1.name));
+    state->player1.score = 0; // Đặt lại điểm số
+
+    if (type == MATCH_PVE) {
+        strncpy_s(state->player2.name, "AI (Máy)", sizeof(state->player2.name));
     }
-
-    // --- 5. HIỆU ỨNG POP-UP (OVERLAY) KHI PAUSE / GAME OVER ---
-    if (state->status == MATCH_PAUSED || state->status == MATCH_FINISHED) {
-        // Vẽ một màn đen bán trong suốt bao phủ toàn bộ màn hình!
-        DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.7f));
-
-        // Vẽ khung trắng ở giữa
-        int popupWidth = 500;
-        int popupHeight = 200;
-        int popupX = (screenWidth - popupWidth) / 2;
-        int popupY = (screenHeight - popupHeight) / 2;
-        DrawRectangle(popupX, popupY, popupWidth, popupHeight, RAYWHITE);
-        DrawRectangleLines(popupX, popupY, popupWidth, popupHeight, DARKGRAY);
-
-        if (state->status == MATCH_PAUSED) {
-            DrawTextCentered(popupY + 50, screenWidth, "--- GAME TAM DUNG ---", 30, ORANGE);
-            DrawTextCentered(popupY + 120, screenWidth, "ESC: Tiep tuc   |   Q: Ve Menu", 20, DARKGRAY);
-        }
-        else if (state->status == MATCH_FINISHED) {
-            std::string winMsg;
-            Color winColor;
-            if (state->winner == -1) {
-                winMsg = std::string(state->player1.name) + " CHIEN THANG!"; // 
-                winColor = RED;
-            }
-            else if (state->winner == 1) {
-                winMsg = std::string(state->player2.name) + " CHIEN THANG!"; // 
-                winColor = BLUE;
-            }
-            else {
-                winMsg = "HAI BEN HOA NHAU!"; 
-                winColor = ORANGE;
-            }
-
-            DrawTextCentered(popupY + 50, screenWidth, winMsg.c_str(), 35, winColor);
-            DrawTextCentered(popupY + 120, screenWidth, "Nhan 'Y' de Choi lai hoac 'N' de Ve Menu", 20, DARKGRAY); // [cite: 17, 19]
-        }
+    else {
+        strncpy_s(state->player2.name, "Player 2", sizeof(state->player2.name));
     }
+    state->player2.score = 0;
+
+    // 4. Đặt lại luồng điều khiển
+    state->isPlayer1Turn = true;    // X luôn đi trước
+    state->status = MATCH_PLAYING;  // Bắt đầu ngay lập tức
+    state->winner = 0;              // Chưa có người thắng
+
+    // 5. Đưa con trỏ chọn ô về chính giữa bàn cờ
+    state->cursor.x = boardSize / 2;
+    state->cursor.y = boardSize / 2;
 }

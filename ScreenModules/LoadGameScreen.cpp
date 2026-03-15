@@ -1,74 +1,87 @@
 ﻿#include "LoadGameScreen.h"
 #include "../RenderAPI/UIComponents.h"
-#include "../SystemModules/SaveLoadSystem.h"
-#include "../SystemModules/AudioSystem.h"
-#include <raylib.h>
-#include <string>
+#include "../RenderAPI/Colours.h"
 
 const int TOTAL_LOAD_ITEMS = 4;
-// Danh sách các mục hiển thị trên màn hình
-const char* loadItems[TOTAL_LOAD_ITEMS] = {
-    "1. Ban luu 1 (Save Slot 1)",
-    "2. Ban luu 2 (Save Slot 2)",
-    "3. Ban luu 3 (Save Slot 3)",
-    "4. Quay lai Menu (Back)"
+
+// Sử dụng chuẩn chuỗi rộng (Wide string) cho Unicode
+const wchar_t* loadItems[TOTAL_LOAD_ITEMS] = {
+    L"1. Bản lưu 1 (Save Slot 1)",
+    L"2. Bản lưu 2 (Save Slot 2)",
+    L"3. Bản lưu 3 (Save Slot 3)",
+    L"4. Quay lại Menu (Back)"
 };
 
-void UpdateLoadGameScreen(ScreenState& currentState, PlayState* playState, int& selectedOption, std::string& statusMessage) {
+bool ProcessLoadGameInput(WPARAM wParam, ScreenState& currentState, PlayState* playState, int& selectedOption, std::wstring& statusMessage) {
+    bool hasChanged = false;
+
     // Di chuyển lên
-    if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) {
+    if (wParam == 'W' || wParam == 'w' || wParam == VK_UP) {
         selectedOption--;
         if (selectedOption < 0) selectedOption = TOTAL_LOAD_ITEMS - 1;
-        statusMessage = ""; // Xóa thông báo lỗi cũ khi đổi mục khác
+        statusMessage = L""; // Xóa thông báo lỗi cũ
+        hasChanged = true;
     }
-
     // Di chuyển xuống
-    if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN)) {
+    else if (wParam == 'S' || wParam == 's' || wParam == VK_DOWN) {
         selectedOption++;
         if (selectedOption >= TOTAL_LOAD_ITEMS) selectedOption = 0;
-        statusMessage = "";
+        statusMessage = L"";
+        hasChanged = true;
     }
-
     // Chọn mục
-    if (IsKeyPressed(KEY_ENTER)) {
+    else if (wParam == VK_RETURN || wParam == VK_SPACE) {
         if (selectedOption == 3) {
             // Chọn "Quay lại Menu"
             currentState = SCREEN_MENU;
-            statusMessage = "";
+            statusMessage = L"";
         }
         else {
-            // Tạo tên file tương ứng (VD: Asset/save_slot_1.bin)
-            std::string filename = "Asset/save_slot_" + std::to_string(selectedOption + 1) + ".bin";
+            // Tạo tên file tương ứng bằng std::wstring
+            std::wstring filename = L"Asset/save_slot_" + std::to_wstring(selectedOption + 1) + L".bin";
 
-            // Gọi hệ thống LoadMatchData để nạp dữ liệu vào playState
+            // GỌI HỆ THỐNG LOAD GAME (Cần đảm bảo LoadMatchData nhận const wchar_t*)
+            /*
             if (LoadMatchData(playState, filename.c_str())) {
-                PlaySFX("Asset/audio/success.wav"); // Âm thanh thành công (nếu có)
-                currentState = SCREEN_PLAY;         // Load thành công -> Chuyển thẳng vào ván đấu!
-                statusMessage = "";
+                PlaySFX(L"Asset/audio/success.wav");
+                currentState = SCREEN_PLAY;
+                statusMessage = L"";
             }
             else {
-                // Thất bại: Không tìm thấy file hoặc file hỏng
-                statusMessage = "Loi: Khong tim thay hoac file luu bi hong!";
-                PlaySFX("Asset/audio/error.wav"); // Âm thanh báo lỗi
+                statusMessage = L"Lỗi: Không tìm thấy hoặc file lưu bị hỏng!";
+                PlaySFX(L"Asset/audio/error.wav");
             }
+            */
+
+            // Code tạm thời cho mục đích minh họa giao diện:
+            statusMessage = L"Lỗi: Module SaveLoad chưa được liên kết!";
         }
+        hasChanged = true;
+    }
+    // Bấm ESC để thoát nhanh về Menu
+    else if (wParam == VK_ESCAPE) {
+        currentState = SCREEN_MENU;
+        statusMessage = L"";
+        hasChanged = true;
     }
 
-    // Bấm ESC để thoát nhanh về Menu
-    if (IsKeyPressed(KEY_ESCAPE)) {
-        currentState = SCREEN_MENU;
-        statusMessage = "";
-    }
+    return hasChanged;
 }
 
-void RenderLoadGameScreen(int selectedOption, const std::string& statusMessage, int screenWidth, int screenHeight) {
-    // 1. Vẽ tiêu đề màn hình
-    int titleY = screenHeight / 4 - 60;
-    DrawTextCentered(titleY, screenWidth, "==================================", 30, SKYBLUE);
-    DrawTextCentered(titleY + 40, screenWidth, "TAI GAME (LOAD GAME)", 50, BLUE);
-    DrawTextCentered(titleY + 100, screenWidth, "==================================", 30, SKYBLUE);
+void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statusMessage, int screenWidth, int screenHeight) {
+    // 1. Phủ màu nền (Clear màn hình cũ)
+    RECT rect = { 0, 0, screenWidth, screenHeight };
+    HBRUSH hBg = CreateSolidBrush(Colour::GRAY_LIGHTEST);
+    FillRect(hdc, &rect, hBg);
+    DeleteObject(hBg);
 
-    // 2. Vẽ danh sách các khe lưu game (Save Slots)
+    // 2. Vẽ tiêu đề màn hình
+    int titleY = screenHeight / 4 - 60;
+    DrawTextCentered(hdc, L"==================================", titleY, screenWidth, Colour::BLUE_LIGHT);
+    DrawTextCentered(hdc, L"TẢI GAME (LOAD GAME)", titleY + 40, screenWidth, Colour::BLUE_DARKEST, GlobalFont::Title);
+    DrawTextCentered(hdc, L"==================================", titleY + 100, screenWidth, Colour::BLUE_LIGHT);
+
+    // 3. Vẽ danh sách các khe lưu game
     int startY = screenHeight / 2 - 20;
     int spacing = 50;
 
@@ -76,21 +89,29 @@ void RenderLoadGameScreen(int selectedOption, const std::string& statusMessage, 
         int currentY = startY + i * spacing;
 
         if (i == selectedOption) {
-            // Mục đang được chọn: Thêm mũi tên, phóng to và tô màu Vàng
-            std::string highlightedText = ">>  " + std::string(loadItems[i]) + "  <<";
-            DrawTextCentered(currentY, screenWidth, highlightedText.c_str(), 35, GOLD);
+            // Mục đang được chọn
+            std::wstring highlightedText = L">>  " + std::wstring(loadItems[i]) + L"  <<";
+            DrawTextCentered(hdc, highlightedText, currentY, screenWidth, Colour::ORANGE_NORMAL, GlobalFont::Bold);
         }
         else {
             // Mục bình thường
-            DrawTextCentered(currentY, screenWidth, loadItems[i], 30, DARKGRAY);
+            DrawTextCentered(hdc, loadItems[i], currentY, screenWidth, Colour::GRAY_DARK);
         }
     }
 
-    // 3. Hiển thị thông báo lỗi (nếu có) bằng màu Đỏ ở dưới cùng danh sách
+    // 4. Hiển thị thông báo trạng thái (Nếu có lỗi)
     if (!statusMessage.empty()) {
-        DrawTextCentered(startY + TOTAL_LOAD_ITEMS * spacing + 20, screenWidth, statusMessage.c_str(), 25, RED);
+        DrawTextCentered(hdc, statusMessage, startY + TOTAL_LOAD_ITEMS * spacing + 20, screenWidth, Colour::RED_NORMAL, GlobalFont::Bold);
     }
 
-    // 4. Hướng dẫn phím điều khiển
-    DrawTextCentered(screenHeight - 50, screenWidth, "W/S: Di chuyen | ENTER: Chon | ESC: Quay lai", 20, GRAY);
+    // 5. Hướng dẫn phím điều khiển
+    DrawTextCentered(hdc, L"W/S: Di chuyển | ENTER: Chọn | ESC: Quay lại", screenHeight - 50, screenWidth, Colour::GRAY_NORMAL);
+}
+
+void UpdateLoadGameScreen(ScreenState& currentState, PlayState* playState, int& selectedOption, std::wstring& statusMessage, WPARAM wParam) {
+    // Bỏ qua nếu không có sự kiện phím (wParam = 0)
+    if (wParam == 0) return;
+
+    // Ủy quyền xử lý logic cho ProcessLoadGameInput
+    ProcessLoadGameInput(wParam, currentState, playState, selectedOption, statusMessage);
 }

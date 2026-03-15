@@ -1,11 +1,24 @@
-﻿#pragma once
+﻿#ifndef LOAD_GAME_SCREEN_H
+#define LOAD_GAME_SCREEN_H
 #include "../ApplicationTypes/GameState.h"
 #include "../ApplicationTypes/PlayState.h"
 #include <string>
+#include <windows.h>
 
-// Xử lý phím điều hướng để chọn bản lưu bằng Raylib
-// Nếu người chơi chọn Tải thành công, currentState sẽ chuyển thẳng sang SCREEN_PLAY
-void UpdateLoadGameScreen(ScreenState& currentState, PlayState* playState, int& selectedOption, std::string& statusMessage);
+/**
+ * @brief Xử lý sự kiện bàn phím cho màn hình Tải Game.
+ * @return bool Trả về true nếu cần vẽ lại màn hình (InvalidateRect).
+ */
+bool ProcessLoadGameInput(WPARAM wParam, ScreenState& currentState, PlayState* playState, int& selectedOption, std::wstring& statusMessage);
 
-// Vẽ màn hình danh sách các bản lưu (Save Slots) bằng tọa độ pixel
-void RenderLoadGameScreen(int selectedOption, const std::string& statusMessage, int screenWidth, int screenHeight);
+/**
+ * @brief Kết xuất giao diện Màn hình Tải Game lên Back Buffer.
+ */
+void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statusMessage, int screenWidth, int screenHeight);
+
+/**
+ * @brief Nhận thông điệp từ WndProc và định tuyến xử lý logic đầu vào.
+ */
+void UpdateLoadGameScreen(ScreenState& currentState, PlayState* playState, int& selectedOption, std::wstring& statusMessage, WPARAM wParam);
+
+#endif // LOAD_GAME_SCREEN_H 
