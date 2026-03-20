@@ -1,0 +1,161 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="GameLogic">
+      <UniqueIdentifier>{fd98c714-96d0-4cc6-9fa2-b8ab3c43d3b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SystemModules">
+      <UniqueIdentifier>{3392c8f1-e747-44d1-8363-93fae8e72d86}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RenderAPI">
+      <UniqueIdentifier>{ebf90cc9-3cf4-43d6-99ad-a80693f535dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ApplicationTypes">
+      <UniqueIdentifier>{8f49e6d2-a2d0-4a68-8ecf-26f26882f089}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset">
+      <UniqueIdentifier>{7e7e28a3-6055-48bd-a0d4-e8cc39b1112c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ScreenModules">
+      <UniqueIdentifier>{233625c2-94b0-4244-bdcf-1d52c4ec2c89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\images">
+      <UniqueIdentifier>{5dfd7986-1a13-4f45-b16e-d56aeba2b10b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\audio">
+      <UniqueIdentifier>{b0b6f301-a9f2-44b8-9714-583798bc2b87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\lang">
+      <UniqueIdentifier>{27ad0ed5-b95f-49f2-a240-2f56134b8185}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ApplicationTypes\GameConfig.h">
+      <Filter>ApplicationTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="ApplicationTypes\GameConstants.h">
+      <Filter>ApplicationTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="ApplicationTypes\GameState.h">
+      <Filter>ApplicationTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="ApplicationTypes\PlayState.h">
+      <Filter>ApplicationTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLogic\BotAI.h">
+      <Filter>GameLogic</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLogic\GameEngine.h">
+      <Filter>GameLogic</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLogic\GameRules.h">
+      <Filter>GameLogic</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderAPI\Renderer.h">
+      <Filter>RenderAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderAPI\Colours.h">
+      <Filter>RenderAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderAPI\UIComponents.h">
+      <Filter>RenderAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenModules\AboutScreen.h">
+      <Filter>ScreenModules</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenModules\GuildScreen.h">
+      <Filter>ScreenModules</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenModules\LoadGameScreen.h">
+      <Filter>ScreenModules</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenModules\MenuScreen.h">
+      <Filter>ScreenModules</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenModules\PlayScreen.h">
+      <Filter>ScreenModules</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenModules\SettingScreen.h">
+      <Filter>ScreenModules</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemModules\AudioSystem.h">
+      <Filter>SystemModules</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemModules\ConfigLoader.h">
+      <Filter>SystemModules</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemModules\Localization.h">
+      <Filter>SystemModules</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemModules\SaveLoadSystem.h">
+      <Filter>SystemModules</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemModules\TimeSystem.h">
+      <Filter>SystemModules</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GameLogic\BotAI.cpp">
+      <Filter>GameLogic</Filter>
+    </ClCompile>
+    <ClCompile Include="GameLogic\GameEngine.cpp">
+      <Filter>GameLogic</Filter>
+    </ClCompile>
+    <ClCompile Include="GameLogic\GameRules.cpp">
+      <Filter>GameLogic</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderAPI\Renderer.cpp">
+      <Filter>RenderAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderAPI\UIComponents.cpp">
+      <Filter>RenderAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenModules\AboutScreen.cpp">
+      <Filter>ScreenModules</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenModules\GuildScreen.cpp">
+      <Filter>ScreenModules</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenModules\LoadGameScreen.cpp">
+      <Filter>ScreenModules</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenModules\MenuScreen.cpp">
+      <Filter>ScreenModules</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenModules\PlayScreen.cpp">
+      <Filter>ScreenModules</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenModules\SettingScreen.cpp">
+      <Filter>ScreenModules</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemModules\AudioSystem.cpp">
+      <Filter>SystemModules</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemModules\ConfigLoader.cpp">
+      <Filter>SystemModules</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemModules\Localization.cpp">
+      <Filter>SystemModules</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemModules\SaveLoadSystem.cpp">
+      <Filter>SystemModules</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemModules\TimeSystem.cpp">
+      <Filter>SystemModules</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Asset\config.ini">
+      <Filter>Asset</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Asset\images\o.png">
+      <Filter>Asset\images</Filter>
+    </Image>
+    <Image Include="Asset\images\x.png">
+      <Filter>Asset\images</Filter>
+    </Image>
+  </ItemGroup>
+</Project>

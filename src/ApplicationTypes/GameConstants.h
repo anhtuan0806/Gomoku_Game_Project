@@ -1,0 +1,12 @@
+﻿#ifndef _GAMECONSTANTS_H_
+#define _GAMECONSTANTS_H_
+
+#define GOMOKU_SIZE 15
+#define WIN_CONDITION 5
+#define MAX_BOARD_SIZE 20
+
+#define CELL_EMPTY 0
+#define CELL_PLAYER1 1
+#define CELL_PLAYER2 2
+
+#endif
