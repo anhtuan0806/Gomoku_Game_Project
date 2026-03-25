@@ -1,7 +1,9 @@
 ﻿#include "GameEngine.h"
 #include "GameRules.h"
 
-void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize, int countdownTime) {
+void initNewMatch(PlayState* state, PlayMode mode, MatchType type,
+    int boardSize, int countdownTime)
+{
     state->gameMode = mode;
     state->matchType = type;
     state->boardSize = boardSize;
@@ -15,8 +17,10 @@ void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize
     state->p1.movesCount = 0;
     state->p2.movesCount = 0;
 
-    for (int r = 0; r < MAX_BOARD_SIZE; r++) {
-        for (int c = 0; c < MAX_BOARD_SIZE; c++) {
+    for (int r = 0; r < MAX_BOARD_SIZE; r++)
+    {
+        for (int c = 0; c < MAX_BOARD_SIZE; c++)
+        {
             state->board[r][c] = CELL_EMPTY;
         }
     }
@@ -25,13 +29,16 @@ void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize
     state->cursorCol = boardSize / 2;
 }
 
-void switchTurn(PlayState* state) {
+void switchTurn(PlayState* state)
+{
     state->isP1Turn = !state->isP1Turn;
     state->timeRemaining = state->countdownTime;
 }
 
-bool processMove(PlayState* state, int row, int col) {
-    if (state->status != MATCH_PLAYING || !isValidMove(state, row, col)) {
+bool processMove(PlayState* state, int row, int col)
+{
+    if (state->status != MATCH_PLAYING || !isValidMove(state, row, col))
+    {
         return false;
     }
 
@@ -43,11 +50,13 @@ bool processMove(PlayState* state, int row, int col) {
 
     // Kiểm tra kết quả
     int winStatus = checkWinCondition(state);
-    if (winStatus != -1) {
+    if (winStatus != -1)
+    {
         state->status = MATCH_FINISHED;
         state->winner = winStatus;
     }
-    else {
+    else
+    {
         switchTurn(state);
     }
 

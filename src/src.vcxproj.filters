@@ -93,6 +93,9 @@
     <ClInclude Include="SystemModules\TimeSystem.h">
       <Filter>SystemModules</Filter>
     </ClInclude>
+    <ClInclude Include="GameLogic\PlayerEngineer.h">
+      <Filter>GameLogic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameLogic\BotAI.cpp">
@@ -144,6 +147,9 @@
       <Filter>SystemModules</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="GameLogic\PlayerEngineer.cpp">
+      <Filter>GameLogic</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Asset\config.ini">
