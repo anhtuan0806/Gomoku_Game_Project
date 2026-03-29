@@ -1,5 +1,6 @@
 ﻿#include "GameEngine.h"
 #include "GameRules.h"
+#include "../SystemModules/TimeSystem.h"
 
 void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize, int countdownTime) {
     state->gameMode = mode;
@@ -23,11 +24,14 @@ void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize
 
     state->cursorRow = boardSize / 2;
     state->cursorCol = boardSize / 2;
+
+	ResetTimer();
 }
 
 void switchTurn(PlayState* state) {
     state->isP1Turn = !state->isP1Turn;
     state->timeRemaining = state->countdownTime;
+	ResetTimer();
 }
 
 bool processMove(PlayState* state, int row, int col) {
@@ -35,17 +39,22 @@ bool processMove(PlayState* state, int row, int col) {
         return false;
     }
 
-    // Đánh cờ
     state->board[row][col] = state->isP1Turn ? CELL_PLAYER1 : CELL_PLAYER2;
 
     if (state->isP1Turn) state->p1.movesCount++;
     else state->p2.movesCount++;
 
-    // Kiểm tra kết quả
     int winStatus = checkWinCondition(state);
     if (winStatus != -1) {
         state->status = MATCH_FINISHED;
         state->winner = winStatus;
+
+        if (winStatus == CELL_PLAYER1) {
+            state->p1.score++;
+        }
+        else if (winStatus == CELL_PLAYER2) {
+            state->p2.score++;
+        }
     }
     else {
         switchTurn(state);

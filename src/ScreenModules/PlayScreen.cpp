@@ -13,17 +13,26 @@ extern bool UpdateCountdown(PlayState* state, double dt);
 
 bool UpdatePlayLogic(PlayState* state, double dt) {
     bool needsRedraw = false;
+
     if (state->status == MATCH_PLAYING) {
+        // Nếu một giây trôi qua, UpdateCountdown trả về true
         if (UpdateCountdown(state, dt)) {
-            switchTurn(state);
             needsRedraw = true;
+
+            // Nếu sau khi trừ giây mà thời gian bằng 0 -> Hết lượt, đổi người chơi
+            if (state->timeRemaining <= 0) {
+                switchTurn(state);
+            }
         }
     }
+
+    // Xử lý nước đi của Bot AI (giữ nguyên logic cũ)
     if (state->status == MATCH_PLAYING && state->matchType == MATCH_PVE && !state->isP1Turn) {
         int aiRow, aiCol;
         calculateAIMove(state, 1, aiRow, aiCol);
         if (processMove(state, aiRow, aiCol)) needsRedraw = true;
     }
+
     return needsRedraw;
 }
 
