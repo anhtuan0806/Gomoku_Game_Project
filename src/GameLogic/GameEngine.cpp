@@ -55,25 +55,31 @@ bool processMove(PlayState* state, int row, int col) {
         return false;
     }
 
+    // Đặt quân cờ tương ứng với lượt hiện tại
     state->board[row][col] = state->isP1Turn ? CELL_PLAYER1 : CELL_PLAYER2;
 
     if (state->isP1Turn) state->p1.movesCount++;
     else state->p2.movesCount++;
 
     int winStatus = checkWinCondition(state);
-    if (winStatus != -1) {
+    if (winStatus != -1) { // Có kết quả thắng/thua hoặc hòa
         if (winStatus == CELL_PLAYER1) state->p1.score++;
         else if (winStatus == CELL_PLAYER2) state->p2.score++;
 
-        // Kiểm tra xem đã đạt mục tiêu Bo chưa (Ví dụ Bo3 cần thắng 2 ván)
+        // Kiểm tra xem đã đủ điểm thắng cả trận (Bo) chưa
         if (state->p1.score >= state->targetScore || state->p2.score >= state->targetScore) {
             state->status = MATCH_FINISHED;
             state->winner = winStatus;
         }
         else {
-            // Nếu chưa đủ điểm thắng cả trận, tự động reset bàn cờ để đánh ván tiếp theo
+            // Nếu chưa đủ điểm thắng cả trận, reset bàn cờ để đánh ván tiếp theo
+            // Hàm này đã có sẵn logic đặt state->isP1Turn = true
             startNextRound(state);
         }
+    }
+    else {
+        // Nếu ván đấu vẫn đang tiếp tục (winStatus == -1), thực hiện chuyển lượt
+        switchTurn(state);
     }
 
     return true;
