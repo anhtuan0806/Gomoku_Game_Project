@@ -3,18 +3,15 @@
 #include <string>
 #include "../ApplicationTypes/GameState.h"
 #include "../ApplicationTypes/PlayState.h"
+#include "../ApplicationTypes/GameConfig.h" 
 #include "../RenderAPI/Renderer.h"
 
 const int CELL_SIZE = 40;
 
-// Cập nhật logic tự động (Thời gian đếm ngược, AI tự động đánh)
 bool UpdatePlayLogic(PlayState* state, double dt);
 
-// Xử lý sự kiện bàn phím của người chơi
-bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState);
+bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState, GameConfig* config);
 
-// Kết xuất màn hình Play
-void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int screenHeight, const Sprite& spriteX, const Sprite& spriteO);
+void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int screenHeight, const Sprite& spriteX, const Sprite& spriteO, const GameConfig* config);
 
-// Định tuyến Input
-void UpdatePlayScreen(PlayState* state, ScreenState& currentState, WPARAM wParam);
+void UpdatePlayScreen(PlayState* state, ScreenState& currentState, WPARAM wParam, GameConfig* config);

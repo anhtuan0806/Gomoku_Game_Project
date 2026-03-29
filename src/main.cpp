@@ -133,7 +133,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             changed = true;
             break;
         case SCREEN_PLAY:
-            UpdatePlayScreen(&g_PlayState, g_CurrentScreen, wParam);
+            UpdatePlayScreen(&g_PlayState, g_CurrentScreen, wParam, &g_Config);
             changed = true;
             break;
         case SCREEN_SETTING:
@@ -186,7 +186,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             RenderMenuScreen(buffer.hdcMem, g_MenuSelected, w, h);
             break;
         case SCREEN_PLAY:
-            RenderPlayScreen(buffer.hdcMem, &g_PlayState, w, h, g_SpriteX, g_SpriteO);
+            RenderPlayScreen(buffer.hdcMem, &g_PlayState, w, h, g_SpriteX, g_SpriteO, &g_Config);
             break;
         case SCREEN_SETTING:
             RenderSettingScreen(buffer.hdcMem, &g_Config, g_SettingSelected, w, h);
