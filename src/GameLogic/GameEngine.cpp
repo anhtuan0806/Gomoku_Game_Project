@@ -2,16 +2,33 @@
 #include "GameRules.h"
 #include "../SystemModules/TimeSystem.h"
 
-void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize, int countdownTime) {
+void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize,
+    int countdownTime, int difficulty, int targetScore, int totalTime) {
     state->gameMode = mode;
     state->matchType = type;
     state->boardSize = boardSize;
     state->countdownTime = countdownTime;
-    state->timeRemaining = countdownTime;
+    state->difficulty = difficulty;
+    state->targetScore = targetScore;
 
+    // Khởi tạo thời gian tổng
+    state->isMatchTimed = (totalTime > 0);
+    state->p1TotalTimeLeft = totalTime * 60; // Đổi từ phút sang giây
+    state->p2TotalTimeLeft = totalTime * 60;
+
+    // Reset điểm số về 0 cho trận đấu mới
+    state->p1.score = 0;
+    state->p2.score = 0;
+
+    // Gọi hàm khởi tạo bàn cờ
+    startNextRound(state);
+}
+
+void startNextRound(PlayState* state) {
+    state->timeRemaining = state->countdownTime;
     state->isP1Turn = true;
     state->status = MATCH_PLAYING;
-    state->winner = -1; // Chưa kết thúc
+    state->winner = -1;
 
     state->p1.movesCount = 0;
     state->p2.movesCount = 0;
@@ -22,10 +39,9 @@ void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize
         }
     }
 
-    state->cursorRow = boardSize / 2;
-    state->cursorCol = boardSize / 2;
-
-	ResetTimer();
+    state->cursorRow = state->boardSize / 2;
+    state->cursorCol = state->boardSize / 2;
+    ResetTimer();
 }
 
 void switchTurn(PlayState* state) {
@@ -46,18 +62,18 @@ bool processMove(PlayState* state, int row, int col) {
 
     int winStatus = checkWinCondition(state);
     if (winStatus != -1) {
-        state->status = MATCH_FINISHED;
-        state->winner = winStatus;
+        if (winStatus == CELL_PLAYER1) state->p1.score++;
+        else if (winStatus == CELL_PLAYER2) state->p2.score++;
 
-        if (winStatus == CELL_PLAYER1) {
-            state->p1.score++;
+        // Kiểm tra xem đã đạt mục tiêu Bo chưa (Ví dụ Bo3 cần thắng 2 ván)
+        if (state->p1.score >= state->targetScore || state->p2.score >= state->targetScore) {
+            state->status = MATCH_FINISHED;
+            state->winner = winStatus;
         }
-        else if (winStatus == CELL_PLAYER2) {
-            state->p2.score++;
+        else {
+            // Nếu chưa đủ điểm thắng cả trận, tự động reset bàn cờ để đánh ván tiếp theo
+            startNextRound(state);
         }
-    }
-    else {
-        switchTurn(state);
     }
 
     return true;

@@ -3,6 +3,7 @@
 
 enum ScreenState {
     SCREEN_MENU,
+    SCREEN_MATCH_CONFIG,
     SCREEN_PLAY,
     SCREEN_LOAD_GAME,
     SCREEN_SETTING,

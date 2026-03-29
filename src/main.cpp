@@ -19,6 +19,7 @@
 #include "ScreenModules/PlayScreen.h"
 #include "ScreenModules/SettingScreen.h"
 #include "ScreenModules/LoadGameScreen.h"
+#include "ScreenModules/MatchConfigScreen.h"
 
 // --- Trạng thái toàn cục ---
 ScreenState g_CurrentScreen = SCREEN_MENU;
@@ -26,6 +27,7 @@ GameConfig  g_Config;
 PlayState   g_PlayState;
 
 // Lựa chọn hiện tại trong các menu
+int g_ConfigSelected = 0;
 int g_MenuSelected = 0;
 int g_LoadSelected = 0;
 int g_SettingSelected = 0;
@@ -126,9 +128,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         case SCREEN_MENU:
             UpdateMenuScreen(g_CurrentScreen, g_MenuSelected, wParam);
             if (g_CurrentScreen == SCREEN_PLAY) {
-                ResetPlayScreenStatics(); 
-                initNewMatch(&g_PlayState, MODE_CARO, MATCH_PVP, 15, 30);
+                // Thay vì vào SCREEN_PLAY, ta chuyển sang SCREEN_MATCH_CONFIG
+                g_CurrentScreen = SCREEN_MATCH_CONFIG;
+                g_ConfigSelected = 0;
+                // Khởi tạo thông số mặc định để người chơi chỉnh sửa
+                g_PlayState.gameMode = MODE_CARO;
+                g_PlayState.matchType = MATCH_PVP;
+                g_PlayState.difficulty = 2;
+                g_PlayState.countdownTime = 30;
+                g_PlayState.targetScore = 1;
             }
+            changed = true;
+            break;
+
+        case SCREEN_MATCH_CONFIG:
+            UpdateMatchConfigScreen(g_CurrentScreen, &g_PlayState, g_ConfigSelected, wParam);
+            if (wParam == VK_ESCAPE) g_CurrentScreen = SCREEN_MENU;
             changed = true;
             break;
         case SCREEN_PLAY:
@@ -192,6 +207,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             break;
         case SCREEN_LOAD_GAME:
             RenderLoadGameScreen(buffer.hdcMem, g_LoadSelected, g_LoadStatus, w, h);
+            break;
+        case SCREEN_MATCH_CONFIG:
+            RenderMatchConfigScreen(buffer.hdcMem, g_ConfigSelected, &g_PlayState, w, h);
             break;
         case SCREEN_GUIDE: {
             // Vẽ nền xám nhạt giống Menu

@@ -136,6 +136,7 @@
     <ClInclude Include="ScreenModules\AboutScreen.h" />
     <ClInclude Include="ScreenModules\GuildScreen.h" />
     <ClInclude Include="ScreenModules\LoadGameScreen.h" />
+    <ClInclude Include="ScreenModules\MatchConfigScreen.h" />
     <ClInclude Include="ScreenModules\MenuScreen.h" />
     <ClInclude Include="ScreenModules\PlayScreen.h" />
     <ClInclude Include="ScreenModules\SettingScreen.h" />
@@ -155,6 +156,7 @@
     <ClCompile Include="ScreenModules\AboutScreen.cpp" />
     <ClCompile Include="ScreenModules\GuildScreen.cpp" />
     <ClCompile Include="ScreenModules\LoadGameScreen.cpp" />
+    <ClCompile Include="ScreenModules\MatchConfigScreen.cpp" />
     <ClCompile Include="ScreenModules\MenuScreen.cpp" />
     <ClCompile Include="ScreenModules\PlayScreen.cpp" />
     <ClCompile Include="ScreenModules\SettingScreen.cpp" />

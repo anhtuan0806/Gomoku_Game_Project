@@ -26,10 +26,10 @@ bool UpdatePlayLogic(PlayState* state, double dt) {
         }
     }
 
-    // Xử lý nước đi của Bot AI (giữ nguyên logic cũ)
     if (state->status == MATCH_PLAYING && state->matchType == MATCH_PVE && !state->isP1Turn) {
         int aiRow, aiCol;
-        calculateAIMove(state, 1, aiRow, aiCol);
+        // Truyền độ khó đã lưu trong state vào AI
+        calculateAIMove(state, state->difficulty, aiRow, aiCol);
         if (processMove(state, aiRow, aiCol)) needsRedraw = true;
     }
 
@@ -174,7 +174,8 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
 
     if (state->status == MATCH_FINISHED) {
         if (wParam == 'Y' || wParam == 'y') {
-            initNewMatch(state, state->gameMode, state->matchType, state->boardSize, state->countdownTime);
+			// Reset về cấu hình trận đấu ban đầu để bắt đầu ván mới
+			startNextRound(state);
             hasChanged = true;
         }
         else if (wParam == 'N' || wParam == 'n' || wParam == VK_ESCAPE) {

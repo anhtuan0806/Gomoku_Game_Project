@@ -39,6 +39,14 @@ struct PlayState {
 
     MatchStatus status;
     int winner; // 0: Hòa, 1: P1, 2: P2, -1: Đang chơi
+
+    int difficulty;       // 1: Dễ, 2: Trung bình, 3: Khó
+    int targetScore;      // 1 (Bo1), 2 (Bo3 - thắng 2 ván), 3 (Bo5 - thắng 3 ván)
+
+    // Quản lý thời gian tổng cả trận (giây)
+    int p1TotalTimeLeft;
+    int p2TotalTimeLeft;
+    bool isMatchTimed;    // Có bật giới hạn thời gian cả trận không
 };
 
 #endif // _PLAY_STATE_H

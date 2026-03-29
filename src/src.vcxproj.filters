@@ -93,6 +93,9 @@
     <ClInclude Include="SystemModules\TimeSystem.h">
       <Filter>SystemModules</Filter>
     </ClInclude>
+    <ClInclude Include="ScreenModules\MatchConfigScreen.h">
+      <Filter>ScreenModules</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameLogic\BotAI.cpp">
@@ -144,6 +147,9 @@
       <Filter>SystemModules</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ScreenModules\MatchConfigScreen.cpp">
+      <Filter>ScreenModules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Asset\config.ini">
