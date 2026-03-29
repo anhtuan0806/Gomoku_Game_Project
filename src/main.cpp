@@ -9,6 +9,7 @@
 #include "SystemModules/ConfigLoader.h"
 #include "SystemModules/AudioSystem.h"
 #include "SystemModules/TimeSystem.h"
+#include "RenderAPI/Colours.h"
 #include "RenderAPI/Renderer.h"
 #include "RenderAPI/UIComponents.h"
 #include "GameLogic/GameEngine.h"
@@ -70,13 +71,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
 
-    // 5. Tải và chuẩn hóa kích thước quân cờ (Pre-scale)
     g_SpriteX = LoadPNG(L"Asset/images/x.png");
     g_SpriteO = LoadPNG(L"Asset/images/o.png");
     ScaleSprite(g_SpriteX, CELL_SIZE, CELL_SIZE);
     ScaleSprite(g_SpriteO, CELL_SIZE, CELL_SIZE);
 
-    // 6. Vòng lặp trò chơi (Real-time Game Loop)
     MSG msg = {};
     auto lastTime = std::chrono::high_resolution_clock::now();
 
@@ -126,8 +125,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         switch (g_CurrentScreen) {
         case SCREEN_MENU:
             UpdateMenuScreen(g_CurrentScreen, g_MenuSelected, wParam);
-            // Nếu vừa chọn "Bắt đầu", khởi tạo một ván đấu mặc định
             if (g_CurrentScreen == SCREEN_PLAY) {
+                ResetPlayScreenStatics(); 
                 initNewMatch(&g_PlayState, MODE_CARO, MATCH_PVP, 15, 30);
             }
             changed = true;

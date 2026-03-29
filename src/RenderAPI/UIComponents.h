@@ -1,8 +1,8 @@
 ﻿#pragma once
 #include "Renderer.h"
-#include "../ApplicationTypes/PlayState.h" // Nhúng PlayState để vẽ trực tiếp
+#include "../ApplicationTypes/PlayState.h"
 
-// Vẽ một Sprite cụ thể lên màn hình (Bắt buộc dùng Gdiplus::Graphics để tối ưu)
+// Vẽ một Sprite cụ thể lên màn hình 
 void DrawSprite(Gdiplus::Graphics& g, const Sprite& sprite, int x, int y);
 
 // Vẽ văn bản căn giữa

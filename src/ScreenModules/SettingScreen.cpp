@@ -3,6 +3,7 @@
 #include "../RenderAPI/Colours.h"
 #include "../SystemModules/AudioSystem.h"
 #include "../SystemModules/ConfigLoader.h" 
+#include "../ApplicationTypes/PlayState.h"
 #include <string>
 
 const int TOTAL_SETTING_ITEMS = 7;

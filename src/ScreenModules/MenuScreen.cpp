@@ -1,7 +1,6 @@
 ﻿#include "MenuScreen.h"
 #include "../RenderAPI/UIComponents.h"
 #include "../RenderAPI/Colours.h"
-#include "../ApplicationTypes/GameState.h"
 
 const int TOTAL_MENU_ITEMS = 6;
 

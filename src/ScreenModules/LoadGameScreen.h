@@ -2,10 +2,6 @@
 #define LOAD_GAME_SCREEN_H
 #include "../ApplicationTypes/GameState.h"
 #include "../ApplicationTypes/PlayState.h"
-#include "../RenderAPI/UIComponents.h"
-#include "../RenderAPI/Colours.h"
-#include "../SystemModules/AudioSystem.h"
-#include "../SystemModules/SaveLoadSystem.h"
 #include <string>
 #include <windows.h>
 

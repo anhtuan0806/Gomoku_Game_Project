@@ -7,12 +7,9 @@
 #include "../SystemModules/SaveLoadSystem.h"
 #include "../SystemModules/ConfigLoader.h"
 #include "../SystemModules/Localization.h"
+#include "../ApplicationTypes/GameConstants.h"
 
 extern bool UpdateCountdown(PlayState* state, double dt);
-
-// Biến cục bộ quản lý lựa chọn trong Menu Pause
-static int g_PauseSelected = 0;
-const int TOTAL_PAUSE_ITEMS = 6;
 
 bool UpdatePlayLogic(PlayState* state, double dt) {
     bool needsRedraw = false;
@@ -33,12 +30,63 @@ bool UpdatePlayLogic(PlayState* state, double dt) {
 bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState, GameConfig* config) {
     bool hasChanged = false;
 
-    // --- LOGIC KHI ĐANG PAUSE ---
     if (state->status == MATCH_PAUSED) {
-        if (wParam == VK_ESCAPE) {
-            state->status = MATCH_PLAYING;
-            return true;
+        // TRƯỜNG HỢP 1: ĐANG NHẬP TÊN 
+        if (g_CurrentSubMenu == SUB_SAVE_NAME_ENTRY) {
+            if (wParam == VK_ESCAPE) {
+                g_CurrentSubMenu = SUB_SAVE_SELECT;
+                return true;
+            }
+            if (wParam == VK_RETURN) {
+                if (g_SaveNameInput.empty()) {
+                    g_SaveNameInput = L"NEW_SAVE";
+                }
+                else if (SaveMatchData(state, GetSavePath(g_SaveSlotSelected + 1).c_str())) {
+                    PlaySFX(L"Asset/audio/success.wav");
+                    g_CurrentSubMenu = SUB_MAIN; 
+                    g_SaveNameInput = L"";
+                }
+                return true;
+            }
+            if (wParam == VK_BACK) {
+                if (!g_SaveNameInput.empty()) { 
+                    g_SaveNameInput.pop_back(); hasChanged = true; 
+                }
+            }
+            else if (g_SaveNameInput.length() < MAX_SAVE_NAME_LEN) {
+                if ((wParam >= '0' && wParam <= '9') || (wParam >= 'A' && wParam <= 'Z') || wParam == VK_SPACE) {
+                    g_SaveNameInput += (wchar_t)wParam;
+                    hasChanged = true;
+                }
+            }
+            return hasChanged;
         }
+
+        // TRƯỜNG HỢP 2: CHỌN SLOT LƯU
+        if (g_CurrentSubMenu == SUB_SAVE_SELECT) {
+            if (wParam == VK_ESCAPE) { g_CurrentSubMenu = SUB_MAIN; return true; }
+            if (wParam == 'W' || wParam == VK_UP) {
+                g_SaveSlotSelected = (g_SaveSlotSelected - 1 < 0) ? MAX_SAVE_SLOTS - 1 : g_SaveSlotSelected - 1;
+                return true;
+            }
+            if (wParam == 'S' || wParam == VK_DOWN) {
+                g_SaveSlotSelected = (g_SaveSlotSelected + 1 >= MAX_SAVE_SLOTS) ? 0 : g_SaveSlotSelected + 1;
+                return true;
+            }
+            if (wParam == VK_RETURN || wParam == VK_SPACE) {
+                g_CurrentSubMenu = SUB_SAVE_NAME_ENTRY;
+                g_SaveNameInput = L"";
+                return true;
+            }
+            return false;
+        }
+
+        // TRƯỜNG HỢP 3: MENU PAUSE CHÍNH
+        if (wParam == VK_ESCAPE) { 
+            state->status = MATCH_PLAYING;     
+            return true; 
+        }
+
         if (wParam == 'W' || wParam == VK_UP) {
             g_PauseSelected = (g_PauseSelected - 1 < 0) ? TOTAL_PAUSE_ITEMS - 1 : g_PauseSelected - 1;
             hasChanged = true;
@@ -48,59 +96,73 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
             hasChanged = true;
         }
         else if (wParam == VK_RETURN || wParam == VK_SPACE || wParam == VK_RIGHT || wParam == VK_LEFT) {
-            hasChanged = true;
             int dir = (wParam == VK_LEFT) ? -1 : 1;
-
             switch (g_PauseSelected) {
-            case 0: // Tiếp tục
-                state->status = MATCH_PLAYING;
-                break;
-            case 1: // Nhạc nền (BGM)
-                config->isBgmEnabled = !config->isBgmEnabled;
-                if (!config->isBgmEnabled) StopBGM();
-                // else PlayBGM("Asset/audio/bgm_menu.wav");
-                break;
-            case 2: // Âm lượng (Adjust Volume - Ví dụ chỉnh SFX)
+            case 0: 
+                state->status = MATCH_PLAYING; 
+                break; 
+            case 1: 
+                config->isBgmEnabled = !config->isBgmEnabled; 
+                if (!config->isBgmEnabled) { 
+                    StopBGM(); 
+                }
+                break; 
+            case 2:
                 config->sfxVolume += dir * 10;
-                if (config->sfxVolume > 100) config->sfxVolume = 100;
-                if (config->sfxVolume < 0) config->sfxVolume = 0;
+                if (config->sfxVolume > 100) {
+                    config->sfxVolume = 100;
+                }
+                if (config->sfxVolume < 0) {
+                    config->sfxVolume = 0;
+                }
                 break;
-            case 3: // Ngôn ngữ
+            case 3:
                 config->currentLang = (config->currentLang == APP_LANG_VI) ? APP_LANG_EN : APP_LANG_VI;
                 LoadLanguageFile(config->currentLang);
                 break;
-            case 4: // Lưu Game
-                if (SaveMatchData(state, L"Asset/save_auto.bin")) {
-                    PlaySFX(L"Asset/audio/success.wav");
-                }
+            case 4: 
+                g_CurrentSubMenu = SUB_SAVE_SELECT; 
                 break;
-            case 5: // Thoát
+            case 5: 
                 SaveConfig(config, "Asset/config.ini");
                 currentState = SCREEN_MENU;
+                ResetPlayScreenStatics(); 
                 break;
             }
+            hasChanged = true;
         }
         return hasChanged;
     }
 
-    // --- LOGIC KHI ĐANG CHƠI ---
     if (state->status == MATCH_PLAYING) {
         if (wParam == VK_ESCAPE) {
             state->status = MATCH_PAUSED;
             g_PauseSelected = 0;
             return true;
         }
-        // ... (Giữ nguyên logic di chuyển cursor Row/Col và processMove)
-        if ((wParam == 'W' || wParam == VK_UP) && state->cursorRow > 0) { state->cursorRow--; hasChanged = true; }
-        if ((wParam == 'S' || wParam == VK_DOWN) && state->cursorRow < state->boardSize - 1) { state->cursorRow++; hasChanged = true; }
-        if ((wParam == 'A' || wParam == VK_LEFT) && state->cursorCol > 0) { state->cursorCol--; hasChanged = true; }
-        if ((wParam == 'D' || wParam == VK_RIGHT) && state->cursorCol < state->boardSize - 1) { state->cursorCol++; hasChanged = true; }
+        if ((wParam == 'W' || wParam == VK_UP) && state->cursorRow > 0) { 
+            state->cursorRow--; 
+            hasChanged = true; 
+        }
+        if ((wParam == 'S' || wParam == VK_DOWN) && state->cursorRow < state->boardSize - 1) { 
+            state->cursorRow++; 
+            hasChanged = true; 
+        }
+        if ((wParam == 'A' || wParam == VK_LEFT) && state->cursorCol > 0) { 
+            state->cursorCol--; 
+            hasChanged = true; 
+        }
+        if ((wParam == 'D' || wParam == VK_RIGHT) && state->cursorCol < state->boardSize - 1) { 
+            state->cursorCol++; 
+            hasChanged = true; 
+        }
         if (wParam == VK_RETURN || wParam == VK_SPACE) {
-            if (processMove(state, state->cursorRow, state->cursorCol)) hasChanged = true;
+            if (processMove(state, state->cursorRow, state->cursorCol)) { 
+                hasChanged = true; 
+            }
         }
     }
 
-    // Logic khi kết thúc (Win/Loss)
     if (state->status == MATCH_FINISHED) {
         if (wParam == 'Y' || wParam == 'y') {
             initNewMatch(state, state->gameMode, state->matchType, state->boardSize, state->countdownTime);
@@ -116,7 +178,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
 }
 
 void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int screenHeight, const Sprite& spriteX, const Sprite& spriteO, const GameConfig* config) {
-    // 1. Vẽ bàn cờ và thông tin trận đấu (Giữ nguyên phần vẽ cũ)
+    // 1. Vẽ bàn cờ và thông tin trận đấu 
     RECT bgRect = { 0, 0, screenWidth, screenHeight };
     HBRUSH hBg = CreateSolidBrush(Colour::WHITE);
     FillRect(hdc, &bgRect, hBg);
@@ -155,44 +217,70 @@ void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int scre
     // 2. Lớp phủ Pause Menu
     if (state->status == MATCH_PAUSED) {
         Gdiplus::Graphics g(hdc);
-        Gdiplus::SolidBrush shadowBrush(Gdiplus::Color(200, 0, 0, 0)); // Phủ đen mờ toàn màn hình
+        Gdiplus::SolidBrush shadowBrush(Gdiplus::Color(200, 0, 0, 0));
         g.FillRectangle(&shadowBrush, 0, 0, screenWidth, screenHeight);
 
-        int menuW = 400, menuH = 450;
+        int menuW = 450, menuH = 450;
         int menuX = (screenWidth - menuW) / 2;
         int menuY = (screenHeight - menuH) / 2;
-
         Gdiplus::SolidBrush bgBrush(Gdiplus::Color(255, 255, 255, 255));
         g.FillRectangle(&bgBrush, menuX, menuY, menuW, menuH);
 
-        DrawTextCentered(hdc, L"--- TẠM DỪNG ---", menuY + 30, screenWidth, Colour::BLUE_DARKEST, GlobalFont::Title);
+        if (g_CurrentSubMenu == SUB_MAIN) {
+            // VẼ MENU CHÍNH
+            DrawTextCentered(hdc, L"--- TẠM DỪNG ---", menuY + 30, screenWidth, Colour::BLUE_DARKEST, GlobalFont::Title);
+            const wchar_t* labels[] = { L"Tiếp tục", L"Nhạc nền: ", L"Âm lượng: ", L"Ngôn ngữ: ", L"Lưu ván đấu", L"Về Menu chính" };
+            for (int i = 0; i < TOTAL_PAUSE_ITEMS; i++) {
+                std::wstring itemText = labels[i];
+                // Thêm giá trị động cho các setting
+                if (i == 1) itemText += (config->isBgmEnabled ? L"BẬT" : L"TẮT");
+                if (i == 2) itemText += std::to_wstring(config->sfxVolume) + L"%";
+                if (i == 3) itemText += (config->currentLang == APP_LANG_VI ? L"Tiếng Việt" : L"English");
 
-        const wchar_t* labels[] = {
-            L"Tiếp tục (Resume)",
-            L"Nhạc nền (BGM): ",
-            L"Âm lượng SFX: ",
-            L"Ngôn ngữ: ",
-            L"Lưu ván đấu (Save)",
-            L"Về Menu chính (Exit)"
-        };
+                COLORREF color = (i == g_PauseSelected) ? Colour::ORANGE_NORMAL : Colour::GRAY_DARK;
+                HFONT font = (i == g_PauseSelected) ? GlobalFont::Bold : GlobalFont::Default;
 
-        for (int i = 0; i < TOTAL_PAUSE_ITEMS; i++) {
-            std::wstring itemText = labels[i];
-            // Thêm giá trị động cho các setting
-            if (i == 1) { 
-                itemText += (config->isBgmEnabled ? L"BẬT" : L"TẮT"); 
+                DrawTextCentered(hdc, itemText, menuY + 110 + i * 50, screenWidth, color, font);
             }
-            if (i == 2) { 
-                itemText += std::to_wstring(config->sfxVolume) + L"%"; 
-            }
-            if (i == 3) { 
-                itemText += (config->currentLang == APP_LANG_VI ? L"Tiếng Việt" : L"English"); 
-            }
+        }
+        else if (g_CurrentSubMenu == SUB_SAVE_SELECT) {
+            // VẼ MENU CHỌN SLOT LƯU
+            DrawTextCentered(hdc, L"--- CHỌN VỊ TRÍ LƯU ---", menuY + 30, screenWidth, Colour::ORANGE_DARK, GlobalFont::Title);
 
-            COLORREF color = (i == g_PauseSelected) ? Colour::ORANGE_NORMAL : Colour::GRAY_DARK;
-            HFONT font = (i == g_PauseSelected) ? GlobalFont::Bold : GlobalFont::Default;
+            for (int i = 0; i < MAX_SAVE_SLOTS; i++) {
+                bool exists = CheckSaveExists(i + 1);
+                std::wstring slotLabel = L"Slot " + std::to_wstring(i + 1) + (exists ? L" [Đã lưu]" : L" [Trống]");
 
-            DrawTextCentered(hdc, itemText, menuY + 110 + i * 50, screenWidth, color, font);
+                if (slotLabel.length() > MAX_SAVE_NAME_LEN) slotLabel = slotLabel.substr(0, MAX_SAVE_NAME_LEN - 3) + L"...";
+
+                COLORREF color = (i == g_SaveSlotSelected) ? Colour::RED_NORMAL : Colour::GRAY_DARK;
+                HFONT font = (i == g_SaveSlotSelected) ? GlobalFont::Bold : GlobalFont::Default;
+                DrawTextCentered(hdc, slotLabel, menuY + 110 + i * 50, screenWidth, color, font);
+            }
+            DrawTextCentered(hdc, L"Nhấn ENTER để đặt tên", menuY + 380, screenWidth, Colour::GRAY_DARK, GlobalFont::Default);
+            DrawTextCentered(hdc, L"ESC: Quay lại", menuY + 380, screenWidth, Colour::GRAY_NORMAL, GlobalFont::Default);
+        }
+        else if (g_CurrentSubMenu == SUB_SAVE_NAME_ENTRY) {
+            // GIAO DIỆN NHẬP TÊN
+            DrawTextCentered(hdc, L"NHẬP TÊN FILE LƯU", menuY + 50, screenWidth, Colour::BLUE_DARK, GlobalFont::Title);
+
+            // Vẽ khung nhập liệu (Text Box giả)
+            int boxW = 300, boxH = 40;
+            int boxX = (screenWidth - boxW) / 2;
+            int boxY = menuY + 150;
+
+            // Vẽ hình chữ nhật làm background cho text
+            HBRUSH hBoxBrush = CreateSolidBrush(RGB(240, 240, 240));
+            RECT rectBox = { boxX, boxY, boxX + boxW, boxY + boxH };
+            FillRect(hdc, &rectBox, hBoxBrush);
+            DeleteObject(hBoxBrush);
+
+            // Hiển thị nội dung người dùng đang gõ
+            std::wstring displayText = g_SaveNameInput + L"_"; // Thêm dấu gạch dưới làm con trỏ nhấp nháy giả
+            DrawTextCentered(hdc, displayText.c_str(), boxY + 8, screenWidth, Colour::BLACK, GlobalFont::Bold);
+
+            DrawTextCentered(hdc, L"Nhấn ENTER để xác nhận", menuY + 250, screenWidth, Colour::GREEN_DARK, GlobalFont::Default);
+            DrawTextCentered(hdc, L"ESC để quay lại", menuY + 300, screenWidth, Colour::GRAY_DARK, GlobalFont::Default);
         }
     }
     else if (state->status == MATCH_FINISHED) {
@@ -223,4 +311,11 @@ void UpdatePlayScreen(PlayState* state, ScreenState& currentState, WPARAM wParam
         return; 
     }
     ProcessPlayInput(wParam, state, currentState, config);
+}
+
+void ResetPlayScreenStatics() {
+    g_CurrentSubMenu = SUB_MAIN;
+    g_PauseSelected = 0;
+    g_SaveSlotSelected = 0;
+    g_SaveNameInput = L"";
 }
