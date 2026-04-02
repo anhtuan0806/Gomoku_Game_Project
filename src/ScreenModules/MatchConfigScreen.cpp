@@ -78,16 +78,14 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
         break;
     case 7: // BẮT ĐẦU
         if (wParam == VK_RETURN) {
-            // Chuyển tên từ wstring sang char array
-            size_t outputSize;
-            wcstombs_s(&outputSize, playState->p1.name, 50, editName1.c_str(), 49);
+            playState->p1.name = editName1;
 
             if (playState->matchType == MATCH_PVE) {
                 std::string botName = (playState->difficulty == 1) ? "Bot De" : (playState->difficulty == 2 ? "Bot Vua" : "Bot Kho");
-                strcpy_s(playState->p2.name, botName.c_str());
+                playState->p2.name = std::wstring(botName.begin(), botName.end());
             }
             else {
-                wcstombs_s(&outputSize, playState->p2.name, 50, editName2.c_str(), 49);
+                playState->p2.name = editName2;
             }
 
             int bSize = (playState->gameMode == MODE_CARO) ? 15 : 3;
@@ -113,7 +111,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
     DrawTextCentered(hdc, L"--- THIẾT LẬP TRẬN ĐẤU ---", 50, screenWidth, Colour::BLUE_DARKEST, GlobalFont::Title);
 
     std::wstring labels[] = {
-        L"Chế độ: " + std::wstring(config->gameMode == MODE_CARO ? L"Caro 5x5" : L"Tic-Tac-Toe 3x3"),
+        L"Chế độ: " + std::wstring(config->gameMode == MODE_CARO ? L"Caro 15x15" : L"Tic-Tac-Toe 3x3"),
         L"Đối thủ: " + std::wstring(config->matchType == MATCH_PVP ? L"Người vs Người" : L"Người vs Máy"),
         L"Độ khó AI: " + std::wstring(config->difficulty == 1 ? L"Dễ" : (config->difficulty == 2 ? L"Trung bình" : L"Khó")),
         L"TG mỗi lượt: " + std::to_wstring(config->countdownTime) + L"s",

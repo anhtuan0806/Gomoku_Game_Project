@@ -1,15 +1,10 @@
-﻿#include "GameEngine.h"
+#include "GameEngine.h"
 #include "GameRules.h"
 #include "../SystemModules/TimeSystem.h"
 
-<<<<<<< HEAD
 void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize,
-    int countdownTime, int difficulty, int targetScore, int totalTime) {
-=======
-void initNewMatch(PlayState* state, PlayMode mode, MatchType type,
-    int boardSize, int countdownTime)
-{
->>>>>>> logic-game
+    int countdownTime, int difficulty, int targetScore, int totalTime) 
+    {
     state->gameMode = mode;
     state->matchType = type;
     state->boardSize = boardSize;
@@ -23,14 +18,19 @@ void initNewMatch(PlayState* state, PlayMode mode, MatchType type,
     state->p2TotalTimeLeft = totalTime * 60;
 
     // Reset điểm số về 0 cho trận đấu mới
-    state->p1.score = 0;
-    state->p2.score = 0;
+    state->p1.totalWins = 0;
+    state->p2.totalWins = 0;
+
+    // Khởi tạo thời gian lượt chờ cho PlayerInfo2 (quan trọng để ResetTimer không bị 0)
+    state->p1.maxTurnTime = static_cast<float>(countdownTime);
+    state->p2.maxTurnTime = static_cast<float>(countdownTime);
 
     // Gọi hàm khởi tạo bàn cờ
     startNextRound(state);
 }
 
-void startNextRound(PlayState* state) {
+void startNextRound(PlayState* state) 
+{
     state->timeRemaining = state->countdownTime;
     state->isP1Turn = true;
     state->status = MATCH_PLAYING;
@@ -49,14 +49,14 @@ void startNextRound(PlayState* state) {
 
     state->cursorRow = state->boardSize / 2;
     state->cursorCol = state->boardSize / 2;
-    ResetTimer();
+    ResetTimer(state);
 }
 
 void switchTurn(PlayState* state)
 {
     state->isP1Turn = !state->isP1Turn;
     state->timeRemaining = state->countdownTime;
-	ResetTimer();
+    ResetTimer(state);
 }
 
 bool processMove(PlayState* state, int row, int col)
@@ -73,33 +73,24 @@ bool processMove(PlayState* state, int row, int col)
     else state->p2.movesCount++;
 
     int winStatus = checkWinCondition(state);
-<<<<<<< HEAD
     if (winStatus != -1) { // Có kết quả thắng/thua hoặc hòa
-        if (winStatus == CELL_PLAYER1) state->p1.score++;
-        else if (winStatus == CELL_PLAYER2) state->p2.score++;
+        if (winStatus == CELL_PLAYER1) state->p1.totalWins++;
+        else if (winStatus == CELL_PLAYER2) state->p2.totalWins++;
 
-        // Kiểm tra xem đã đủ điểm thắng cả trận (Bo) chưa
-        if (state->p1.score >= state->targetScore || state->p2.score >= state->targetScore) {
+        // Cập nhật luật BO: số ván thắng = x / 2 + 1
+        int winRequired = state->targetScore / 2 + 1;
+        if (state->p1.totalWins >= winRequired || state->p2.totalWins >= winRequired) 
+        {
             state->status = MATCH_FINISHED;
             state->winner = winStatus;
         }
         else {
             // Nếu chưa đủ điểm thắng cả trận, reset bàn cờ để đánh ván tiếp theo
-            // Hàm này đã có sẵn logic đặt state->isP1Turn = true
             startNextRound(state);
         }
     }
     else {
         // Nếu ván đấu vẫn đang tiếp tục (winStatus == -1), thực hiện chuyển lượt
-=======
-    if (winStatus != -1)
-    {
-        state->status = MATCH_FINISHED;
-        state->winner = winStatus;
-    }
-    else
-    {
->>>>>>> logic-game
         switchTurn(state);
     }
 

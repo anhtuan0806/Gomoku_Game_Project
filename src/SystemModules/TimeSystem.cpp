@@ -1,4 +1,4 @@
-﻿#include "TimeSystem.h"
+#include "TimeSystem.h"
 #include <iomanip>
 #include <sstream>
 
@@ -11,42 +11,34 @@ bool UpdateCountdown(PlayState* state, double dt)
 
     timeAccumulator += dt;
 
-<<<<<<< HEAD
-    if (timeAccumulator >= 1.0) {
-=======
     // Nếu tích lũy đủ 1 giây  
     if (timeAccumulator >= 1.0)
     {
->>>>>>> logic-game
         timeAccumulator -= 1.0;
         state->timeRemaining--;
 
-<<<<<<< HEAD
-        if (state->timeRemaining > 0) {
-            state->timeRemaining--;
-            return true; 
-=======
         if (state->timeRemaining <= 0)
         {
             state->timeRemaining = 0;
-            return true;
->>>>>>> logic-game
         }
+        return true;
     }
     return false;
 }
 
-<<<<<<< HEAD
-// Bổ sung hàm Reset để dùng khi chuyển lượt, tránh cộng dồn thời gian thừa
-void ResetTimer() {
-    timeAccumulator = 0.0;
-}
-=======
 void ResetTimer(PlayState* state)
 {
     // Áp dụng: Ép thời gian đếm ngược bằng chính thời gian của Người chơi hiện tại!
     // Tuỳ vào tới lượt ai (isP1Turn), lấy maxTurnTime tương ứng.
     float maxFloatTime = state->isP1Turn ? state->p1.maxTurnTime : state->p2.maxTurnTime;
+
+    // Failsafe: Tránh lỗi load game cũ hoặc uninitialized memory khiến maxFloatTime <= 0
+    if (maxFloatTime <= 0.0f) {
+        maxFloatTime = (state->countdownTime > 0) ? static_cast<float>(state->countdownTime) : 30.0f;
+        // Tự động gán lại nếu bộ nhớ trước đó chứa rác
+        if (state->isP1Turn) state->p1.maxTurnTime = maxFloatTime;
+        else state->p2.maxTurnTime = maxFloatTime;
+    }
 
     state->timeRemaining = static_cast<int>(maxFloatTime);
     state->countdownTime = state->timeRemaining; // Cập nhật lại thời gian gốc nếu UI cần dùng chia tỉ lệ
@@ -64,4 +56,3 @@ std::string GetTimeDisplay(PlayState* state)
 
     return oss.str();
 }
->>>>>>> logic-game

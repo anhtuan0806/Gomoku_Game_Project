@@ -201,21 +201,19 @@ void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int scre
 
 	HFONT hOldFont = (HFONT)SelectObject(hdc, GlobalFont::Default);
     // Điểm P1
-    std::string n1 = state->p1.name;
-    std::wstring p1Text = std::wstring(n1.begin(), n1.end()) + L" (X): " + std::to_wstring(state->p1.score);
+    std::wstring p1Text = state->p1.name + L" (X): " + std::to_wstring(state->p1.totalWins);
     SetTextColor(hdc, Colour::RED_NORMAL);
     RECT rLeft = { 50, 60, screenWidth / 2, 100 };
     DrawTextW(hdc, p1Text.c_str(), -1, &rLeft, DT_LEFT | DT_SINGLELINE);
 
     // Điểm P2
-    std::string n2 = state->p2.name;
-    std::wstring p2Text = std::wstring(n2.begin(), n2.end()) + L" (O): " + std::to_wstring(state->p2.score);
+    std::wstring p2Text = state->p2.name + L" (O): " + std::to_wstring(state->p2.totalWins);
     SetTextColor(hdc, Colour::BLUE_NORMAL);
     RECT rRight = { screenWidth / 2, 60, screenWidth - 50, 100 };
     DrawTextW(hdc, p2Text.c_str(), -1, &rRight, DT_RIGHT | DT_SINGLELINE);
 
-    std::wstring p1NameW(state->p1.name, state->p1.name + strlen(state->p1.name));
-    std::wstring p2NameW(state->p2.name, state->p2.name + strlen(state->p2.name));
+    std::wstring p1NameW = state->p1.name;
+    std::wstring p2NameW = state->p2.name;
     std::wstring turnText = L"Lượt của: " + (state->isP1Turn ? p1NameW : p2NameW);
     COLORREF turnColor = state->isP1Turn ? Colour::RED_NORMAL : Colour::BLUE_NORMAL;
     DrawTextCentered(hdc, turnText, 60, screenWidth, turnColor);
