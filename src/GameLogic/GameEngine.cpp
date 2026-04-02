@@ -2,8 +2,14 @@
 #include "GameRules.h"
 #include "../SystemModules/TimeSystem.h"
 
+<<<<<<< HEAD
 void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize,
     int countdownTime, int difficulty, int targetScore, int totalTime) {
+=======
+void initNewMatch(PlayState* state, PlayMode mode, MatchType type,
+    int boardSize, int countdownTime)
+{
+>>>>>>> logic-game
     state->gameMode = mode;
     state->matchType = type;
     state->boardSize = boardSize;
@@ -33,8 +39,10 @@ void startNextRound(PlayState* state) {
     state->p1.movesCount = 0;
     state->p2.movesCount = 0;
 
-    for (int r = 0; r < MAX_BOARD_SIZE; r++) {
-        for (int c = 0; c < MAX_BOARD_SIZE; c++) {
+    for (int r = 0; r < MAX_BOARD_SIZE; r++)
+    {
+        for (int c = 0; c < MAX_BOARD_SIZE; c++)
+        {
             state->board[r][c] = CELL_EMPTY;
         }
     }
@@ -44,14 +52,17 @@ void startNextRound(PlayState* state) {
     ResetTimer();
 }
 
-void switchTurn(PlayState* state) {
+void switchTurn(PlayState* state)
+{
     state->isP1Turn = !state->isP1Turn;
     state->timeRemaining = state->countdownTime;
 	ResetTimer();
 }
 
-bool processMove(PlayState* state, int row, int col) {
-    if (state->status != MATCH_PLAYING || !isValidMove(state, row, col)) {
+bool processMove(PlayState* state, int row, int col)
+{
+    if (state->status != MATCH_PLAYING || !isValidMove(state, row, col))
+    {
         return false;
     }
 
@@ -62,6 +73,7 @@ bool processMove(PlayState* state, int row, int col) {
     else state->p2.movesCount++;
 
     int winStatus = checkWinCondition(state);
+<<<<<<< HEAD
     if (winStatus != -1) { // Có kết quả thắng/thua hoặc hòa
         if (winStatus == CELL_PLAYER1) state->p1.score++;
         else if (winStatus == CELL_PLAYER2) state->p2.score++;
@@ -79,6 +91,15 @@ bool processMove(PlayState* state, int row, int col) {
     }
     else {
         // Nếu ván đấu vẫn đang tiếp tục (winStatus == -1), thực hiện chuyển lượt
+=======
+    if (winStatus != -1)
+    {
+        state->status = MATCH_FINISHED;
+        state->winner = winStatus;
+    }
+    else
+    {
+>>>>>>> logic-game
         switchTurn(state);
     }
 

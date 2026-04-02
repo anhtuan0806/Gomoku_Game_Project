@@ -2,27 +2,47 @@
 #define _PLAY_STATE_H
 #include "GameConstants.h"
 #include "GameState.h"
+#include <string>
 
-enum MatchStatus {
+using std::string, std::wstring;
+
+// Trạng thái ván đấu
+enum MatchStatus
+{
     MATCH_PLAYING,
     MATCH_PAUSED,
     MATCH_FINISHED
 };
 
-struct PlayerInfo {
+// Thông tin người chơi (cũ)
+struct PlayerInfo
+{
     char name[50];
-    int avatarID;    
+    int avatarID;
     char piece;        // 'X' hoặc 'O'
     int score;
     int movesCount;
 };
 
-struct PlayState {
+// Thông tin người chơi (mới)
+struct PlayerInfo2
+{
+    wstring name;
+    string avatarPath;
+    char piece;          // 'X' hoặc 'O'      
+    int totalWins;
+    int movesCount;
+    float maxTurnTime;
+};
+
+// Trạng thái ván đấu
+struct PlayState
+{
     PlayMode gameMode;
     MatchType matchType;
 
-    PlayerInfo p1;
-    PlayerInfo p2;
+    PlayerInfo2 p1;
+    PlayerInfo2 p2;
 
     bool isP1Turn;
 

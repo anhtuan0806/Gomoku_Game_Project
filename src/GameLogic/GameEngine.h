@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿#ifndef _GAME_ENGINE_H_
+#define _GAME_ENGINE_H_
+
 #include "../ApplicationTypes/PlayState.h"
 
 // Khởi tạo ván đấu mới
@@ -14,3 +16,5 @@ bool processMove(PlayState* state, int row, int col);
 
 // Chuyển lượt chơi
 void switchTurn(PlayState* state);
+
+#endif 

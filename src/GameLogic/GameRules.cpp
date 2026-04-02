@@ -1,13 +1,16 @@
 ﻿#include "GameRules.h"
 
-bool isValidMove(const PlayState* state, int row, int col) {
-    if (row < 0 || row >= state->boardSize || col < 0 || col >= state->boardSize) {
+bool isValidMove(const PlayState* state, int row, int col)
+{
+    if (row < 0 || row >= state->boardSize || col < 0 || col >= state->boardSize)
+    {
         return false;
     }
     return state->board[row][col] == CELL_EMPTY;
 }
 
-int checkWinCondition(const PlayState* state) {
+int checkWinCondition(const PlayState* state)
+{
     int winLength = (state->gameMode == MODE_CARO) ? 5 : 3;
     int size = state->boardSize;
 
@@ -17,29 +20,37 @@ int checkWinCondition(const PlayState* state) {
 
     bool isBoardFull = true;
 
-    for (int r = 0; r < size; r++) {
-        for (int c = 0; c < size; c++) {
-            if (state->board[r][c] == CELL_EMPTY) {
+    for (int r = 0; r < size; r++)
+    {
+        for (int c = 0; c < size; c++)
+        {
+            if (state->board[r][c] == CELL_EMPTY)
+            {
                 isBoardFull = false;
                 continue;
             }
 
             int currentPiece = state->board[r][c];
 
-            for (int dir = 0; dir < 4; dir++) {
+            for (int dir = 0; dir < 4; dir++)
+            {
                 int count = 1;
-                for (int step = 1; step < winLength; step++) {
+                for (int step = 1; step < winLength; step++)
+                {
                     int nr = r + dr[dir] * step;
                     int nc = c + dc[dir] * step;
 
-                    if (nr >= 0 && nr < size && nc >= 0 && nc < size && state->board[nr][nc] == currentPiece) {
+                    if (nr >= 0 && nr < size && nc >= 0 && nc < size && state->board[nr][nc] == currentPiece)
+                    {
                         count++;
                     }
-                    else {
+                    else
+                    {
                         break;
                     }
                 }
-                if (count == winLength) {
+                if (count == winLength)
+                {
                     return currentPiece; // Người chơi 1 hoặc 2 thắng
                 }
             }

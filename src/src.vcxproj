@@ -130,6 +130,7 @@
     <ClInclude Include="GameLogic\BotAI.h" />
     <ClInclude Include="GameLogic\GameEngine.h" />
     <ClInclude Include="GameLogic\GameRules.h" />
+    <ClInclude Include="GameLogic\PlayerEngineer.h" />
     <ClInclude Include="RenderAPI\Colours.h" />
     <ClInclude Include="RenderAPI\Renderer.h" />
     <ClInclude Include="RenderAPI\UIComponents.h" />
@@ -150,6 +151,7 @@
     <ClCompile Include="GameLogic\BotAI.cpp" />
     <ClCompile Include="GameLogic\GameEngine.cpp" />
     <ClCompile Include="GameLogic\GameRules.cpp" />
+    <ClCompile Include="GameLogic\PlayerEngineer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RenderAPI\Renderer.cpp" />
     <ClCompile Include="RenderAPI\UIComponents.cpp" />

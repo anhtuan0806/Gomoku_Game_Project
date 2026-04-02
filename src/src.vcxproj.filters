@@ -93,8 +93,13 @@
     <ClInclude Include="SystemModules\TimeSystem.h">
       <Filter>SystemModules</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="ScreenModules\MatchConfigScreen.h">
       <Filter>ScreenModules</Filter>
+=======
+    <ClInclude Include="GameLogic\PlayerEngineer.h">
+      <Filter>GameLogic</Filter>
+>>>>>>> logic-game
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -147,8 +152,13 @@
       <Filter>SystemModules</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+<<<<<<< HEAD
     <ClCompile Include="ScreenModules\MatchConfigScreen.cpp">
       <Filter>ScreenModules</Filter>
+=======
+    <ClCompile Include="GameLogic\PlayerEngineer.cpp">
+      <Filter>GameLogic</Filter>
+>>>>>>> logic-game
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
