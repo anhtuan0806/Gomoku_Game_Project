@@ -1,0 +1,48 @@
+name: "Đề xuất cải tiến"
+description: "Tạo issue để đề xuất cải tiến cho game hoặc codebase"
+title: "🚀 [Cải tiến]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Vấn đề hiện tại
+      description: Mô tả ngắn gọn điều gì đang gây bất tiện hoặc có thể làm tốt hơn.
+      placeholder: "Ví dụ: Bot cấp Hard vẫn chưa phản ứng tốt ở các thế cờ mở..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Đề xuất cải tiến
+      description: Mô tả giải pháp bạn đề xuất.
+      placeholder: "Ví dụ: Tăng độ sâu tìm kiếm động theo giai đoạn trận đấu..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_impact
+    attributes:
+      label: Lợi ích kỳ vọng
+      description: Cải tiến này sẽ giúp ích gì cho người chơi hoặc đội phát triển?
+      placeholder: "Ví dụ: Giảm nước đi lỗi của bot, tăng trải nghiệm PvE..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Khu vực ảnh hưởng
+      options:
+        - Gameplay
+        - Bot AI
+        - UI/UX
+        - Hiệu năng
+        - Âm thanh
+        - Lưu/Tải game
+        - Tài liệu
+        - Khác
+    validations:
+      required: true
