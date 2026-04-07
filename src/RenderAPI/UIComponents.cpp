@@ -202,6 +202,55 @@ void DrawPixelTrophy(Gdiplus::Graphics& g, int cx, int cy, int size) {
     }
 }
 
+// =============================================================
+// DrawPixelBanner: Tiêu đề procedural thay chữ thuần
+// Nền gradient tối + viền sáng pulse + 2 icon bóng 2 bên + chữ GDI
+// =============================================================
+void DrawPixelBanner(Gdiplus::Graphics& g, HDC hdc, const std::wstring& text,
+    int cx, int cy, int panelW, COLORREF textColor, COLORREF glowColor)
+{
+    int bannerW = panelW - 24;
+    int bannerH = 50;
+    int bannerX = cx - bannerW / 2;
+    int bannerY = cy - bannerH / 2;
+
+    // 1. Nền gradient tối (3 dải)
+    Gdiplus::LinearGradientBrush gradBrush(
+        Gdiplus::Point(bannerX, bannerY),
+        Gdiplus::Point(bannerX + bannerW, bannerY),
+        Gdiplus::Color(230, 10, 15, 25),
+        Gdiplus::Color(230, 30, 60, 90));
+    g.FillRectangle(&gradBrush, bannerX, bannerY, bannerW, bannerH);
+
+    // 2. Đường viền sáng trên/dưới pulse
+    float pulse = 0.6f + sin(g_GlobalAnimTime * 6.0f) * 0.4f;
+    BYTE lineA = (BYTE)(180 + pulse * 75);
+    BYTE gr = GetRValue(glowColor), gg = GetGValue(glowColor), gb = GetBValue(glowColor);
+    Gdiplus::Pen topLine(Gdiplus::Color(lineA, gr, gg, gb), 2.5f);
+    Gdiplus::Pen botLine(Gdiplus::Color((BYTE)(lineA * 0.6f), gr, gg, gb), 1.5f);
+    g.DrawLine(&topLine, bannerX, bannerY,     bannerX + bannerW, bannerY);
+    g.DrawLine(&botLine, bannerX, bannerY + bannerH, bannerX + bannerW, bannerY + bannerH);
+
+    // 3. Nhấn sáng 2 góc (corner glow)
+    Gdiplus::SolidBrush cornerBrush(Gdiplus::Color(80, gr, gg, gb));
+    g.FillRectangle(&cornerBrush, bannerX,                  bannerY, 4, bannerH);
+    g.FillRectangle(&cornerBrush, bannerX + bannerW - 4, bannerY, 4, bannerH);
+
+    // 4. Icon bóng pixel nhỏ 2 bên (decorative)
+    int iconY = cy - 10;
+    int iconSize = 20;
+    DrawPixelFootball(g, bannerX + 30, iconY, iconSize);
+    DrawPixelFootball(g, bannerX + bannerW - 30, iconY, iconSize);
+
+    // 5. Chữ tiêu đề - GDI (hỗ trợ Unicode tiếng Việt)
+    SetTextColor(hdc, textColor);
+    HFONT oldF = (HFONT)SelectObject(hdc, GlobalFont::Title);
+    SetBkMode(hdc, TRANSPARENT);
+    RECT r = { bannerX + 50, bannerY, bannerX + bannerW - 50, bannerY + bannerH };
+    DrawTextW(hdc, text.c_str(), -1, &r, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+    SelectObject(hdc, oldF);
+}
+
 void DrawProceduralStadium(Gdiplus::Graphics& g, int screenWidth, int screenHeight) {
     // 1. Nền Cỏ sọc ngang
     int stripeHeight = 60;

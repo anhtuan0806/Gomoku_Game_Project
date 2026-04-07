@@ -110,88 +110,121 @@ void DrawColTextSetting(HDC hdc, const std::wstring& text, int x, int y, int wid
 void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, int screenWidth, int screenHeight) {
     Gdiplus::Graphics g(hdc);
     g.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
-    
+
     // 1. Nền Sân Cổ Động Procedural
     DrawProceduralStadium(g, screenWidth, screenHeight);
 
-    // 2. Bảng Form Kính Trắng (White Glassmorphism)
-    Gdiplus::SolidBrush whitePanel(GdipColour::GLASS_WHITE);
-    int panelW = 650;
-    int panelH = 500;
+    // 2. Bảng Form Kính Trắng — rộng và cao hơn để chứa đủ 7 dòng
+    int panelW = 720;
+    int panelH = 580;
     int panelX = (screenWidth - panelW) / 2;
-    int panelY = (screenHeight - panelH) / 2 - 20;
-    
+    int panelY = (screenHeight - panelH) / 2 - 10;
+
+    Gdiplus::SolidBrush whitePanel(GdipColour::GLASS_WHITE);
     g.FillRectangle(&whitePanel, panelX, panelY, panelW, panelH);
-    
+
     Gdiplus::Pen panelPen(GdipColour::PANEL_GREEN_BORDER, 3.0f);
     g.DrawRectangle(&panelPen, panelX, panelY, panelW, panelH);
 
-    // Tiêu đề
-    DrawTextCentered(hdc, L"--- THIẾT LẬP KỸ THUẬT ---", panelY + 30, screenWidth, Colour::BLUE_DARKEST, GlobalFont::Title);
+    // 3. Tiêu đề Pixel Banner
+    DrawPixelBanner(g, hdc, L"THIẾT LẬP KỸ THUẬT", screenWidth / 2, panelY + 40,
+        panelW - 20, Colour::WHITE, RGB(50, 220, 80));
 
-    int startY = panelY + 100;
-    int spacing = 45;
-    
-    int col1X = panelX + 20;
-    int col1W = 280;
-    int col2X = panelX + 320;
-    int col2W = 300;
+    // 4. Layout 2 cột — Label bên trái, Value/Control bên phải
+    int startY  = panelY + 105;
+    int spacing = 52;                  // đủ cao để chữ không chạm nhau
+
+    int col1X   = panelX + 16;
+    int col1W   = 300;                 // cột nhãn
+    int col2X   = panelX + 330;
+    int col2W   = panelW - 330 - 16;  // cột giá trị — lấy hết phần còn lại
+
+    SetBkMode(hdc, TRANSPARENT);
 
     for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
         std::wstring label = L"";
         std::wstring value = L"";
-        
+
         COLORREF labelColor = Colour::GRAY_DARKEST;
-        COLORREF valColor = Colour::GRAY_DARK;
+        COLORREF valColor   = Colour::GRAY_DARK;
         HFONT fontItem = (i == selectedOption) ? GlobalFont::Bold : GlobalFont::Default;
 
+        // Màu giá trị pulse cam khi đang chọn
         if (i == selectedOption) {
             int rCol = (int)(180 + sin(g_GlobalAnimTime * 12.0f) * 75);
-            valColor = RGB(255, max(0, min(255, 255 - rCol)), 0); // Pulse Cam/Đỏ
+            valColor = RGB(255, max(0, min(255, 255 - rCol)), 0);
         }
 
         switch (i) {
-        case 0: label = L"Nhạc nền Sân vận động:"; value = config->isBgmEnabled ? L"< BẬT (ON) >" : L"< TẮT (OFF) >"; break;
-        case 1: label = L"Âm lượng Nhạc:"; value = L""; break; // Đặc thù vẽ thanh Bar
-        case 2: label = L"Tạp âm Thi đấu (SFX):"; value = config->isSfxEnabled ? L"< BẬT (ON) >" : L"< TẮT (OFF) >"; break;
-        case 3: label = L"Âm lượng SFX:"; value = L""; break; // Đặc thù vẽ thanh Bar
-        case 4: label = L"Ngôn ngữ Bình luận:"; value = (config->currentLang == APP_LANG_VI) ? L"< Tiếng Việt >" : L"< English >"; break;
-        case 5: label = L"Chủ đề Nền (Theme):"; value = (config->currentTheme == THEME_CLASSIC) ? L"< Sân Cỏ Anh >" : (config->currentTheme == THEME_NEON ? L"< Sân Neon >" : L"< Retro Matrix >"); break;
-        case 6: label = L"XÁC NHẬN RA SÂN"; value = L""; break;
+        case 0: label = L"Nhạc nền Sân vận động:";  value = config->isBgmEnabled ? L"< BẬT (ON) >"  : L"< TẮT (OFF) >"; break;
+        case 1: label = L"Âm lượng Nhạc:";           value = L""; break;
+        case 2: label = L"Tạp âm Thi đấu (SFX):";   value = config->isSfxEnabled ? L"< BẬT (ON) >"  : L"< TẮT (OFF) >"; break;
+        case 3: label = L"Âm lượng SFX:";            value = L""; break;
+        case 4: label = L"Ngôn ngữ Bình luận:";      value = (config->currentLang == APP_LANG_VI) ? L"< Tiếng Việt >" : L"< English >"; break;
+        case 5: label = L"Chủ đề Nền (Theme):";
+            value = (config->currentTheme == THEME_CLASSIC) ? L"< Sân Cỏ Anh >"
+                  : (config->currentTheme == THEME_NEON)    ? L"< Sân Neon >"
+                  :                                           L"< Retro Matrix >"; break;
+        case 6: label = L""; value = L""; break; // Nút Xác Nhận — vẽ riêng
         }
 
         int yPos = startY + i * spacing;
 
         if (i == 6) {
+            // --- Nút Xác Nhận Ra Sân ---
             COLORREF btnColor = Colour::BLUE_DARKEST;
             if (i == selectedOption) {
                 int gCol = (int)(150 + sin(g_GlobalAnimTime * 15.0f) * 105);
                 btnColor = RGB(max(0, min(255, 255 - gCol)), 100, 255);
+
+                // Nền highlight nút khi chọn
+                Gdiplus::SolidBrush btnBg(Gdiplus::Color(80, 0, 120, 255));
+                g.FillRectangle(&btnBg, panelX + 60, yPos + 4, panelW - 120, spacing - 8);
             }
-            DrawTextCentered(hdc, L"== [ QUAY LẠI CHỈ ĐẠO ] ==", yPos + 30, screenWidth, btnColor, (i == selectedOption ? GlobalFont::Title : GlobalFont::Bold));
-        }
-        else {
+            RECT btnRect = { panelX, yPos, panelX + panelW, yPos + spacing };
+            SetTextColor(hdc, btnColor);
+            HFONT oldF = (HFONT)SelectObject(hdc, (i == selectedOption ? GlobalFont::Title : GlobalFont::Bold));
+            DrawTextW(hdc, L"== [ QUAY LẠI CHỈ ĐẠO ] ==", -1, &btnRect,
+                DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+            SelectObject(hdc, oldF);
+        } else {
+            // --- Dòng nhãn (cột trái) ---
             DrawColTextSetting(hdc, label, col1X, yPos, col1W, labelColor, GlobalFont::Bold, DT_RIGHT);
-            
+
+            // --- Cột phải: thanh trượt hoặc giá trị text ---
             if (i == 1 || i == 3) {
-                // Vẽ Thanh Trượt Kỹ Thuật Số (Volume Bar)
-                int vol = (i == 1) ? config->bgmVolume : config->sfxVolume;
-                int barX = col2X + 20;
-                int barY = yPos + 18;
-                
+                int vol  = (i == 1) ? config->bgmVolume : config->sfxVolume;
+                int barX = col2X + 4;
+                int barY = yPos + (spacing - 16) / 2;   // căn dọc giữa dòng
+                int barW = 200;
+                int barH = 16;
+
+                // Nền thanh
                 Gdiplus::SolidBrush bgBrush(GdipColour::BAR_TRACK);
-                g.FillRectangle(&bgBrush, barX, barY, 200, 15);
-                
-                Gdiplus::Color fillC = (i == selectedOption) ? GdipColour::BAR_FILL_SELECTED : GdipColour::BAR_FILL_NORMAL;
+                g.FillRectangle(&bgBrush, barX, barY, barW, barH);
+
+                // Phần đã kéo
+                Gdiplus::Color fillC = (i == selectedOption) ? GdipColour::BAR_FILL_SELECTED
+                                                              : GdipColour::BAR_FILL_NORMAL;
                 Gdiplus::SolidBrush fillBrush(fillC);
-                g.FillRectangle(&fillBrush, barX, barY, vol * 2, 15); // x2 vì độ dài tổng là 200
-                
-                DrawColTextSetting(hdc, std::to_wstring(vol) + L"%", barX + 210, yPos, 80, valColor, fontItem, DT_LEFT);
+                g.FillRectangle(&fillBrush, barX, barY, vol * 2, barH);
+
+                // Nút kéo (thumb)
+                int thumbX = barX + vol * 2 - 5;
+                Gdiplus::SolidBrush thumbBrush(GdipColour::WithAlpha(fillC, 255));
+                g.FillRectangle(&thumbBrush, thumbX, barY - 2, 10, barH + 4);
+
+                // % hiển thị bên phải thanh
+                DrawColTextSetting(hdc, std::to_wstring(vol) + L"%",
+                    barX + barW + 8, yPos, col2W - barW - 8, valColor, fontItem, DT_LEFT);
             } else {
                 DrawColTextSetting(hdc, value, col2X, yPos, col2W, valColor, fontItem, DT_LEFT);
             }
         }
     }
 
-    DrawTextCentered(hdc, L"A/D: Thay đổi thông số Điều hành  |  ESC/Enter: Lưu Hồ sơ", screenHeight - 60, screenWidth, Colour::WHITE, GlobalFont::Note);
+    // 5. Gợi ý phím — nằm dưới cùng màn hình
+    DrawTextCentered(hdc, L"A / D: Thay đổi  |  W / S: Chọn mục  |  ESC / Enter: Lưu & Thoát",
+        screenHeight - 48, screenWidth, Colour::WHITE, GlobalFont::Note);
 }
+

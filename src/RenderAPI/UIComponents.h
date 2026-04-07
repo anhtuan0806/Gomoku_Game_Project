@@ -39,6 +39,11 @@ void DrawPixelAvatar(Gdiplus::Graphics& g, int x, int y, int size, int avatarTyp
 void DrawPixelFootball(Gdiplus::Graphics& g, int cx, int cy, int size);
 void DrawPixelTrophy(Gdiplus::Graphics& g, int cx, int cy, int size);
 
+// Vẽ Banner Tiêu đề Pixel Art cho màn hình Menu/Settings/Load
+// text: chuỗi ký tự đơn giản (ASCII), cx/cy: tâm banner, accent: màu nổi bật
+void DrawPixelBanner(Gdiplus::Graphics& g, HDC hdc, const std::wstring& text,
+    int cx, int cy, int panelW, COLORREF textColor, COLORREF glowColor);
+
 // --- HÀM TỔNG HỢP VẼ GAME ---
 // Hàm này sẽ vẽ lưới, các quân cờ hiện có, và ô viền highlight đang chọn
 void DrawGameBoard(HDC hdc, const PlayState* state, int cellSize, int offsetX, int offsetY, const Sprite& spriteX, const Sprite& spriteO);
