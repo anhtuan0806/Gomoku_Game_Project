@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <windows.h>
 #include <gdiplus.h>
 #include <string>
@@ -24,6 +24,7 @@ namespace GlobalFont {
     extern HFONT Default;
     extern HFONT Bold;
     extern HFONT Title;
+    extern HFONT Note;
 
     void Initialize();
     void Cleanup();

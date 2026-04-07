@@ -1,4 +1,4 @@
-﻿#include <windows.h>
+#include <windows.h>
 #include <chrono>
 #include <string>
 
@@ -43,6 +43,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     // 1. Khởi tạo Đồ họa & Font
     if (!InitGraphics(g_GdiplusToken)) return 0;
+    
+    // Nạp Font Tiếng Việt vào bộ nhớ riêng của App
+    AddFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Regular.ttf", FR_PRIVATE, 0);
+    AddFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Bold.ttf", FR_PRIVATE, 0);
+    AddFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Black.ttf", FR_PRIVATE, 0);
+    AddFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Italic.ttf", FR_PRIVATE, 0);
+
     GlobalFont::Initialize();
 
     // 2. Tải Cấu hình & Nhạc nền
@@ -54,6 +61,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // 3. Đăng ký lớp cửa sổ
     const wchar_t CLASS_NAME[] = L"GomokuGameClass";
     WNDCLASSW wc = {};
+    wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
@@ -75,8 +83,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     g_SpriteX = LoadPNG(L"Asset/images/x.png");
     g_SpriteO = LoadPNG(L"Asset/images/o.png");
-    ScaleSprite(g_SpriteX, CELL_SIZE, CELL_SIZE);
-    ScaleSprite(g_SpriteO, CELL_SIZE, CELL_SIZE);
 
     MSG msg = {};
     auto lastTime = std::chrono::high_resolution_clock::now();
@@ -87,25 +93,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             DispatchMessage(&msg);
         }
         else {
+            // Tối ưu hóa FPS (~60 FPS) bằng cách Sleep khoảng 16ms
+            Sleep(16);
+            
             // Tính toán Delta Time (dt)
             auto currentTime = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = currentTime - lastTime;
             lastTime = currentTime;
             double dt = elapsed.count();
 
+            g_GlobalAnimTime += (float)dt;
+
             // Cập nhật Logic (Đếm ngược, AI tự đánh)
-            bool needsRedraw = false;
             if (g_CurrentScreen == SCREEN_PLAY) {
-                needsRedraw = UpdatePlayLogic(&g_PlayState, dt);
+                UpdatePlayLogic(&g_PlayState, dt);
             }
             else if (g_CurrentScreen == SCREEN_EXIT) {
                 PostQuitMessage(0);
             }
 
-            // Vẽ lại màn hình nếu có thay đổi logic
-            if (needsRedraw) {
-                InvalidateRect(hWnd, NULL, FALSE);
-            }
+            // Ép vẽ lại toàn cục mỗi khung hình để Animation mượt
+            InvalidateRect(hWnd, NULL, FALSE);
         }
     }
 
@@ -113,6 +121,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     FreeSprite(g_SpriteX);
     FreeSprite(g_SpriteO);
     GlobalFont::Cleanup();
+    
+    // Gỡ font khỏi bộ nhớ
+    RemoveFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Regular.ttf", FR_PRIVATE, 0);
+    RemoveFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Bold.ttf", FR_PRIVATE, 0);
+    RemoveFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Black.ttf", FR_PRIVATE, 0);
+    RemoveFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Italic.ttf", FR_PRIVATE, 0);
+    
     ShutdownGraphics(g_GdiplusToken);
 
     return (int)msg.wParam;
@@ -120,6 +135,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
+    case WM_SIZE:
+        InvalidateRect(hWnd, NULL, FALSE);
+        return DefWindowProc(hWnd, message, wParam, lParam);
+
     case WM_KEYDOWN: {
         bool changed = false;
 

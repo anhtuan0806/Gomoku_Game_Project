@@ -1,17 +1,19 @@
-﻿#include "MenuScreen.h"
+#include "MenuScreen.h"
 #include "../RenderAPI/UIComponents.h"
 #include "../RenderAPI/Colours.h"
+#include <cmath>
+#include <map>
 
 const int TOTAL_MENU_ITEMS = 6;
 
 // Chuyển sang chuỗi wide-character (L"") để hỗ trợ Unicode tiếng Việt
 const wchar_t* menuItems[TOTAL_MENU_ITEMS] = {
-    L"1. Bắt Đầu Chơi (Play Game)",
-    L"2. Tải Game (Load Game)",
-    L"3. Cài Đặt (Settings)",
-    L"4. Hướng Dẫn (Guide)",
-    L"5. Giới Thiệu (About)",
-    L"6. Thoát (Exit)"
+    L"Bắt Đầu",
+    L"Tải Băng",
+    L"Cài Đặt Sân",
+    L"Hướng Dẫn",
+    L"Giới Thiệu",
+    L"Thoát"
 };
 
 void UpdateMenuScreen(ScreenState& currentState, int& selectedOption, WPARAM wParam) {
@@ -55,41 +57,65 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState& currentState, int& selectedOpt
 }
 
 void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHeight) {
-    // 0. Xóa nền màn hình cũ bằng màu xám nhạt
-    RECT rect = { 0, 0, screenWidth, screenHeight };
-    HBRUSH hBg = CreateSolidBrush(Colour::GRAY_LIGHTEST);
-    FillRect(hdc, &rect, hBg);
-    DeleteObject(hBg);
+    Gdiplus::Graphics g(hdc);
+    
+    // 0. Nền sân vận động
+    // Vẽ Sân vận động theo cấu trúc Ma Trận Thuật Toán (Procedural)
+    DrawProceduralStadium(g, screenWidth, screenHeight);
 
-    // 1. Vẽ tiêu đề Game (Áp dụng GlobalFont::Title cho cỡ lớn)
-    int titleY = screenHeight / 4 - 60;
+    // Lớp kính phản quang mờ để nổi bật chữ
+    Gdiplus::SolidBrush shadowBrush(GdipColour::SHADOW_PANEL);
+    g.FillRectangle(&shadowBrush, 0, 0, screenWidth, screenHeight);
 
-    // Tham số HFONT cuối cùng bị bỏ trống -> Tự động dùng GlobalFont::Default
-    DrawTextCentered(hdc, L"==================================", titleY, screenWidth, Colour::BLUE_LIGHT);
+    // 1. Ve cup Vo Dich Pixel Art va Tieu de Game
+    // Ứng dụng Animation tâng Cúp
+    int cupYOffset = (int)(sin(g_GlobalAnimTime * 2.5f) * 10.0f);
+    DrawPixelTrophy(g, screenWidth / 2, screenHeight / 4 - 85 + cupYOffset, 100);
 
-    // Truyền GlobalFont::Title để hiển thị phông to, đậm
-    DrawTextCentered(hdc, L"CARO & TIC-TAC-TOE", titleY + 40, screenWidth, Colour::BLUE_DARKEST, GlobalFont::Title);
+    // 1.5 Tải và Vẽ khối Logo Điểm Ảnh khổng lồ bằng hệ thống Load TXT Modular
+    static PixelModel titleModel;
+    static std::map<int, Gdiplus::Color> titlePalette;
+    if (!titleModel.isLoaded) {
+        titleModel = LoadPixelModel("Asset/models/title_caro.txt");
+        titlePalette[1] = GdipColour::TITLE_BORDER;
+        titlePalette[2] = GdipColour::TITLE_FILL;
+        titlePalette[3] = GdipColour::TITLE_SHADOW;
+    }
 
-    DrawTextCentered(hdc, L"==================================", titleY + 100, screenWidth, Colour::BLUE_LIGHT);
+    int titleYOffset = (int)(sin(g_GlobalAnimTime * 2.0f) * 6.0f);
+    
+    // In Ma trận "CARO" (Pixel size = 12)
+    DrawPixelModel(g, titleModel, screenWidth / 2, screenHeight / 4 + 20 + titleYOffset, 12, titlePalette);
+    
+    // Hậu tố "CHAMPIONS LEAGUE" bằng chữ VT323
+    DrawTextCentered(hdc, L"CHAMPIONS LEAGUE", screenHeight / 4 + 75 + titleYOffset, screenWidth, Colour::YELLOW_NORMAL, GlobalFont::Title);
 
     // 2. In danh sách các mục Menu
-    int startY = screenHeight / 2 - 20;
-    int spacing = 50;
+    int startY = screenHeight / 2 + 10;
+    int spacing = 55;
 
     for (int i = 0; i < TOTAL_MENU_ITEMS; i++) {
         int currentY = startY + i * spacing;
 
         if (i == selectedOption) {
-            // Mục đang chọn: Dùng GlobalFont::Bold và màu cam nổi bật
-            std::wstring highlightedText = L">>  " + std::wstring(menuItems[i]) + L"  <<";
-            DrawTextCentered(hdc, highlightedText, currentY, screenWidth, Colour::ORANGE_NORMAL, GlobalFont::Bold);
+            std::wstring highlightedText = std::wstring(menuItems[i]);
+            
+            // Hiệu ứng màu nhấp nháy chuyển từ Cam nhạt sang Vàng chói cho cảm giác năng động
+            int gCol = (int)(150 + sin(g_GlobalAnimTime * 8.0f) * 105);
+            COLORREF dynColor = RGB(255, max(0, min(255, gCol)), 0);
+
+            // Vẽ Trái bóng 2 bên mục đang chọn (Tăng Size và hạ Offset Y để vừa với VT323)
+            int wStrOffset = (int)highlightedText.length() * 18 + 70; 
+            DrawPixelFootball(g, screenWidth / 2 - wStrOffset, currentY + 38, 48);
+            DrawPixelFootball(g, screenWidth / 2 + wStrOffset, currentY + 38, 48);
+
+            DrawTextCentered(hdc, highlightedText, currentY, screenWidth, dynColor, GlobalFont::Title);
         }
         else {
-            // Mục bình thường: Dùng GlobalFont::Default và màu xám tối
-            DrawTextCentered(hdc, menuItems[i], currentY, screenWidth, Colour::GRAY_DARK);
+            DrawTextCentered(hdc, menuItems[i], currentY + 6, screenWidth, Colour::WHITE, GlobalFont::Bold);
         }
     }
 
     // 3. Vẽ hướng dẫn điều khiển
-    DrawTextCentered(hdc, L"Dùng W/S/UP/DOWN để di chuyển, ENTER để chọn", screenHeight - 50, screenWidth, Colour::GRAY_NORMAL);
+    DrawTextCentered(hdc, L"Dùng W/S/UP/DOWN để rê bóng, ENTER để sút (chọn)", screenHeight - 50, screenWidth, Colour::GRAY_LIGHT, GlobalFont::Note);
 }

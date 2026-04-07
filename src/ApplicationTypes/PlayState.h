@@ -4,6 +4,9 @@
 #include "GameState.h"
 #include <string>
 
+#include <vector>
+#include <utility>
+
 using namespace std;
 // Trạng thái ván đấu
 enum MatchStatus
@@ -45,6 +48,15 @@ struct PlayState
     // Tọa độ con trỏ hiện tại trên bàn cờ
     int cursorRow;
     int cursorCol;
+    
+    // Lưu tọa độ vừa đánh và chuỗi các ô tạo nên đường thắng
+    int lastMoveRow;
+    int lastMoveCol;
+    std::vector<std::pair<int, int>> winningCells;
+    
+    // Lịch sử bước đi
+    std::vector<std::pair<int, int>> matchHistory;
+    std::vector<std::pair<int, int>> redoStack;
 
     MatchStatus status;
     int winner; // 0: Hòa, 1: P1, 2: P2, -1: Đang chơi
@@ -52,7 +64,8 @@ struct PlayState
     int difficulty;       // 1: Dễ, 2: Trung bình, 3: Khó
     int targetScore;      // 1 (Bo1), 2 (Bo3 - thắng 2 ván), 3 (Bo5 - thắng 3 ván)
 
-    // Quản lý thời gian tổng cả trận (giây)
+    // Quản lý thời gian
+    float matchDuration;  // Tổng thời gian PVE (giây)
     int p1TotalTimeLeft;
     int p2TotalTimeLeft;
     bool isMatchTimed;    // Có bật giới hạn thời gian cả trận không

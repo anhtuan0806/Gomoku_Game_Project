@@ -1,4 +1,4 @@
-﻿#ifndef _GAME_ENGINE_H_
+#ifndef _GAME_ENGINE_H_
 #define _GAME_ENGINE_H_
 
 #include "../ApplicationTypes/PlayState.h"
@@ -16,5 +16,8 @@ bool processMove(PlayState* state, int row, int col);
 
 // Chuyển lượt chơi
 void switchTurn(PlayState* state);
+
+void undoMove(PlayState* state);
+void redoMove(PlayState* state);
 
 #endif 
