@@ -6,8 +6,9 @@ static double timeAccumulator = 0.0;
 
 bool UpdateCountdown(PlayState* state, double dt)
 {
-    if (state->timeRemaining <= 0)
+    if (state->timeRemaining <= 0) {
         return true;
+    }
 
     timeAccumulator += dt;
 
@@ -36,8 +37,12 @@ void ResetTimer(PlayState* state)
     if (maxFloatTime <= 0.0f) {
         maxFloatTime = (state->countdownTime > 0) ? static_cast<float>(state->countdownTime) : 30.0f;
         // Tự động gán lại nếu bộ nhớ trước đó chứa rác
-        if (state->isP1Turn) state->p1.maxTurnTime = maxFloatTime;
-        else state->p2.maxTurnTime = maxFloatTime;
+        if (state->isP1Turn) {
+            state->p1.maxTurnTime = maxFloatTime;
+        }
+        else {
+            state->p2.maxTurnTime = maxFloatTime;
+        }
     }
 
     state->timeRemaining = static_cast<int>(maxFloatTime);

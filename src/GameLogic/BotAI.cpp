@@ -41,15 +41,24 @@ static LineInfo analyzeDirection(const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE]
 }
 
 static int evaluateLine(const LineInfo& line, int winLen) {
-    if (line.count >= winLen) return 1000000;
-    if (line.openEnds == 0) return 0;
+    if (line.count >= winLen) { 
+        return 1000000; 
+    }
+    if (line.openEnds == 0) { 
+        return 0; 
+    }
     bool openTwo = (line.openEnds == 2);
     switch (line.count) {
-    case 4: return openTwo ? 50000 : 10000;
-    case 3: return openTwo ? 5000 : 1000;
-    case 2: return openTwo ? 500 : 100;
-    case 1: return openTwo ? 50 : 10;
-    default: return 0;
+    case 4: 
+        return openTwo ? 50000 : 10000;
+    case 3: 
+        return openTwo ? 5000 : 1000;
+    case 2: 
+        return openTwo ? 500 : 100;
+    case 1: 
+        return openTwo ? 50 : 10;
+    default: 
+        return 0;
     }
 }
 
@@ -68,7 +77,9 @@ static bool isCandidate(const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE], int siz
     for (int dr = -radius; dr <= radius; dr++) {
         for (int dc = -radius; dc <= radius; dc++) {
             int nr = r + dr, nc = c + dc;
-            if (isInBounds(nr, nc, size) && board[nr][nc] != CELL_EMPTY) return true;
+            if (isInBounds(nr, nc, size) && board[nr][nc] != CELL_EMPTY) { 
+                return true; 
+            }
         }
     }
     return false;
@@ -97,7 +108,9 @@ static void simpleMove(const PlayState* state, int& outRow, int& outCol) {
 
     for (int r = 0; r < size; r++) {
         for (int c = 0; c < size; c++) {
-            if (state->board[r][c] != CELL_EMPTY || !isCandidate(state->board, size, r, c)) continue;
+            if (state->board[r][c] != CELL_EMPTY || !isCandidate(state->board, size, r, c)) { 
+                continue; 
+            }
             int atk = scoreMove(state->board, size, winLen, r, c, CELL_PLAYER2);
             int def = scoreMove(state->board, size, winLen, r, c, CELL_PLAYER1);
             int total = atk + def * 2;
@@ -107,7 +120,9 @@ static void simpleMove(const PlayState* state, int& outRow, int& outCol) {
             }
         }
     }
-    if (bestScore == -1) randomMove(state, outRow, outCol);
+    if (bestScore == -1) {
+        randomMove(state, outRow, outCol);
+    }
 }
 
 static int evaluateBoard(const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE], int size, int winLen) {
@@ -116,7 +131,8 @@ static int evaluateBoard(const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE], int si
         for (int c = 0; c < size; c++) {
             if (board[r][c] == CELL_PLAYER2) {
                 score += scoreMove(board, size, winLen, r, c, CELL_PLAYER2);
-            } else if (board[r][c] == CELL_PLAYER1) {
+            } 
+            else if (board[r][c] == CELL_PLAYER1) {
                 score -= scoreMove(board, size, winLen, r, c, CELL_PLAYER1);
             }
         }
@@ -143,7 +159,9 @@ static int alphaBeta(int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE], int size, int wi
         return a.score > b.score;
     });
 
-    if (moves.empty()) return evaluateBoard(board, size, winLen);
+    if (moves.empty()) {
+        return evaluateBoard(board, size, winLen);
+    }
 
     if (isMax) {
         int best = INT_MIN;
@@ -151,20 +169,33 @@ static int alphaBeta(int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE], int size, int wi
             board[m.r][m.c] = CELL_PLAYER2;
             int val = alphaBeta(board, size, winLen, depth - 1, alpha, beta, false);
             board[m.r][m.c] = CELL_EMPTY;
-            if (val > best) best = val;
-            if (best > alpha) alpha = best;
-            if (beta <= alpha) break;
+            if (val > best) {
+                best = val;
+            }
+            if (best > alpha) {
+                alpha = best;
+            }
+            if (beta <= alpha) {
+                break;
+            }
         }
         return best;
-    } else {
+    } 
+    else {
         int best = INT_MAX;
         for (const auto& m : moves) {
             board[m.r][m.c] = CELL_PLAYER1;
             int val = alphaBeta(board, size, winLen, depth - 1, alpha, beta, true);
             board[m.r][m.c] = CELL_EMPTY;
-            if (val < best) best = val;
-            if (best < beta) beta = best;
-            if (beta <= alpha) break;
+            if (val < best) {
+                best = val;
+            }
+            if (best < beta) {
+                beta = best;
+            }
+            if (beta <= alpha) {
+                break;
+            }
         }
         return best;
     }
@@ -173,9 +204,11 @@ static int alphaBeta(int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE], int size, int wi
 void calculateAIMove(const PlayState* state, int difficulty, int& outRow, int& outCol) {
     if (difficulty == 1) {
         randomMove(state, outRow, outCol);
-    } else if (difficulty == 2) {
+    } 
+    else if (difficulty == 2) {
         simpleMove(state, outRow, outCol);
-    } else {
+    } 
+    else {
         int size = state->boardSize;
         int winLen = (state->gameMode == MODE_CARO) ? 5 : 3;
         int depth = 4; // Tăng depth nhờ Move Ordering

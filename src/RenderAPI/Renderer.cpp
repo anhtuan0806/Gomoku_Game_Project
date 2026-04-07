@@ -17,10 +17,18 @@ namespace GlobalFont {
     }
 
     void Cleanup() {
-        if (Default) DeleteObject(Default);
-        if (Bold) DeleteObject(Bold);
-        if (Title) DeleteObject(Title);
-        if (Note) DeleteObject(Note);
+        if (Default) {
+            DeleteObject(Default);
+        }
+        if (Bold) {
+            DeleteObject(Bold);
+        }
+        if (Title) {
+            DeleteObject(Title);
+		}
+        if (Note) {
+            DeleteObject(Note);
+		}
 
         // Gỡ bỏ cấu trúc Font khỏi RAM của Hệ Độ Hành
         RemoveFontResourceExW(L"Asset/font/VT323/VT323-Regular.ttf", FR_PRIVATE, 0);
@@ -56,7 +64,9 @@ void FreeSprite(Sprite& sprite) {
 }
 
 void ScaleSprite(Sprite& sprite, int targetWidth, int targetHeight) {
-    if (!sprite.image) return;
+    if (!sprite.image) {
+        return;
+    }
     Gdiplus::Bitmap* scaledBitmap = new Gdiplus::Bitmap(targetWidth, targetHeight, PixelFormat32bppARGB);
     Gdiplus::Graphics g(scaledBitmap);
     g.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);

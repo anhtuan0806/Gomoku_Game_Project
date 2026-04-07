@@ -18,8 +18,9 @@ const wchar_t* menuItems[TOTAL_MENU_ITEMS] = {
 
 void UpdateMenuScreen(ScreenState& currentState, int& selectedOption, WPARAM wParam) {
     // Bỏ qua nếu không có sự kiện phím hợp lệ
-    if (wParam == 0) 
+    if (wParam == 0) {
         return;
+    }
 
     // Ủy quyền xử lý logic phím nhấn. 
     // Trong tương lai, nếu cần thêm hiệu ứng âm thanh khi chuyển mục menu (chẳng hạn PlaySFX("hover.wav")), 
@@ -33,22 +34,38 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState& currentState, int& selectedOpt
     // Loại bỏ hàm IsKeyPressed của Raylib (Polling), sử dụng trực tiếp wParam của Event
     if (wParam == 'W' || wParam == 'w' || wParam == VK_UP) {
         selectedOption--;
-        if (selectedOption < 0) selectedOption = TOTAL_MENU_ITEMS - 1;
+        if (selectedOption < 0) {
+            selectedOption = TOTAL_MENU_ITEMS - 1;
+        }
         hasChanged = true;
     }
     else if (wParam == 'S' || wParam == 's' || wParam == VK_DOWN) {
         selectedOption++;
-        if (selectedOption >= TOTAL_MENU_ITEMS) selectedOption = 0;
+        if (selectedOption >= TOTAL_MENU_ITEMS) {
+            selectedOption = 0;
+        }
         hasChanged = true;
     }
     else if (wParam == VK_RETURN || wParam == VK_SPACE) {
         switch (selectedOption) {
-        case 0: currentState = SCREEN_PLAY; break;
-        case 1: currentState = SCREEN_LOAD_GAME; break;
-        case 2: currentState = SCREEN_SETTING; break;
-        case 3: currentState = SCREEN_GUIDE; break;
-        case 4: currentState = SCREEN_ABOUT; break;
-        case 5: currentState = SCREEN_EXIT; break;
+        case 0: 
+            currentState = SCREEN_PLAY; 
+            break;
+        case 1: 
+            currentState = SCREEN_LOAD_GAME; 
+            break;
+        case 2: 
+            currentState = SCREEN_SETTING; 
+            break;
+        case 3: 
+            currentState = SCREEN_GUIDE; 
+            break;
+        case 4: 
+            currentState = SCREEN_ABOUT; 
+            break;
+        case 5: 
+            currentState = SCREEN_EXIT; 
+            break;
         }
         hasChanged = true;
     }

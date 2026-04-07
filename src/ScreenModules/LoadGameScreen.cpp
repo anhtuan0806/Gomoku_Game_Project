@@ -110,7 +110,8 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
                 int gCol = (int)(150 + sin(g_GlobalAnimTime * 15.0f) * 105);
                 color = RGB(max(0, min(255, 255 - gCol)), 100, 255);
                 font = GlobalFont::Title;
-            } else {
+            } 
+            else {
                 color = Colour::BLUE_DARKEST;
             }
             RECT btnRect = { panelX, yPos + 6, panelX + panelW, yPos + slotH };
@@ -118,7 +119,8 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
             HFONT oldF = (HFONT)SelectObject(hdc, font);
             DrawTextW(hdc, itemText.c_str(), -1, &btnRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
             SelectObject(hdc, oldF);
-        } else {
+        } 
+        else {
             // --- Slot Save (i = 0..4) ---
             bool exists = CheckSaveExists(i + 1);
             itemText = L"Hồ Sơ " + std::to_wstring(i + 1)
@@ -136,7 +138,8 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
 
                 color = Colour::WHITE;
                 itemText = L"▶  " + itemText;
-            } else {
+            } 
+            else {
                 Gdiplus::SolidBrush slotBrush(GdipColour::SLOT_NORMAL);
                 g.FillRectangle(&slotBrush, slotX, yPos, slotW, slotH);
                 color = exists ? Colour::GRAY_DARKEST : Colour::GRAY_NORMAL;
@@ -169,7 +172,9 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
 
 void UpdateLoadGameScreen(ScreenState& currentState, PlayState* playState, int& selectedOption, std::wstring& statusMessage, WPARAM wParam) {
     // Bỏ qua nếu không có sự kiện phím (wParam = 0)
-    if (wParam == 0) return;
+    if (wParam == 0) {
+        return;
+    }
 
     // Ủy quyền xử lý logic cho ProcessLoadGameInput
     ProcessLoadGameInput(wParam, currentState, playState, selectedOption, statusMessage);

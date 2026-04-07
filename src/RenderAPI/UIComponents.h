@@ -1,11 +1,10 @@
-#pragma once
+#ifndef _UI_COMPONENTS_H_
+#define _UI_COMPONENTS_H_
 #include "Renderer.h"
 #include "../ApplicationTypes/PlayState.h"
 #include <vector>
 #include <string>
 #include <map>
-#include <windows.h>
-#include <gdiplus.h>
 
 // Thời gian cho Animation toàn cục
 extern float g_GlobalAnimTime;
@@ -53,3 +52,5 @@ void DrawGameBoard(HDC hdc, const PlayState* state, int cellSize, int offsetX, i
 void PreScaleSprite(const Sprite& orig, Sprite& scaled, int width, int height);
 
 void SetTextColour(HDC hdc, COLORREF colour);
+
+#endif // _UI_COMPONENTS_H_

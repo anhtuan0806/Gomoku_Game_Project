@@ -42,7 +42,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     // 1. Khởi tạo Đồ họa & Font
-    if (!InitGraphics(g_GdiplusToken)) return 0;
+    if (!InitGraphics(g_GdiplusToken)) {
+        return 0;
+    }
     
     // Nạp Font Tiếng Việt vào bộ nhớ riêng của App
     AddFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Regular.ttf", FR_PRIVATE, 0);
@@ -76,7 +78,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         NULL, NULL, hInstance, NULL
     );
 
-    if (hWnd == NULL) return 0;
+    if (hWnd == NULL) {
+        return 0;
+    }
 
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
@@ -162,7 +166,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
         case SCREEN_MATCH_CONFIG:
             UpdateMatchConfigScreen(g_CurrentScreen, &g_PlayState, g_ConfigSelected, wParam);
-            if (wParam == VK_ESCAPE) g_CurrentScreen = SCREEN_MENU;
+            if (wParam == VK_ESCAPE) {
+                g_CurrentScreen = SCREEN_MENU;
+            }
             changed = true;
             break;
         case SCREEN_PLAY:
@@ -195,7 +201,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
         }
 
-        if (changed) InvalidateRect(hWnd, NULL, FALSE);
+        if (changed) {
+            InvalidateRect(hWnd, NULL, FALSE);
+        }
         break;
     }
 

@@ -19,7 +19,9 @@ int checkWinCondition(const PlayState* state, int lastRow, int lastCol, std::vec
     }
 
     int currentPiece = state->board[lastRow][lastCol];
-    if (currentPiece == CELL_EMPTY) return -1;
+    if (currentPiece == CELL_EMPTY) {
+        return -1;
+    }
 
     // Các hướng: Ngang, Dọc, Chéo chính, Chéo phụ (chỉ cần lấy 1 nửa phương chiều)
     int dr[] = { 0, 1, 1, 1 };
@@ -40,7 +42,9 @@ int checkWinCondition(const PlayState* state, int lastRow, int lastCol, std::vec
                 count++;
                 currentLine.push_back({nr, nc});
             }
-            else break;
+            else {
+                break;
+            }
         }
 
         // Quét về phía lùi
@@ -52,7 +56,9 @@ int checkWinCondition(const PlayState* state, int lastRow, int lastCol, std::vec
                 count++;
                 currentLine.push_back({nr, nc});
             }
-            else break;
+            else {
+                break;
+            }
         }
 
         if (count >= winLength)

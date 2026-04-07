@@ -27,7 +27,8 @@ bool UpdatePlayLogic(PlayState* state, double dt) {
     if (state->status == MATCH_FINISHED) {
         g_WinAnimTime += (float)dt;
         needsRedraw = true;
-    } else {
+    } 
+    else {
         g_WinAnimTime = 0.0f;
     }
 
@@ -35,7 +36,8 @@ bool UpdatePlayLogic(PlayState* state, double dt) {
         if (state->matchType == MATCH_PVE) {
             state->matchDuration += (float)dt;
             needsRedraw = true; // For timer display update
-        } else {
+        } 
+        else {
             // Nếu một giây trôi qua, UpdateCountdown trả về true
             if (UpdateCountdown(state, dt)) {
                 needsRedraw = true;
@@ -57,7 +59,8 @@ bool UpdatePlayLogic(PlayState* state, double dt) {
                 calculateAIMove(&localState, localState.difficulty, r, c);
                 return std::make_pair(r, c);
             });
-        } else if (g_AIFuture.valid() && g_AIFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+        } 
+        else if (g_AIFuture.valid() && g_AIFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
             auto bestMove = g_AIFuture.get();
             g_AIsCalculating = false;
             if (processMove(state, bestMove.first, bestMove.second)) {
@@ -106,7 +109,10 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
 
         // TRƯỜNG HỢP 2: CHỌN SLOT LƯU
         if (g_CurrentSubMenu == SUB_SAVE_SELECT) {
-            if (wParam == VK_ESCAPE) { g_CurrentSubMenu = SUB_MAIN; return true; }
+            if (wParam == VK_ESCAPE) { 
+                g_CurrentSubMenu = SUB_MAIN; 
+                return true; 
+            }
             if (wParam == 'W' || wParam == VK_UP) {
                 g_SaveSlotSelected = (g_SaveSlotSelected - 1 < 0) ? MAX_SAVE_SLOTS - 1 : g_SaveSlotSelected - 1;
                 return true;
@@ -173,7 +179,9 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
     }
 
     if (state->status == MATCH_PLAYING) {
-        if (g_AIsCalculating) return false; // Khóa bản đồ khi AI đang tính toán
+        if (g_AIsCalculating) {
+            return false;
+        }// Khóa bản đồ khi AI đang tính toán
 
         if (wParam == VK_ESCAPE) {
             state->status = MATCH_PAUSED;
@@ -237,11 +245,21 @@ void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int scre
     
     // Lambda dịch chuỗi path sang hệ Avatar Matrix
     auto decodeAvatar = [](const std::string& path) -> int {
-        if (path.find("avatar_1") != std::string::npos) return 0;
-        if (path.find("avatar_2") != std::string::npos) return 1;
-        if (path.find("bot_easy") != std::string::npos) return 2;
-        if (path.find("bot_medium") != std::string::npos) return 3;
-        if (path.find("bot_hard") != std::string::npos) return 4;
+        if (path.find("avatar_1") != std::string::npos) {
+            return 0;
+        }
+        if (path.find("avatar_2") != std::string::npos) {
+            return 1;
+        }
+        if (path.find("bot_easy") != std::string::npos) {
+            return 2;
+        }
+        if (path.find("bot_medium") != std::string::npos) {
+            return 3;
+        }
+        if (path.find("bot_hard") != std::string::npos) {
+            return 4;
+        }
         return 0; 
     };
 
@@ -249,7 +267,9 @@ void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int scre
     int availableHeight = screenHeight - 120; // Trừ hao khoảng trống Header trên cùng
     int availableWidth = screenWidth - 300;   // Trừ hao 2 lề Tab
     int maxBoardSize = availableWidth < availableHeight ? availableWidth : availableHeight;
-    if (maxBoardSize < 200) maxBoardSize = 200; 
+    if (maxBoardSize < 200) {
+        maxBoardSize = 200;
+    }
     
     int dynamicCellSize = maxBoardSize / state->boardSize;
     int boardPixelSize = state->boardSize * dynamicCellSize;
@@ -379,7 +399,8 @@ void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int scre
         wchar_t buffer[64];
         swprintf(buffer, 64, L"Thời gian đã chơi: %02d:%02d", minutes, seconds);
         timeText = buffer;
-    } else {
+    } 
+    else {
         timeText = L"Thời gian lượt: " + std::to_wstring(state->timeRemaining) + L"s";
     }
     DrawTextCentered(hdc, timeText, 50, screenWidth, Colour::GRAY_DARK, GlobalFont::Default);
@@ -419,8 +440,12 @@ void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int scre
             for (int i = 0; i < TOTAL_PAUSE_ITEMS; i++) {
                 std::wstring itemText = labels[i];
                 // Thêm giá trị động cho các setting
-                if (i == 1) itemText += (config->isBgmEnabled ? L"< BẬT >" : L"< TẮT >");
-                if (i == 2) itemText += std::to_wstring(config->sfxVolume) + L"%";
+                if (i == 1) {
+                    itemText += (config->isBgmEnabled ? L"< BẬT >" : L"< TẮT >");
+                }
+                if (i == 2) {
+                    itemText += std::to_wstring(config->sfxVolume) + L"%";
+                }
 
                 COLORREF color = Colour::GRAY_NORMAL;
                 HFONT font = GlobalFont::Default;
@@ -446,7 +471,9 @@ void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int scre
                 COLORREF color = (i == g_SaveSlotSelected) ? Colour::YELLOW_NORMAL : Colour::GRAY_NORMAL;
                 HFONT font = (i == g_SaveSlotSelected) ? GlobalFont::Bold : GlobalFont::Default;
                 
-                if (i == g_SaveSlotSelected) slotLabel = L"-> " + slotLabel + L" <-";
+                if (i == g_SaveSlotSelected) {
+                    slotLabel = L"-> " + slotLabel + L" <-";
+                }
                 DrawTextCentered(hdc, slotLabel, menuY + 130 + i * 55, screenWidth, color, font);
             }
             DrawTextCentered(hdc, L"[ ENTER ] Xác nhận lưu", menuY + 430, screenWidth, Colour::GREEN_NORMAL, GlobalFont::Default);

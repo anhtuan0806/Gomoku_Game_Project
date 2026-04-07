@@ -15,7 +15,9 @@ float g_GlobalAnimTime = 0.0f;
 PixelModel LoadPixelModel(const std::string& filePath) {
     PixelModel model;
     std::ifstream file(filePath);
-    if (!file.is_open()) return model;
+    if (!file.is_open()) {
+        return model;
+    }
 
     std::string line;
     // Đọc kích thước W H ở dòng đầu
@@ -26,7 +28,9 @@ PixelModel LoadPixelModel(const std::string& filePath) {
 
     model.data.resize(model.height, std::vector<int>(model.width, 0));
     for (int r = 0; r < model.height; ++r) {
-        if (!std::getline(file, line)) break;
+        if (!std::getline(file, line)) {
+            break;
+        }
         std::stringstream ss(line);
         for (int c = 0; c < model.width; ++c) {
             int val = 0;
@@ -40,7 +44,9 @@ PixelModel LoadPixelModel(const std::string& filePath) {
 }
 
 void DrawPixelModel(Gdiplus::Graphics& g, const PixelModel& model, int cx, int cy, int pSize, const std::map<int, Gdiplus::Color>& palette) {
-    if (!model.isLoaded) return;
+    if (!model.isLoaded) {
+        return;
+    }
 
     int totalW = model.width * pSize;
     int totalH = model.height * pSize;
@@ -66,36 +72,78 @@ void DrawPixelModel(Gdiplus::Graphics& g, const PixelModel& model, int cx, int c
 const int AVATAR_SIZE = 8;
 
 Gdiplus::Color GetPaletteColor(int type, int code) {
-    if (code == 0) return GdipColour::_TRANSPARENT;
-    if (code == 1) return GdipColour::AVA_OUTLINE;
-    if (code == 5) return GdipColour::AVA_EYE;
+    if (code == 0) {
+        return GdipColour::_TRANSPARENT;
+    }
+    if (code == 1) {
+        return GdipColour::AVA_OUTLINE;
+    }
+    if (code == 5) {
+        return GdipColour::AVA_EYE;
+    }
 
     if (type == 0) { // Do Trang
-        if (code == 2) return GdipColour::AVA_P1_SKIN;
-        if (code == 3) return GdipColour::AVA_P1_SHIRT;
-        if (code == 4) return GdipColour::AVA_P1_ACCENT;
-    } else if (type == 1) { // Lam Vang
-        if (code == 2) return GdipColour::AVA_P2_SKIN;
-        if (code == 3) return GdipColour::AVA_P2_SHIRT;
-        if (code == 4) return GdipColour::AVA_P2_ACCENT;
-    } else if (type == 2) { // Bot Easy
-        if (code == 2) return GdipColour::AVA_BOT_EASY_BODY;
-        if (code == 3) return GdipColour::AVA_BOT_EASY_ACCENT;
-        if (code == 4) return GdipColour::AVA_BOT_EASY_ACCENT;
-    } else if (type == 3) { // Bot Medium
-        if (code == 2) return GdipColour::AVA_BOT_MED_BODY;
-        if (code == 3) return GdipColour::AVA_BOT_MED_DARK;
-        if (code == 4) return GdipColour::AVA_BOT_MED_DARKEST;
-    } else { // Bot Hard
-        if (code == 2) return GdipColour::AVA_BOT_HARD_BODY;
-        if (code == 3) return GdipColour::AVA_BOT_HARD_SHIRT;
-        if (code == 4) return GdipColour::AVA_BOT_HARD_DARK;
+        if (code == 2) {
+            return GdipColour::AVA_P1_SKIN;
+        }
+        if (code == 3) {
+            return GdipColour::AVA_P1_SHIRT;
+        }
+        if (code == 4) {
+            return GdipColour::AVA_P1_ACCENT;
+        }
+    } 
+    else if (type == 1) { // Lam Vang
+        if (code == 2) {
+            return GdipColour::AVA_P2_SKIN;
+        }
+        if (code == 3) {
+            return GdipColour::AVA_P2_SHIRT;
+        }
+        if (code == 4) {
+            return GdipColour::AVA_P2_ACCENT;
+        }
+    } 
+    else if (type == 2) { // Bot Easy
+        if (code == 2) {
+            return GdipColour::AVA_BOT_EASY_BODY;
+        }
+        if (code == 3) {
+            return GdipColour::AVA_BOT_EASY_ACCENT;
+        }
+        if (code == 4) {
+            return GdipColour::AVA_BOT_EASY_ACCENT;
+        }
+    } 
+    else if (type == 3) { // Bot Medium
+        if (code == 2) {
+            return GdipColour::AVA_BOT_MED_BODY;
+        }
+        if (code == 3) {
+            return GdipColour::AVA_BOT_MED_DARK;
+        }
+        if (code == 4) {
+            return GdipColour::AVA_BOT_MED_DARKEST;
+        }
+    } 
+    else { // Bot Hard
+        if (code == 2) {
+            return GdipColour::AVA_BOT_HARD_BODY;
+        }
+        if (code == 3) {
+            return GdipColour::AVA_BOT_HARD_SHIRT;
+        }
+        if (code == 4) {
+            return GdipColour::AVA_BOT_HARD_DARK;
+        }
     }
     return GdipColour::DEBUG_MAGENTA;
 }
 
 void DrawPixelAvatar(Gdiplus::Graphics& g, int x, int y, int size, int avatarType) {
-    if (avatarType < 0 || avatarType > 4) avatarType = 0;
+    if (avatarType < 0 || avatarType > 4) {
+        avatarType = 0;
+    }
     
     // Nạp Data Mô hình Cầu thủ động (Load từ máy nếu chưa có)
     static PixelModel avatarModels[5];
@@ -105,7 +153,9 @@ void DrawPixelAvatar(Gdiplus::Graphics& g, int x, int y, int size, int avatarTyp
     }
     
     const PixelModel& model = avatarModels[avatarType];
-    if (!model.isLoaded || model.width == 0) return;
+    if (!model.isLoaded || model.width == 0) {
+        return;
+    }
 
     int pixelSize = size / model.width;
     int shadowOffset = pixelSize / 3;

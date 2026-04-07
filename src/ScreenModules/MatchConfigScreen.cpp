@@ -19,7 +19,9 @@ const std::wstring AVATAR_NAMES[] = { L"Tiền Đạo Số 7", L"Nhạc Trưởn
 const std::string AVATAR_PATHS[] = { "Asset/images/avatar_1.png", "Asset/images/avatar_2.png" };
 
 void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, int& selectedOption, WPARAM wParam) {
-    if (wParam == 0) return;
+    if (wParam == 0) {
+        return;
+    }
 
     // --- TRƯỜNG HỢP 1: ĐANG NHẬP TÊN (CHỈ Ở TRANG 2) ---
     if (activeEditing != 0 && currentPage == 1) {
@@ -98,20 +100,29 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
             }
             break;
         }
-    } else {
+    } 
+    else {
         bool isPvE = (playState->matchType == MATCH_PVE);
         switch (selectedOption) {
         case 0: // Đổi Avatar P1 (A/D)
-            if (dir != 0) p1AvatarIdx = (p1AvatarIdx + dir + 2) % 2;
+            if (dir != 0) {
+                p1AvatarIdx = (p1AvatarIdx + dir + 2) % 2;
+            }
             break;
         case 1: // Sửa Tên P1 (Enter)
-            if (wParam == VK_RETURN) activeEditing = 1;
+            if (wParam == VK_RETURN) {
+                activeEditing = 1;
+            }
             break;
         case 2: // Đổi Avatar P2 (A/D)
-            if (!isPvE && dir != 0) p2AvatarIdx = (p2AvatarIdx + dir + 2) % 2;
+            if (!isPvE && dir != 0) {
+                p2AvatarIdx = (p2AvatarIdx + dir + 2) % 2;
+            }
             break;
         case 3: // Sửa Tên P2 (Enter)
-            if (!isPvE && wParam == VK_RETURN) activeEditing = 2;
+            if (!isPvE && wParam == VK_RETURN) {
+                activeEditing = 2;
+            }
             break;
         case 4: // Quay lại
             if (wParam == VK_RETURN || wParam == VK_SPACE) {
@@ -127,9 +138,15 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
                 if (isPvE) {
                     std::wstring botName = (playState->difficulty == 1) ? L"Trạm Trưởng Vàng" : (playState->difficulty == 2 ? L"Bot Thiết Giáp" : L"Bóng Đêm Thách Đấu");
                     playState->p2.name = botName;
-                    if (playState->difficulty == 1) playState->p2.avatarPath = "Asset/images/bot_easy.png";
-                    else if (playState->difficulty == 2) playState->p2.avatarPath = "Asset/images/bot_medium.png";
-                    else playState->p2.avatarPath = "Asset/images/bot_hard.png";
+                    if (playState->difficulty == 1) {
+                        playState->p2.avatarPath = "Asset/images/bot_easy.png";
+                    }
+                    else if (playState->difficulty == 2) {
+                        playState->p2.avatarPath = "Asset/images/bot_medium.png";
+                    }
+                    else {
+                        playState->p2.avatarPath = "Asset/images/bot_hard.png";
+                    }
                 }
                 else {
                     playState->p2.name = editName2;

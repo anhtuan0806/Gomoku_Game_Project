@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _RENDERER_H_
+#define _RENDERER_H_
 #include <windows.h>
 #include <gdiplus.h>
 #include <string>
@@ -42,3 +43,5 @@ void ScaleSprite(Sprite& sprite, int targetWidth, int targetHeight);
 // Quản lý bộ đệm (Buffer)
 void CreateBuffer(HWND hwnd, HDC hdc, DoubleBuffer& buffer);
 void DeleteBuffer(DoubleBuffer& buffer);
+
+#endif // _RENDERER_H_

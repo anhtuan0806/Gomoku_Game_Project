@@ -9,7 +9,9 @@
 const int TOTAL_SETTING_ITEMS = 7;
 
 void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int selectedOption, int direction, bool isEnterPressed) {
-    if (direction == 0 && !isEnterPressed) return;
+    if (direction == 0 && !isEnterPressed) {
+        return;
+    }
 
     switch (selectedOption) {
     case 0: // Nhạc nền (BGM)
@@ -26,21 +28,33 @@ void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int sele
     case 1: // Âm lượng BGM
         if (direction != 0) {
             config->bgmVolume += direction * 10;
-            if (config->bgmVolume > 100) config->bgmVolume = 100;
-            if (config->bgmVolume < 0) config->bgmVolume = 0;
+            if (config->bgmVolume > 100) {
+                config->bgmVolume = 100;
+            }
+            if (config->bgmVolume < 0) {
+                config->bgmVolume = 0;
+            }
         }
         break;
 
     case 2: // Hiệu ứng (SFX)
-        if (isEnterPressed) config->isSfxEnabled = !config->isSfxEnabled;
-        else config->isSfxEnabled = (direction == 1);
+        if (isEnterPressed) {
+            config->isSfxEnabled = !config->isSfxEnabled;
+        }
+        else {
+            config->isSfxEnabled = (direction == 1);
+        }
         break;
 
     case 3: // Âm lượng SFX
         if (direction != 0) {
             config->sfxVolume += direction * 10;
-            if (config->sfxVolume > 100) config->sfxVolume = 100;
-            if (config->sfxVolume < 0) config->sfxVolume = 0;
+            if (config->sfxVolume > 100) {
+                config->sfxVolume = 100;
+            }
+            if (config->sfxVolume < 0) {
+                config->sfxVolume = 0;
+            }
         }
         break;
 
@@ -56,8 +70,12 @@ void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int sele
         int step = (direction != 0) ? direction : 1;
         int themeVal = (int)config->currentTheme + step;
 
-        if (themeVal > (int)THEME_RETRO) themeVal = (int)THEME_CLASSIC;
-        if (themeVal < (int)THEME_CLASSIC) themeVal = (int)THEME_RETRO;
+        if (themeVal > (int)THEME_RETRO) {
+            themeVal = (int)THEME_CLASSIC;
+        }
+        if (themeVal < (int)THEME_CLASSIC) {
+            themeVal = (int)THEME_RETRO;
+        }
         config->currentTheme = (BoardTheme)themeVal;
         break;
     }
@@ -72,7 +90,9 @@ void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int sele
 }
 
 void UpdateSettingScreen(ScreenState& currentState, GameConfig* config, int& selectedOption, WPARAM keyCode) {
-    if (keyCode == 0) return;
+    if (keyCode == 0) {
+        return;
+    }
 
     if (keyCode == VK_ESCAPE) {
         SaveConfig(config, "Asset/config.ini");
@@ -90,8 +110,12 @@ void UpdateSettingScreen(ScreenState& currentState, GameConfig* config, int& sel
     }
 
     int direction = 0;
-    if (keyCode == 'D' || keyCode == VK_RIGHT) direction = 1;
-    if (keyCode == 'A' || keyCode == VK_LEFT) direction = -1;
+    if (keyCode == 'D' || keyCode == VK_RIGHT) {
+        direction = 1;
+    }
+    if (keyCode == 'A' || keyCode == VK_LEFT) {
+        direction = -1;
+    }
 
     bool isEnterPressed = (keyCode == VK_RETURN);
     ProcessSettingInput(currentState, config, selectedOption, direction, isEnterPressed);
@@ -156,16 +180,36 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
         }
 
         switch (i) {
-        case 0: label = L"Nhạc nền Sân:";  value = config->isBgmEnabled ? L"< BẬT (ON) >"  : L"< TẮT (OFF) >"; break;
-        case 1: label = L"Âm lượng Nhạc:";           value = L""; break;
-        case 2: label = L"Tạp âm Thi đấu (SFX):";   value = config->isSfxEnabled ? L"< BẬT (ON) >"  : L"< TẮT (OFF) >"; break;
-        case 3: label = L"Âm lượng SFX:";            value = L""; break;
-        case 4: label = L"Ngôn ngữ Bình luận:";      value = (config->currentLang == APP_LANG_VI) ? L"< Tiếng Việt >" : L"< English >"; break;
-        case 5: label = L"Chủ đề Nền:";
+        case 0: 
+            label = L"Nhạc nền Sân:";  
+            value = config->isBgmEnabled ? L"< BẬT (ON) >"  : L"< TẮT (OFF) >"; 
+            break;
+        case 1: 
+            label = L"Âm lượng Nhạc:";           
+            value = L""; 
+            break;
+        case 2: 
+            label = L"Tạp âm Thi đấu (SFX):";   
+            value = config->isSfxEnabled ? L"< BẬT (ON) >"  : L"< TẮT (OFF) >"; 
+            break;
+        case 3: 
+            label = L"Âm lượng SFX:";            
+            value = L""; 
+            break;
+        case 4: 
+            label = L"Ngôn ngữ Bình luận:";      
+            value = (config->currentLang == APP_LANG_VI) ? L"< Tiếng Việt >" : L"< English >"; 
+            break;
+        case 5: 
+            label = L"Chủ đề Nền:";
             value = (config->currentTheme == THEME_CLASSIC) ? L"< Sân Cỏ Anh >"
                   : (config->currentTheme == THEME_NEON)    ? L"< Sân Neon >"
-                  :                                           L"< Retro Matrix >"; break;
-        case 6: label = L""; value = L""; break; // Nút Xác Nhận — vẽ riêng
+                  :                                           L"< Retro Matrix >"; 
+            break;
+        case 6: 
+            label = L""; 
+            value = L""; 
+            break; // Nút Xác Nhận — vẽ riêng
         }
 
         int yPos = startY + i * spacing;
@@ -187,7 +231,8 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
             DrawTextW(hdc, L"== [ QUAY LẠI CHỈ ĐẠO ] ==", -1, &btnRect,
                 DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
             SelectObject(hdc, oldF);
-        } else {
+        } 
+        else {
             // --- Dòng nhãn (cột trái) ---
             DrawColTextSetting(hdc, label, col1X, yPos, col1W, labelColor, GlobalFont::Bold, DT_RIGHT);
 
@@ -217,7 +262,8 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
                 // % hiển thị bên phải thanh
                 DrawColTextSetting(hdc, std::to_wstring(vol) + L"%",
                     barX + barW + 8, yPos, col2W - barW - 8, valColor, fontItem, DT_LEFT);
-            } else {
+            } 
+            else {
                 DrawColTextSetting(hdc, value, col2X, yPos, col2W, valColor, fontItem, DT_LEFT);
             }
         }
