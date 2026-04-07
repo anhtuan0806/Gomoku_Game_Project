@@ -156,12 +156,12 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
         }
 
         switch (i) {
-        case 0: label = L"Nhạc nền Sân vận động:";  value = config->isBgmEnabled ? L"< BẬT (ON) >"  : L"< TẮT (OFF) >"; break;
+        case 0: label = L"Nhạc nền Sân:";  value = config->isBgmEnabled ? L"< BẬT (ON) >"  : L"< TẮT (OFF) >"; break;
         case 1: label = L"Âm lượng Nhạc:";           value = L""; break;
         case 2: label = L"Tạp âm Thi đấu (SFX):";   value = config->isSfxEnabled ? L"< BẬT (ON) >"  : L"< TẮT (OFF) >"; break;
         case 3: label = L"Âm lượng SFX:";            value = L""; break;
         case 4: label = L"Ngôn ngữ Bình luận:";      value = (config->currentLang == APP_LANG_VI) ? L"< Tiếng Việt >" : L"< English >"; break;
-        case 5: label = L"Chủ đề Nền (Theme):";
+        case 5: label = L"Chủ đề Nền:";
             value = (config->currentTheme == THEME_CLASSIC) ? L"< Sân Cỏ Anh >"
                   : (config->currentTheme == THEME_NEON)    ? L"< Sân Neon >"
                   :                                           L"< Retro Matrix >"; break;

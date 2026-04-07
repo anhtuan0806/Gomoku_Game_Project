@@ -28,6 +28,12 @@
     <Filter Include="Asset\lang">
       <UniqueIdentifier>{27ad0ed5-b95f-49f2-a240-2f56134b8185}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Asset\models">
+      <UniqueIdentifier>{6f302024-ccc9-43ab-87ea-0d56136f6b35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\font">
+      <UniqueIdentifier>{689f72e1-9530-4aeb-83f2-7ab07f7d7844}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApplicationTypes\GameConfig.h">
@@ -163,11 +169,45 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Asset\images\o.png">
+    <Text Include="Asset\models\avatar_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avatar_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avatar_2.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avatar_3.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avatar_4.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\lang\en.txt">
+      <Filter>Asset\lang</Filter>
+    </Text>
+    <Text Include="Asset\models\football.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\title_caro.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\trophy.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\lang\vi.txt">
+      <Filter>Asset\lang</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Asset\images\football.png">
       <Filter>Asset\images</Filter>
     </Image>
-    <Image Include="Asset\images\x.png">
-      <Filter>Asset\images</Filter>
-    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Asset\font\VT323\VT323-Regular.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
   </ItemGroup>
 </Project>
