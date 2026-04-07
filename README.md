@@ -1,5 +1,7 @@
 # Caro Champions League
 
+![C++17](https://img.shields.io/badge/C++17-00599C?style=for-the-badge&logo=cplusplus&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white) ![Visual Studio 2022](https://img.shields.io/badge/Visual%20Studio%202022-5C2D91?style=for-the-badge&logo=visualstudio&logoColor=white) ![Engine](https://img.shields.io/badge/Engine-Custom_Win32_GDI%2B-orange?style=for-the-badge) ![Status](https://img.shields.io/badge/Status-In_Progress-yellow?style=for-the-badge)
+
 Caro Champions League là một trò chơi cờ caro (Gomoku) và Tic-Tac-Toe chạy trên Windows, được xây dựng hoàn toàn bằng C++ thuần với Win32 API và GDI+. Giao diện mang chủ đề bóng đá với đồ họa pixel art được vẽ theo quy trình (procedural), hệ thống animation mượt và âm thanh tích hợp.
 
 ## Mục lục
@@ -87,10 +89,10 @@ Cài đặt được lưu nhị phân vào `Asset/config.ini`. Nếu file không
 
 ## Yêu cầu hệ thống
 
-- **Hệ điều hành:** Windows (Win32 API)
-- **Trình biên dịch:** Visual Studio 2019 trở lên (MSVC)
+- **Hệ điều hành:** Windows (Win32 API) ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white)
+- **Trình biên dịch:** Visual Studio 2019 trở lên (MSVC) ![MSVC](https://img.shields.io/badge/MSVC-5C2D91?style=flat-square&logo=visualstudio&logoColor=white)
 - **Thư viện:** GDI+ (`gdiplus.lib`), Windows Multimedia (`winmm.lib`) — đều có sẵn trong Windows SDK, không cần cài thêm.
-- **C++ Standard:** C++17 (dùng `std::filesystem` trong `SaveLoadSystem.cpp`)
+- **C++ Standard:** C++17 ![C++17](https://img.shields.io/badge/C++17-00599C?style=flat-square&logo=cplusplus&logoColor=white)
 
 ---
 
