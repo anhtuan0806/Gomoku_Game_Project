@@ -1,6 +1,10 @@
 # Caro Champions League
 
-![C++17](https://img.shields.io/badge/C++17-00599C?style=for-the-badge&logo=cplusplus&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white) ![Visual Studio 2022](https://img.shields.io/badge/Visual%20Studio%202022-5C2D91?style=for-the-badge&logo=visualstudio&logoColor=white) ![Engine](https://img.shields.io/badge/Engine-Custom_Win32_GDI%2B-orange?style=for-the-badge) ![Status](https://img.shields.io/badge/Status-In_Progress-yellow?style=for-the-badge)
+[![C++17](https://img.shields.io/badge/C++17-00599C?style=for-the-badge&logo=cplusplus&logoColor=white)](https://en.cppreference.com/w/cpp/17)
+[![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://learn.microsoft.com/en-us/windows/win32/)
+[![Visual Studio 2022](https://img.shields.io/badge/Visual%20Studio%202022-5C2D91?style=for-the-badge&logo=visualstudio&logoColor=white)](https://visualstudio.microsoft.com/vs/)
+[![Engine](https://img.shields.io/badge/Engine-Custom_Win32_GDI%2B-orange?style=for-the-badge)](https://learn.microsoft.com/en-us/windows/win32/gdiplus/-gdiplus-gdi-start)
+[![Status](https://img.shields.io/badge/Status-In_Progress-yellow?style=for-the-badge)](https://github.com/anhtuan0806/Gomoku_Game_Project/releases/tag/v1.0.0)
 
 Caro Champions League là một trò chơi cờ caro (Gomoku) và Tic-Tac-Toe chạy trên Windows, được xây dựng hoàn toàn bằng C++ thuần với Win32 API và GDI+. Giao diện mang chủ đề bóng đá với đồ họa pixel art được vẽ theo quy trình (procedural), hệ thống animation mượt và âm thanh tích hợp.
 
