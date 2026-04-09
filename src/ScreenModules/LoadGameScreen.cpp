@@ -82,17 +82,17 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
     Gdiplus::Pen panelPen(GdipColour::PANEL_BLUE_BORDER, 3.0f);
     g.DrawRectangle(&panelPen, panelX, panelY, panelW, panelH);
 
-    // 3. Tiêu đề Pixel Banner (thay vì chữ thuần)
+    // 3. Tiêu đề Pixel Banner (Dấu ấn riêng: Băng ghi hình)
     int bannerCX = screenWidth / 2;
     int bannerCY = panelY + 40;
     DrawPixelBanner(g, hdc, L"LỊCH SỬ THI ĐẤU", bannerCX, bannerCY, panelW - 20,
-        Colour::WHITE, RGB(0, 180, 255));
+        Colour::WHITE, RGB(0, 180, 255), "Asset/models/cassette.txt");
 
     // 4. Vẽ các Slot Save Game
     int slotW    = 500;                           // đủ rộng cho text dài
     int slotH    = 52;                            // đủ cao để chữ không bị cắt
     int slotX    = panelX + (panelW - slotW) / 2;
-    int startY   = panelY + 100;
+    int startY   = panelY + 115;
     int spacing  = slotH + 10;                    // khoảng cách giữa các slot
 
     SetBkMode(hdc, TRANSPARENT);

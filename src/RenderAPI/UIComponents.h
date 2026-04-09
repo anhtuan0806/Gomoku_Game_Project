@@ -20,7 +20,7 @@ struct PixelModel {
 // Hàm Load dữ liệu Pixel từ file txt bên ngoài (hỗ trợ đọc config)
 PixelModel LoadPixelModel(const std::string& filePath);
 // Vẽ mô hình Pixel với Palette động
-void DrawPixelModel(Gdiplus::Graphics& g, const PixelModel& model, int cx, int cy, int pSize, const std::map<int, Gdiplus::Color>& palette);
+void DrawPixelModel(Gdiplus::Graphics& g, const PixelModel& model, int cx, int cy, int totalSize, const std::map<int, Gdiplus::Color>& palette);
 
 // Vẽ một Sprite cụ thể lên màn hình có resize động
 void DrawSprite(Gdiplus::Graphics& g, const Sprite& sprite, int x, int y, int width, int height);
@@ -37,11 +37,12 @@ void DrawPixelAvatar(Gdiplus::Graphics& g, int x, int y, int size, int avatarTyp
 // Vẽ hoạt họa Pixel chuyên dụng cho Khán Đài
 void DrawPixelFootball(Gdiplus::Graphics& g, int cx, int cy, int size);
 void DrawPixelTrophy(Gdiplus::Graphics& g, int cx, int cy, int size);
+void DrawPixelClock(Gdiplus::Graphics& g, int cx, int cy, int size, Gdiplus::Color color);
 
 // Vẽ Banner Tiêu đề Pixel Art cho màn hình Menu/Settings/Load
 // text: chuỗi ký tự đơn giản (ASCII), cx/cy: tâm banner, accent: màu nổi bật
-void DrawPixelBanner(Gdiplus::Graphics& g, HDC hdc, const std::wstring& text,
-    int cx, int cy, int panelW, COLORREF textColor, COLORREF glowColor);
+void DrawPixelBanner(Gdiplus::Graphics& g, HDC hdc, const std::wstring& text, int cx, int cy, int panelW, COLORREF textColor, COLORREF glowColor);
+void DrawPixelBanner(Gdiplus::Graphics& g, HDC hdc, const std::wstring& text, int cx, int cy, int panelW, COLORREF textColor, COLORREF glowColor, const std::string& iconModelPath);
 
 // --- HÀM TỔNG HỢP VẼ GAME ---
 // Hàm này sẽ vẽ lưới, các quân cờ hiện có, và ô viền highlight đang chọn

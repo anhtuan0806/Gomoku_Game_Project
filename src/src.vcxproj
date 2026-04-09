@@ -94,7 +94,7 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -184,6 +184,7 @@
     <Text Include="Asset\models\avatar_2.txt" />
     <Text Include="Asset\models\avatar_3.txt" />
     <Text Include="Asset\models\avatar_4.txt" />
+    <Text Include="Asset\models\clock.txt" />
     <Text Include="Asset\models\football.txt" />
     <Text Include="Asset\models\title_caro.txt" />
     <Text Include="Asset\models\trophy.txt" />

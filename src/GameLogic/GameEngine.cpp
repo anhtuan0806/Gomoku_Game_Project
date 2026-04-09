@@ -177,24 +177,16 @@ bool processMove(PlayState* state, int row, int col)
     }
 
     int winStatus = checkWinCondition(state, row, col, &state->winningCells);
-    if (winStatus != -1) { // Có kết quả thắng/thua hoặc hòa
+    if (winStatus != -1) { 
         if (winStatus == CELL_PLAYER1) state->p1.totalWins++;
         else if (winStatus == CELL_PLAYER2) state->p2.totalWins++;
-
-        // Cập nhật luật BO: số ván thắng = x / 2 + 1
-        int winRequired = state->targetScore / 2 + 1;
-        if (state->p1.totalWins >= winRequired || state->p2.totalWins >= winRequired) 
-        {
-            state->status = MATCH_FINISHED;
-            state->winner = winStatus;
-        }
-        else {
-            // Nếu chưa đủ điểm thắng cả trận, reset bàn cờ để đánh ván tiếp theo
-            startNextRound(state);
-        }
+        
+        // Luôn dừng ván đấu để người chơi xem kết quả
+        state->status = MATCH_FINISHED;
+        state->winner = winStatus;
     }
     else {
-        // Nếu ván đấu vẫn đang tiếp tục (winStatus == -1), thực hiện chuyển lượt
+        // Nếu ván đấu vẫn đang tiếp tục, thực hiện chuyển lượt
         switchTurn(state);
     }
 

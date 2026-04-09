@@ -137,10 +137,18 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
 
         if (wParam == 'W' || wParam == VK_UP) {
             g_PauseSelected = (g_PauseSelected - 1 < 0) ? TOTAL_PAUSE_ITEMS - 1 : g_PauseSelected - 1;
+            // Bỏ qua mục Âm lượng (index 2) nếu Nhạc nền (index 1) đang OFF
+            if (g_PauseSelected == 2 && !config->isBgmEnabled) {
+                g_PauseSelected = (g_PauseSelected - 1 < 0) ? TOTAL_PAUSE_ITEMS - 1 : g_PauseSelected - 1;
+            }
             hasChanged = true;
         }
         else if (wParam == 'S' || wParam == VK_DOWN) {
             g_PauseSelected = (g_PauseSelected + 1 >= TOTAL_PAUSE_ITEMS) ? 0 : g_PauseSelected + 1;
+            // Bỏ qua mục Âm lượng (index 2) nếu Nhạc nền (index 1) đang OFF
+            if (g_PauseSelected == 2 && !config->isBgmEnabled) {
+                g_PauseSelected = (g_PauseSelected + 1 >= TOTAL_PAUSE_ITEMS) ? 0 : g_PauseSelected + 1;
+            }
             hasChanged = true;
         }
         else if (wParam == VK_RETURN || wParam == VK_SPACE || wParam == VK_RIGHT || wParam == VK_LEFT) {
@@ -223,8 +231,17 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
 
     if (state->status == MATCH_FINISHED) {
         if (wParam == 'Y' || wParam == 'y') {
-			// Reset về cấu hình trận đấu ban đầu để bắt đầu ván mới
-			startNextRound(state);
+            int winRequired = state->targetScore / 2 + 1;
+            bool matchOver = (state->p1.totalWins >= winRequired || state->p2.totalWins >= winRequired);
+            
+            if (matchOver) {
+                // Nếu đã thắng cả trận, reset điểm số để đá trận mới
+                state->p1.totalWins = 0;
+                state->p2.totalWins = 0;
+            }
+            
+            // Bắt đầu ván đấu mới (hoặc ván đầu tiên của trận mới)
+            startNextRound(state);
             hasChanged = true;
         }
         else if (wParam == 'N' || wParam == 'n' || wParam == VK_ESCAPE) {
@@ -392,18 +409,53 @@ void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int scre
     COLORREF turnColor = state->isP1Turn ? Colour::RED_NORMAL : Colour::BLUE_NORMAL;
     DrawTextCentered(hdc, boText, 10, screenWidth, turnColor, GlobalFont::Bold);
 
+    // THIẾT KẾ TIMER MỚI: Floating Minimalist (Không khung để tránh đè bàn cờ)
+    int timerY = 55; 
+    
+    // Hiệu ứng rung lắc (Shake) khi thời gian sắp hết (<= 3s)
+    int shakeX = 0, shakeY = 0;
+    COLORREF timerColor = Colour::CYAN_LIGHT; 
+    bool isWarning = (state->matchType != MATCH_PVE && state->timeRemaining <= 3);
+
+    if (isWarning) {
+        float shakeFreq = 25.0f;
+        float shakeAmp = 4.0f;
+        shakeX = (int)(sin(g_GlobalAnimTime * shakeFreq) * shakeAmp);
+        shakeY = (int)(cos(g_GlobalAnimTime * shakeFreq * 0.7f) * shakeAmp);
+        timerColor = Colour::RED_NORMAL; 
+    }
+
+    // Tính toán chiều ngang cụm Floating (Icon + Chữ) để căn giữa
+    int clockSize = 34;
     std::wstring timeText;
     if (state->matchType == MATCH_PVE) {
         int minutes = (int)state->matchDuration / 60;
         int seconds = (int)state->matchDuration % 60;
         wchar_t buffer[64];
-        swprintf(buffer, 64, L"Thời gian đã chơi: %02d:%02d", minutes, seconds);
+        swprintf(buffer, 64, L"ĐÃ CHƠI: %02d:%02d", minutes, seconds);
         timeText = buffer;
     } 
     else {
-        timeText = L"Thời gian lượt: " + std::to_wstring(state->timeRemaining) + L"s";
+        timeText = L"THỜI GIAN: " + std::to_wstring(state->timeRemaining) + L"s";
     }
-    DrawTextCentered(hdc, timeText, 50, screenWidth, Colour::GRAY_DARK, GlobalFont::Default);
+
+    // Ước lượng chiều rộng text để căn giữa cả cụm
+    int textEstimatedW = (int)timeText.length() * 12 + 20;
+    int groupTotalW = clockSize + 15 + textEstimatedW;
+    int groupStartX = (screenWidth - groupTotalW) / 2;
+
+    // 1. Vẽ biểu tượng Đồng hồ Pixel Art (Lơ lửng)
+    float pulse = 0.7f + sin(g_GlobalAnimTime * 8.0f) * 0.3f;
+    BYTE neonA = (BYTE)(150 + pulse * 105);
+    Gdiplus::Color neonColor = isWarning ? Gdiplus::Color(neonA, 255, 0, 0) : Gdiplus::Color(neonA, 0, 200, 255);
+    DrawPixelClock(g, groupStartX + shakeX + clockSize/2, timerY + shakeY + 28, clockSize, neonColor);
+
+    // 2. In chữ kỹ thuật số (Lơ lửng)
+    HFONT oldT = (HFONT)SelectObject(hdc, GlobalFont::Bold);
+    SetTextColor(hdc, timerColor);
+    RECT rTimer = { groupStartX + shakeX + clockSize + 10, timerY + shakeY + 8, screenWidth, timerY + shakeY + 50 };
+    DrawTextW(hdc, timeText.c_str(), -1, &rTimer, DT_LEFT | DT_SINGLELINE | DT_NOPREFIX);
+    SelectObject(hdc, oldT);
     
     // Ghi chú tính năng Đi Lại
     if (state->matchType == MATCH_PVE) {
@@ -412,63 +464,108 @@ void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int scre
     
     SelectObject(hdc, hOldFont);
 
-    // 2. Lớp phủ Pause Menu (Kính Đen Sa Bàn)
+    // 2. Lớp phủ Pause Menu (Phong cách Light Glassmorphism)
     if (state->status == MATCH_PAUSED) {
         Gdiplus::Graphics g(hdc);
-        
-        // Cần g_GlobalAnimTime để làm hiệu ứng nếu import từ UIComponents
         extern float g_GlobalAnimTime; 
 
-        // Phủ mờ không gian (Shadow Overlay cho bàn cờ)
-        Gdiplus::SolidBrush shadowBrush2(GdipColour::SHADOW_HEAVY);
+        // 1. Phủ mờ không gian (Lớp kính trắng đục)
+        Gdiplus::SolidBrush shadowBrush2(Gdiplus::Color(100, 255, 255, 255));
         g.FillRectangle(&shadowBrush2, 0, 0, screenWidth, screenHeight);
 
-        // Khung kinh den (Dark Glassmorphism)
-        int menuW = 550, menuH = 550;
+        // 2. Khung Pause Menu (Màu Vàng Neon Warning)
+        int menuW = 580, menuH = 500;
         int menuX = (screenWidth - menuW) / 2;
         int menuY = (screenHeight - menuH) / 2;
-        Gdiplus::SolidBrush bgBrush(GdipColour::GLASS_DARK);
+        
+        Gdiplus::SolidBrush bgBrush(GdipColour::GLASS_WHITE);
         g.FillRectangle(&bgBrush, menuX, menuY, menuW, menuH);
 
-        Gdiplus::Pen glassGleam(GdipColour::GLASS_GLEAM, 2.0f);
-        g.DrawRectangle(&glassGleam, menuX, menuY, menuW, menuH);
+        Gdiplus::Pen yellowBorder(GdipColour::PANEL_YELLOW_BORDER, 4.0f);
+        g.DrawRectangle(&yellowBorder, menuX, menuY, menuW, menuH);
+
+        // 3. Watermark Còi mờ ẩn dưới nền
+        static std::map<int, Gdiplus::Color> waterPalette;
+        if (waterPalette.empty()) {
+            waterPalette[1] = Gdiplus::Color(30, 0, 0, 0);   // Viền cực mờ
+            waterPalette[2] = Gdiplus::Color(40, 255, 200, 0); // Màu vàng nhạt mờ
+            waterPalette[3] = Gdiplus::Color(40, 255, 255, 255);
+        }
+        static PixelModel whistleMod = LoadPixelModel("Asset/models/whistle.txt");
+        DrawPixelModel(g, whistleMod, screenWidth / 2, screenHeight / 2, 250, waterPalette);
 
         if (g_CurrentSubMenu == SUB_MAIN) {
-            // VẼ MENU CHÍNH
-            DrawTextCentered(hdc, L"== HỘP TÁC CHIẾN ==", menuY + 40, screenWidth, Colour::CYAN_NORMAL, GlobalFont::Title);
-            const wchar_t* labels[] = { L"Tiếp tục thi đấu", L"Nhạc nền: ", L"Âm lượng: ", L"Ghi hình trận", L"Rời phòng thay đồ" };
+            // Header: Thanh Banner Tạm dừng
+            DrawPixelBanner(g, hdc, L"TẠM DỪNG", screenWidth / 2, menuY + 40,
+                menuW - 20, Colour::WHITE, RGB(255, 180, 0), "Asset/models/whistle.txt");
+
+            const wchar_t* labels[] = { L"TRỞ LẠI SÂN", L"NHẠC NỀN: ", L"ÂM LƯỢNG NHẠC", L"GHI HÌNH TRẬN ĐẤU", L"KẾT THÚC TRẬN ĐẤU" };
             for (int i = 0; i < TOTAL_PAUSE_ITEMS; i++) {
                 std::wstring itemText = labels[i];
-                // Thêm giá trị động cho các setting
-                if (i == 1) {
-                    itemText += (config->isBgmEnabled ? L"< BẬT >" : L"< TẮT >");
-                }
-                if (i == 2) {
-                    itemText += std::to_wstring(config->sfxVolume) + L"%";
-                }
-
-                COLORREF color = Colour::GRAY_NORMAL;
+                COLORREF color = Colour::GRAY_DARKEST;
                 HFONT font = GlobalFont::Default;
+                bool isDisabled = (i == 2 && !config->isBgmEnabled);
 
-                if (i == g_PauseSelected) {
-                    int rCol = (int)(180 + sin(g_GlobalAnimTime * 12.0f) * 75);
-                    color = RGB(255, max(0, min(255, 255 - rCol)), 0); 
-                    font = GlobalFont::Bold;
-                    itemText = L">> " + itemText + L" <<";
+                if (i == 1) {
+                    // Hiển thị trạng thái Bật/Tắt bằng khối màu
+                    itemText += (config->isBgmEnabled ? L" [ BẬT ]" : L" [ TẮT ]");
                 }
 
-                DrawTextCentered(hdc, itemText, menuY + 120 + i * 55, screenWidth, color, font);
+                if (i == g_PauseSelected && !isDisabled) {
+                    int wave = (int)(180 + sin(g_GlobalAnimTime * 10.0f) * 75);
+                    color = RGB(255, wave, 0); 
+                    font = GlobalFont::Bold;
+                    if (i != 2) itemText = L">> " + itemText + L" <<";
+                }
+
+                if (isDisabled) {
+                    color = RGB(150, 150, 150); 
+                    font = GlobalFont::Default;
+                    itemText = labels[i] + std::wstring(L" [ KHÓA ]");
+                }
+
+                int itemY = menuY + 140 + i * 55;
+                DrawTextCentered(hdc, (i == 2) ? labels[i] : itemText, itemY, screenWidth, color, font);
+
+                // Vẽ Slider cho mục Âm Lượng
+                if (i == 2) {
+                    int barW = 220;
+                    int barH = 8;
+                    int barX = (screenWidth - barW) / 2;
+                    int barY = itemY + 38;
+
+                    // Thanh nền (Mờ)
+                    Gdiplus::SolidBrush bgSlider(Gdiplus::Color(60, 0, 0, 0));
+                    g.FillRectangle(&bgSlider, barX, barY, barW, barH);
+
+                    // Thanh giá trị (Phát sáng)
+                    float percent = config->sfxVolume / 100.0f;
+                    Gdiplus::Color activeColor = isDisabled ? Gdiplus::Color(100, 150, 150, 150) : Gdiplus::Color(255, 255, 200, 0);
+                    Gdiplus::SolidBrush valBrush(activeColor);
+                    g.FillRectangle(&valBrush, barX, barY, (int)(barW * percent), barH);
+
+                    // Con trỏ Handle (Hình tròn)
+                    int handleX = barX + (int)(barW * percent);
+                    Gdiplus::Color hColor = isDisabled ? Gdiplus::Color(255, 100, 100, 100) : Gdiplus::Color(255, 255, 255, 255);
+                    Gdiplus::SolidBrush hBrush(hColor);
+                    g.FillEllipse(&hBrush, handleX - 8, barY - 4, 16, 16);
+
+                    // Aura phát sáng cho con trỏ nếu đang chọn
+                    if (i == g_PauseSelected && !isDisabled) {
+                        Gdiplus::Pen aura(Gdiplus::Color(150, 255, 200, 0), 2);
+                        g.DrawEllipse(&aura, handleX - 10, barY - 6, 20, 20);
+                    }
+                }
             }
         }
         else if (g_CurrentSubMenu == SUB_SAVE_SELECT) {
-            // VẼ MENU CHỌN SLOT LƯU
             DrawTextCentered(hdc, L"--- LƯU BĂNG GHI HÌNH ---", menuY + 40, screenWidth, Colour::ORANGE_NORMAL, GlobalFont::Title);
 
             for (int i = 0; i < MAX_SAVE_SLOTS; i++) {
                 bool exists = CheckSaveExists(i + 1);
                 std::wstring slotLabel = L"Băng số " + std::to_wstring(i + 1) + (exists ? L"  [Đã Ghi]" : L"  [Trống]");
 
-                COLORREF color = (i == g_SaveSlotSelected) ? Colour::YELLOW_NORMAL : Colour::GRAY_NORMAL;
+                COLORREF color = (i == g_SaveSlotSelected) ? Colour::BLUE_DARKEST : Colour::GRAY_DARKEST;
                 HFONT font = (i == g_SaveSlotSelected) ? GlobalFont::Bold : GlobalFont::Default;
                 
                 if (i == g_SaveSlotSelected) {
@@ -477,31 +574,28 @@ void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int scre
                 DrawTextCentered(hdc, slotLabel, menuY + 130 + i * 55, screenWidth, color, font);
             }
             DrawTextCentered(hdc, L"[ ENTER ] Xác nhận lưu", menuY + 430, screenWidth, Colour::GREEN_NORMAL, GlobalFont::Default);
-            DrawTextCentered(hdc, L"[ ESC ] Quay lại Menu", menuY + 460, screenWidth, Colour::GRAY_LIGHT, GlobalFont::Note);
+            DrawTextCentered(hdc, L"[ ESC ] Quay lại Menu", menuY + 460, screenWidth, Colour::GRAY_DARK, GlobalFont::Note);
         }
         else if (g_CurrentSubMenu == SUB_SAVE_NAME_ENTRY) {
-            // GIAO DIỆN NHẬP TÊN
             DrawTextCentered(hdc, L"DÁN NHÃN CUỘN BĂNG", menuY + 60, screenWidth, Colour::CYAN_NORMAL, GlobalFont::Title);
 
-            // Vẽ khung nhập liệu (Phá form Trắng làm nền Xám tối đi một chút)
             int boxW = 350, boxH = 50;
             int boxX = (screenWidth - boxW) / 2;
             int boxY = menuY + 200;
 
-            HBRUSH hBoxBrush = CreateSolidBrush(RGB(40, 40, 50));
+            HBRUSH hBoxBrush = CreateSolidBrush(RGB(240, 240, 250));
             RECT rectBox = { boxX, boxY, boxX + boxW, boxY + boxH };
             FillRect(hdc, &rectBox, hBoxBrush);
             DeleteObject(hBoxBrush);
             
-            Gdiplus::Pen tbPen(GdipColour::SAVE_BOX_BORDER, 2.0f);
+            Gdiplus::Pen tbPen(GdipColour::WithAlpha(GdipColour::TITLE_BORDER, 180), 2.0f);
             g.DrawRectangle(&tbPen, boxX, boxY, boxW, boxH);
 
-            // Hiển thị nội dung user đang gõ
             std::wstring displayText = g_SaveNameInput + L"_"; 
-            DrawTextCentered(hdc, displayText.c_str(), boxY + 12, screenWidth, Colour::WHITE, GlobalFont::Bold);
+            DrawTextCentered(hdc, displayText.c_str(), boxY + 12, screenWidth, Colour::GRAY_DARKEST, GlobalFont::Bold);
 
-            DrawTextCentered(hdc, L"Nhấn [ ENTER ] để Hoàn Vàng", menuY + 380, screenWidth, Colour::YELLOW_NORMAL, GlobalFont::Default);
-            DrawTextCentered(hdc, L"Nhấn [ ESC ] để Hủy băng", menuY + 430, screenWidth, Colour::RED_NORMAL, GlobalFont::Note);
+            DrawTextCentered(hdc, L"Nhấn [ ENTER ] để Hoàn Tất", menuY + 380, screenWidth, Colour::GREEN_NORMAL, GlobalFont::Default);
+            DrawTextCentered(hdc, L"Nhấn [ ESC ] để Hủy", menuY + 430, screenWidth, Colour::RED_NORMAL, GlobalFont::Note);
         }
     }
     else if (state->status == MATCH_FINISHED) {
@@ -509,48 +603,46 @@ void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int scre
         COLORREF winColor;
         COLORREF winGlow;
 
+        int winRequired = state->targetScore / 2 + 1;
+        bool matchOver = (state->p1.totalWins >= winRequired || state->p2.totalWins >= winRequired);
+
         if (state->winner == CELL_PLAYER1) { 
-            winMsg = L"⚽ " + p1NameW + L" ĐÃ GHI BÀN QUYẾT ĐỊNH! ⚽"; 
+            winMsg = matchOver ? (L"🏆 " + p1NameW + L" ĐÃ GIÀNH CUP VÔ ĐỊCH! 🏆") : (L"⚽ " + p1NameW + L" ĐÃ GHI BÀN THẮNG QUYẾT ĐỊNH! ⚽");
             winColor = Colour::ORANGE_NORMAL;
-            winGlow = RGB(255, 180, 0);
+            winGlow = RGB(255, 120, 0);
         }
         else if (state->winner == CELL_PLAYER2) { 
-            winMsg = L"⚽ " + p2NameW + L" ĐÃ GHI BÀN QUYẾT ĐỊNH! ⚽"; 
+            winMsg = matchOver ? (L"🏆 " + p2NameW + L" ĐÃ GIÀNH CUP VÔ ĐỊCH! 🏆") : (L"⚽ " + p2NameW + L" ĐÃ GHI BÀN THẮNG QUYẾT ĐỊNH! ⚽");
             winColor = Colour::CYAN_NORMAL;
-            winGlow = RGB(0, 220, 255);
+            winGlow = RGB(0, 150, 255);
         }
         else { 
             winMsg = L"⚽ TRẬN ĐẤU HÒA — KHÔNG AI GHI BÀN! ⚽";
-            winColor = Colour::WHITE;
-            winGlow = RGB(200, 200, 200);
+            winColor = Colour::GRAY_DARK;
+            winGlow = RGB(150, 150, 150);
         }
 
-        // ---- BANNER THẮNG: chỉ chiếm vùng Header (0 -> startY), KHÔNG che bàn cờ ----
-        int bannerH = startY; // Vùng header ngay trên bàn cờ
+        int bannerH = startY; 
         
-        // Nền banner mờ (glassmorphism tối)
         float bPulse = 0.5f + sin(g_WinAnimTime * 3.0f) * 0.5f;
-        int bgAlpha = (int)(160 + bPulse * 60);
-        Gdiplus::SolidBrush bannerBg(GdipColour::WithAlpha(GdipColour::BLACK, (BYTE)bgAlpha));
+        int bgAlpha = (int)(180 + bPulse * 40); 
+        Gdiplus::SolidBrush bannerBg(Gdiplus::Color(bgAlpha, 255, 255, 255));
         g.FillRectangle(&bannerBg, 0, 0, screenWidth, bannerH);
 
-        // Viền sáng pulse dưới banner
-        int lineAlpha = (int)(150 + bPulse * 105);
+        int lineAlpha = (int)(200 + bPulse * 55);
         BYTE r_glow = GetRValue(winGlow), g_glow = GetGValue(winGlow), b_glow = GetBValue(winGlow);
-        Gdiplus::Pen glowLine(Gdiplus::Color(lineAlpha, r_glow, g_glow, b_glow), 3.0f);
+        Gdiplus::Pen glowLine(Gdiplus::Color(lineAlpha, r_glow, g_glow, b_glow), 4.0f);
         g.DrawLine(&glowLine, 0, bannerH - 2, screenWidth, bannerH - 2);
 
-        // Trái bóng nhỏ bay ngang qua Banner (fmod giúp loop)
         int ballX = -60 + (int)(fmod(g_WinAnimTime * 300.0f, (float)(screenWidth + 120)));
         int ballY = bannerH / 2 + (int)(sin(g_WinAnimTime * 6.0f) * 12.0f);
         DrawPixelFootball(g, ballX, ballY, 40);
 
-        // Chữ thông báo thắng — căn giữa trong banner
-        int msgY = bannerH / 2 - 20;
+        int msgY = bannerH / 2 - 40;
         DrawTextCentered(hdc, winMsg, msgY, screenWidth, winColor, GlobalFont::Title);
 
-        // Chú thích nhỏ phía dưới chữ thắng
-        DrawTextCentered(hdc, L"Nhấn 'Y' để Đá lại  |  'N' / ESC để Rút lui", msgY + 45, screenWidth, Colour::GRAY_LIGHT, GlobalFont::Note);
+        std::wstring hintText = matchOver ? L"Nhấn phím 'Y' để đá trận mới  |  ESC để Rút lui" : L"Nhấn phím 'Y' để đá ván tiếp theo  |  ESC để Rút lui";
+        DrawTextCentered(hdc, hintText, msgY + 52, screenWidth, Colour::GRAY_DARK, GlobalFont::Note);
     }
 }
 

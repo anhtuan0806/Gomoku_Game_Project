@@ -101,11 +101,15 @@ void UpdateSettingScreen(ScreenState& currentState, GameConfig* config, int& sel
     }
 
     if (keyCode == 'W' || keyCode == VK_UP) {
-        selectedOption = (selectedOption - 1 < 0) ? TOTAL_SETTING_ITEMS - 1 : selectedOption - 1;
+        do {
+            selectedOption = (selectedOption - 1 < 0) ? TOTAL_SETTING_ITEMS - 1 : selectedOption - 1;
+        } while ((selectedOption == 1 && !config->isBgmEnabled) || (selectedOption == 3 && !config->isSfxEnabled));
         return;
     }
     else if (keyCode == 'S' || keyCode == VK_DOWN) {
-        selectedOption = (selectedOption + 1 >= TOTAL_SETTING_ITEMS) ? 0 : selectedOption + 1;
+        do {
+            selectedOption = (selectedOption + 1 >= TOTAL_SETTING_ITEMS) ? 0 : selectedOption + 1;
+        } while ((selectedOption == 1 && !config->isBgmEnabled) || (selectedOption == 3 && !config->isSfxEnabled));
         return;
     }
 
@@ -147,12 +151,13 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
     Gdiplus::SolidBrush whitePanel(GdipColour::GLASS_WHITE);
     g.FillRectangle(&whitePanel, panelX, panelY, panelW, panelH);
 
-    Gdiplus::Pen panelPen(GdipColour::PANEL_GREEN_BORDER, 3.0f);
+    // Viền xanh lá kỹ thuật
+    Gdiplus::Pen panelPen(Gdiplus::Color(180, 50, 200, 80), 3.0f);
     g.DrawRectangle(&panelPen, panelX, panelY, panelW, panelH);
 
-    // 3. Tiêu đề Pixel Banner
+    // 3. Tiêu đề Pixel Banner (Dấu ấn riêng: Bánh răng kỹ thuật)
     DrawPixelBanner(g, hdc, L"THIẾT LẬP KỸ THUẬT", screenWidth / 2, panelY + 40,
-        panelW - 20, Colour::WHITE, RGB(50, 220, 80));
+        panelW - 20, Colour::WHITE, RGB(50, 220, 80), "Asset/models/gears.txt");
 
     // 4. Layout 2 cột — Label bên trái, Value/Control bên phải
     int startY  = panelY + 105;
@@ -172,6 +177,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
         COLORREF labelColor = Colour::GRAY_DARKEST;
         COLORREF valColor   = Colour::GRAY_DARK;
         HFONT fontItem = (i == selectedOption) ? GlobalFont::Bold : GlobalFont::Default;
+        bool isDisabled = (i == 1 && !config->isBgmEnabled) || (i == 3 && !config->isSfxEnabled);
 
         // Màu giá trị pulse cam khi đang chọn
         if (i == selectedOption) {
@@ -179,10 +185,15 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
             valColor = RGB(255, max(0, min(255, 255 - rCol)), 0);
         }
 
+        if (isDisabled) {
+            labelColor = RGB(150, 150, 150);
+            valColor   = RGB(150, 150, 150);
+        }
+
         switch (i) {
         case 0: 
             label = L"Nhạc nền Sân:";  
-            value = config->isBgmEnabled ? L"< BẬT (ON) >"  : L"< TẮT (OFF) >"; 
+            value = config->isBgmEnabled ? L" [ BẬT ]"  : L" [ TẮT ]"; 
             break;
         case 1: 
             label = L"Âm lượng Nhạc:";           
@@ -190,7 +201,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
             break;
         case 2: 
             label = L"Tạp âm Thi đấu (SFX):";   
-            value = config->isSfxEnabled ? L"< BẬT (ON) >"  : L"< TẮT (OFF) >"; 
+            value = config->isSfxEnabled ? L" [ BẬT ]"  : L" [ TẮT ]"; 
             break;
         case 3: 
             label = L"Âm lượng SFX:";            
@@ -236,34 +247,43 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
             // --- Dòng nhãn (cột trái) ---
             DrawColTextSetting(hdc, label, col1X, yPos, col1W, labelColor, GlobalFont::Bold, DT_RIGHT);
 
-            // --- Cột phải: thanh trượt hoặc giá trị text ---
+            // Hiển thị text trực quan cho Bật/Tắt
+            if (i == 0 || i == 2) {
+                bool enabled = (i == 0) ? config->isBgmEnabled : config->isSfxEnabled;
+                COLORREF tColor = enabled ? RGB(0, 180, 50) : RGB(220, 50, 50);
+                DrawColTextSetting(hdc, value, col2X, yPos, col2W, tColor, (i == selectedOption ? GlobalFont::Bold : GlobalFont::Default), DT_LEFT);
+            }
+
+            // --- Cột phải: thanh trượt âm lượng (GIỮ NGUYÊN THANH BAR) ---
             if (i == 1 || i == 3) {
                 int vol  = (i == 1) ? config->bgmVolume : config->sfxVolume;
                 int barX = col2X + 4;
-                int barY = yPos + (spacing - 16) / 2;   // căn dọc giữa dòng
-                int barW = 200;
-                int barH = 16;
+                int barY = yPos + (spacing - 16) / 2;
+                int barW = 220;
+                int barH = 14;
 
                 // Nền thanh
                 Gdiplus::SolidBrush bgBrush(GdipColour::BAR_TRACK);
                 g.FillRectangle(&bgBrush, barX, barY, barW, barH);
 
                 // Phần đã kéo
-                Gdiplus::Color fillC = (i == selectedOption) ? GdipColour::BAR_FILL_SELECTED
-                                                              : GdipColour::BAR_FILL_NORMAL;
+                float percent = vol / 100.0f;
+                Gdiplus::Color fillC = isDisabled ? Gdiplus::Color(100, 150, 150, 150) : 
+                                       ((i == selectedOption) ? GdipColour::BAR_FILL_SELECTED : GdipColour::BAR_FILL_NORMAL);
                 Gdiplus::SolidBrush fillBrush(fillC);
-                g.FillRectangle(&fillBrush, barX, barY, vol * 2, barH);
+                g.FillRectangle(&fillBrush, barX, barY, (int)(barW * percent), barH);
 
                 // Nút kéo (thumb)
-                int thumbX = barX + vol * 2 - 5;
-                Gdiplus::SolidBrush thumbBrush(GdipColour::WithAlpha(fillC, 255));
+                int thumbX = barX + (int)(barW * percent) - 5;
+                Gdiplus::Color tC = isDisabled ? Gdiplus::Color(255, 100, 100, 100) : Gdiplus::Color(255, 230, 230, 230);
+                Gdiplus::SolidBrush thumbBrush(tC);
                 g.FillRectangle(&thumbBrush, thumbX, barY - 2, 10, barH + 4);
 
                 // % hiển thị bên phải thanh
                 DrawColTextSetting(hdc, std::to_wstring(vol) + L"%",
-                    barX + barW + 8, yPos, col2W - barW - 8, valColor, fontItem, DT_LEFT);
-            } 
-            else {
+                    barX + barW + 15, yPos, col2W - barW - 15, valColor, fontItem, DT_LEFT);
+            }
+            else if (i == 4 || i == 5) {
                 DrawColTextSetting(hdc, value, col2X, yPos, col2W, valColor, fontItem, DT_LEFT);
             }
         }

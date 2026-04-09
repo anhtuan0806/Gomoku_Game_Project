@@ -146,8 +146,8 @@ Gomoku_Game_Project/
     │   ├── PlayScreen.h / .cpp     -- Màn hình thi đấu chính
     │   ├── LoadGameScreen.h / .cpp -- Tải game từ slot
     │   ├── SettingScreen.h / .cpp  -- Cài đặt âm thanh, ngôn ngữ, chủ đề
-    │   ├── AboutScreen.h / .cpp    -- Về chúng tôi (stub)
-    │   └── GuildScreen.h / .cpp    -- Hướng dẫn (stub)
+    │   ├── AboutScreen.h / .cpp    -- Về chúng tôi 
+    │   └── GuildScreen.h / .cpp    -- Hướng dẫn 
     │
     └── SystemModules/              -- Hệ thống hỗ trợ
         ├── AudioSystem.h / .cpp    -- Phát nhạc nền (MCI) và hiệu ứng âm thanh (PlaySound)

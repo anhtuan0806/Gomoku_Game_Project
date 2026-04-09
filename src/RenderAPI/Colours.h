@@ -103,6 +103,9 @@ namespace GdipColour {
     // ----- Vien Panel mau chu de -----
     const Gdiplus::Color PANEL_GREEN_BORDER     (200, 34,  139, 34 ); // Vien xanh la
     const Gdiplus::Color PANEL_BLUE_BORDER      (180, 0,   150, 255); // Vien xanh lam
+    const Gdiplus::Color PANEL_ORANGE_BORDER    (200, 255, 120, 0  ); // Vien cam vinh quang
+    const Gdiplus::Color PANEL_GOLD_BORDER      (200, 255, 215, 0  ); // Vien vang hoang gia
+    const Gdiplus::Color PANEL_YELLOW_BORDER    (255, 255, 200, 0  ); // Vàng nghệ đậm
 
     // ----- Mau cau thu P1 (Cam / Do-Cam) -----
     const Gdiplus::Color P1_TURN_PULSE          (30,  255, 150, 0  ); // Nhap nhay luot P1

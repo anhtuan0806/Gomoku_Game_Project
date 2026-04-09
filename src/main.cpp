@@ -34,6 +34,7 @@ int g_MenuSelected = 0;
 int g_LoadSelected = 0;
 int g_SettingSelected = 0;
 std::wstring g_LoadStatus = L"";
+int g_GuildPage = 0;
 
 // Tài nguyên đồ họa
 Sprite g_SpriteX, g_SpriteO;
@@ -186,7 +187,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             changed = true;
             break;
         case SCREEN_GUIDE:
-            UpdateGuildScreen(g_CurrentScreen, wParam);
+            UpdateGuildScreen(g_CurrentScreen, g_GuildPage, wParam);
             changed = true;
             break;
 
@@ -237,7 +238,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             RenderMatchConfigScreen(buffer.hdcMem, g_ConfigSelected, &g_PlayState, w, h);
             break;
         case SCREEN_GUIDE:
-            RenderGuildScreen(buffer.hdcMem, w, h);
+            RenderGuildScreen(buffer.hdcMem, w, h, g_GuildPage);
             break;
 
         case SCREEN_ABOUT:

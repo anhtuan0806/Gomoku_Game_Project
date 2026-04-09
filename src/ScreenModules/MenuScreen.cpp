@@ -80,12 +80,12 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
     // Vẽ Sân vận động theo cấu trúc Ma Trận Thuật Toán (Procedural)
     DrawProceduralStadium(g, screenWidth, screenHeight);
 
-    // Lớp kính phản quang mờ để nổi bật chữ
-    Gdiplus::SolidBrush shadowBrush(GdipColour::SHADOW_PANEL);
-    g.FillRectangle(&shadowBrush, 0, 0, screenWidth, screenHeight);
+    // Lớp kính trắng mờ để tạo phong cách Light Mode chuyên nghiệp
+    Gdiplus::SolidBrush lightGlassBrush(Gdiplus::Color(80, 255, 255, 255));
+    g.FillRectangle(&lightGlassBrush, 0, 0, screenWidth, screenHeight);
 
     // 1. Ve cup Vo Dich Pixel Art va Tieu de Game
-    // Ứng dụng Animation tâng Cúp
+    // ... (giữ nguyên logic tâng cúp)
     int cupYOffset = (int)(sin(g_GlobalAnimTime * 2.5f) * 10.0f);
     DrawPixelTrophy(g, screenWidth / 2, screenHeight / 4 - 85 + cupYOffset, 100);
 
@@ -101,11 +101,9 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
 
     int titleYOffset = (int)(sin(g_GlobalAnimTime * 2.0f) * 6.0f);
     
-    // In Ma trận "CARO" (Pixel size = 12)
-    DrawPixelModel(g, titleModel, screenWidth / 2, screenHeight / 4 + 20 + titleYOffset, 12, titlePalette);
+    DrawPixelModel(g, titleModel, screenWidth / 2, screenHeight / 4 + 20 + titleYOffset, 500, titlePalette);
     
-    // Hậu tố "CHAMPIONS LEAGUE" bằng chữ VT323
-    DrawTextCentered(hdc, L"CHAMPIONS LEAGUE", screenHeight / 4 + 75 + titleYOffset, screenWidth, Colour::YELLOW_NORMAL, GlobalFont::Title);
+    DrawTextCentered(hdc, L"CHAMPIONS LEAGUE", screenHeight / 4 + 75 + titleYOffset, screenWidth, Colour::BLUE_DARKEST, GlobalFont::Title);
 
     // 2. In danh sách các mục Menu
     int startY = screenHeight / 2 + 10;
@@ -117,11 +115,10 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
         if (i == selectedOption) {
             std::wstring highlightedText = std::wstring(menuItems[i]);
             
-            // Hiệu ứng màu nhấp nháy chuyển từ Cam nhạt sang Vàng chói cho cảm giác năng động
-            int gCol = (int)(150 + sin(g_GlobalAnimTime * 8.0f) * 105);
-            COLORREF dynColor = RGB(255, max(0, min(255, gCol)), 0);
+            // Hiệu ứng màu nhấp nháy cho mục đang chọn (Xanh lam -> Cyan)
+            int gCol = (int)(180 + sin(g_GlobalAnimTime * 8.0f) * 75);
+            COLORREF dynColor = RGB(0, max(0, min(255, gCol)), 255); 
 
-            // Vẽ Trái bóng 2 bên mục đang chọn (Tăng Size và hạ Offset Y để vừa với VT323)
             int wStrOffset = (int)highlightedText.length() * 18 + 70; 
             DrawPixelFootball(g, screenWidth / 2 - wStrOffset, currentY + 38, 48);
             DrawPixelFootball(g, screenWidth / 2 + wStrOffset, currentY + 38, 48);
@@ -129,10 +126,10 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
             DrawTextCentered(hdc, highlightedText, currentY, screenWidth, dynColor, GlobalFont::Title);
         }
         else {
-            DrawTextCentered(hdc, menuItems[i], currentY + 6, screenWidth, Colour::WHITE, GlobalFont::Bold);
+            DrawTextCentered(hdc, menuItems[i], currentY + 6, screenWidth, Colour::GRAY_DARKEST, GlobalFont::Bold);
         }
     }
 
-    // 3. Vẽ hướng dẫn điều khiển
-    DrawTextCentered(hdc, L"Dùng W/S/UP/DOWN để rê bóng, ENTER để sút (chọn)", screenHeight - 50, screenWidth, Colour::GRAY_LIGHT, GlobalFont::Note);
+    // 3. Vẽ hướng dẫn điều khiển (Màu tối hơn cho nền sáng)
+    DrawTextCentered(hdc, L"Dùng W/S/UP/DOWN để rê bóng, ENTER để sút (chọn)", screenHeight - 50, screenWidth, Colour::GRAY_DARK, GlobalFont::Note);
 }

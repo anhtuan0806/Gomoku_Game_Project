@@ -1,5 +1,6 @@
 #include "UIComponents.h"
 #include "Colours.h"
+#include <map>
 #include <cmath>
 #include <fstream>
 #include <sstream>
@@ -43,10 +44,14 @@ PixelModel LoadPixelModel(const std::string& filePath) {
     return model;
 }
 
-void DrawPixelModel(Gdiplus::Graphics& g, const PixelModel& model, int cx, int cy, int pSize, const std::map<int, Gdiplus::Color>& palette) {
-    if (!model.isLoaded) {
+void DrawPixelModel(Gdiplus::Graphics& g, const PixelModel& model, int cx, int cy, int totalSize, const std::map<int, Gdiplus::Color>& palette) {
+    if (!model.isLoaded || model.width == 0 || model.height == 0) {
         return;
     }
+
+    // Tự động tính toán kích thước mỗi điểm ảnh dựa trên diện tích mục tiêu
+    int pSize = totalSize / max(model.width, model.height);
+    if (pSize < 1) pSize = 1;
 
     int totalW = model.width * pSize;
     int totalH = model.height * pSize;
@@ -61,6 +66,10 @@ void DrawPixelModel(Gdiplus::Graphics& g, const PixelModel& model, int cx, int c
                 if (it != palette.end()) {
                     Gdiplus::SolidBrush b(it->second);
                     g.FillRectangle(&b, startX + c * pSize, startY + r * pSize, pSize, pSize);
+                    
+                    // Vẽ lưới pixel mờ để giữ phong cách Retro
+                    Gdiplus::Pen p(Gdiplus::Color(60, 0, 0, 0), 1.0f);
+                    g.DrawRectangle(&p, startX + c * pSize, startY + r * pSize, pSize, pSize);
                 }
             }
         }
@@ -252,6 +261,40 @@ void DrawPixelTrophy(Gdiplus::Graphics& g, int cx, int cy, int size) {
     }
 }
 
+void DrawPixelClock(Gdiplus::Graphics& g, int cx, int cy, int size, Gdiplus::Color color) {
+    static PixelModel clockModel;
+    if (!clockModel.isLoaded) {
+        clockModel = LoadPixelModel("Asset/models/clock.txt");
+    }
+    
+    if (!clockModel.isLoaded || clockModel.width == 0) return;
+
+    int pSize = size / clockModel.width;
+    int startX = cx - size / 2;
+    int startY = cy - size / 2;
+
+    Gdiplus::SolidBrush darkBrush(Gdiplus::Color(180, 20, 20, 30));
+    Gdiplus::SolidBrush mainBrush(color);
+    Gdiplus::SolidBrush shineBrush(Gdiplus::Color(255, 255, 255, 255));
+
+    for (int r = 0; r < clockModel.height; r++) {
+        for (int c = 0; c < clockModel.width; c++) {
+            int val = clockModel.data[r][c];
+            if (val == 0) continue;
+
+            Gdiplus::SolidBrush* b = &mainBrush;
+            if (val == 1) b = &darkBrush;
+            if (val == 3) b = &shineBrush;
+
+            g.FillRectangle(b, startX + c * pSize, startY + r * pSize, pSize, pSize);
+            
+            // Vẽ lưới pixel nhẹ để giữ chất Retro
+            Gdiplus::Pen p(Gdiplus::Color(60, 0, 0, 0), 1.0f);
+            g.DrawRectangle(&p, startX + c * pSize, startY + r * pSize, pSize, pSize);
+        }
+    }
+}
+
 // =============================================================
 // DrawPixelBanner: Tiêu đề procedural thay chữ thuần
 // Nền gradient tối + viền sáng pulse + 2 icon bóng 2 bên + chữ GDI
@@ -259,12 +302,18 @@ void DrawPixelTrophy(Gdiplus::Graphics& g, int cx, int cy, int size) {
 void DrawPixelBanner(Gdiplus::Graphics& g, HDC hdc, const std::wstring& text,
     int cx, int cy, int panelW, COLORREF textColor, COLORREF glowColor)
 {
+    DrawPixelBanner(g, hdc, text, cx, cy, panelW, textColor, glowColor, "");
+}
+
+void DrawPixelBanner(Gdiplus::Graphics& g, HDC hdc, const std::wstring& text,
+    int cx, int cy, int panelW, COLORREF textColor, COLORREF glowColor, const std::string& iconModelPath)
+{
     int bannerW = panelW - 24;
     int bannerH = 50;
     int bannerX = cx - bannerW / 2;
     int bannerY = cy - bannerH / 2;
 
-    // 1. Nền gradient tối (3 dải)
+    // 1. Nền gradient tối
     Gdiplus::LinearGradientBrush gradBrush(
         Gdiplus::Point(bannerX, bannerY),
         Gdiplus::Point(bannerX + bannerW, bannerY),
@@ -272,31 +321,49 @@ void DrawPixelBanner(Gdiplus::Graphics& g, HDC hdc, const std::wstring& text,
         Gdiplus::Color(230, 30, 60, 90));
     g.FillRectangle(&gradBrush, bannerX, bannerY, bannerW, bannerH);
 
-    // 2. Đường viền sáng trên/dưới pulse
+    // 2. Đường viền sáng pulse
     float pulse = 0.6f + sin(g_GlobalAnimTime * 6.0f) * 0.4f;
     BYTE lineA = (BYTE)(180 + pulse * 75);
     BYTE gr = GetRValue(glowColor), gg = GetGValue(glowColor), gb = GetBValue(glowColor);
     Gdiplus::Pen topLine(Gdiplus::Color(lineA, gr, gg, gb), 2.5f);
     Gdiplus::Pen botLine(Gdiplus::Color((BYTE)(lineA * 0.6f), gr, gg, gb), 1.5f);
-    g.DrawLine(&topLine, bannerX, bannerY,     bannerX + bannerW, bannerY);
+    g.DrawLine(&topLine, bannerX, bannerY, bannerX + bannerW, bannerY);
     g.DrawLine(&botLine, bannerX, bannerY + bannerH, bannerX + bannerW, bannerY + bannerH);
 
-    // 3. Nhấn sáng 2 góc (corner glow)
     Gdiplus::SolidBrush cornerBrush(Gdiplus::Color(80, gr, gg, gb));
-    g.FillRectangle(&cornerBrush, bannerX,                  bannerY, 4, bannerH);
+    g.FillRectangle(&cornerBrush, bannerX, bannerY, 4, bannerH);
     g.FillRectangle(&cornerBrush, bannerX + bannerW - 4, bannerY, 4, bannerH);
 
-    // 4. Icon bóng pixel nhỏ 2 bên (decorative)
-    int iconY = cy - 10;
-    int iconSize = 20;
-    DrawPixelFootball(g, bannerX + 30, iconY, iconSize);
-    DrawPixelFootball(g, bannerX + bannerW - 30, iconY, iconSize);
+    // 3. Icon trang trí (Football mặc định hoặc Tùy chỉnh)
+    int iconY = cy;
+    int iconSize = 32;
+    
+    if (iconModelPath.empty()) {
+        DrawPixelFootball(g, bannerX + 25, iconY, iconSize);
+        DrawPixelFootball(g, bannerX + bannerW - 25, iconY, iconSize);
+    }
+    else {
+        static std::map<std::string, PixelModel> bannerModelCache;
+        if (bannerModelCache.find(iconModelPath) == bannerModelCache.end()) {
+            bannerModelCache[iconModelPath] = LoadPixelModel(iconModelPath);
+        }
+        
+        // Khởi tạo Palette động dựa trên màu nhấn của màn hình để vẽ icon chuẩn xác
+        std::map<int, Gdiplus::Color> palette;
+        palette[1] = Gdiplus::Color(200, 10, 20, 30);      // Viền tối mờ
+        palette[2] = Gdiplus::Color(255, gr, gg, gb);      // Màu chủ đạo (Accent)
+        palette[3] = Gdiplus::Color(255, 255, 255, 255);  // Màu trắng (Shine)
+        palette[4] = Gdiplus::Color(160, gr, gg, gb);      // Màu phụ (Sub-accent)
 
-    // 5. Chữ tiêu đề - GDI (hỗ trợ Unicode tiếng Việt)
+        DrawPixelModel(g, bannerModelCache[iconModelPath], bannerX + 25, iconY, iconSize, palette);
+        DrawPixelModel(g, bannerModelCache[iconModelPath], bannerX + bannerW - 25, iconY, iconSize, palette);
+    }
+
+    // 4. Chữ tiêu đề (Căn giữa và giới hạn vùng bao quanh)
     SetTextColor(hdc, textColor);
     HFONT oldF = (HFONT)SelectObject(hdc, GlobalFont::Title);
     SetBkMode(hdc, TRANSPARENT);
-    RECT r = { bannerX + 50, bannerY, bannerX + bannerW - 50, bannerY + bannerH };
+    RECT r = { bannerX + 45, bannerY, bannerX + bannerW - 45, bannerY + bannerH };
     DrawTextW(hdc, text.c_str(), -1, &r, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
     SelectObject(hdc, oldF);
 }
