@@ -173,6 +173,7 @@
     <ClCompile Include="SystemModules\TimeSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\README.md" />
     <None Include="Asset\config.ini" />
   </ItemGroup>
   <ItemGroup>

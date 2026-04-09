@@ -20,6 +20,8 @@
 #include "ScreenModules/SettingScreen.h"
 #include "ScreenModules/LoadGameScreen.h"
 #include "ScreenModules/MatchConfigScreen.h"
+#include "ScreenModules/GuildScreen.h"
+#include "ScreenModules/AboutScreen.h"
 
 // --- Trạng thái toàn cục ---
 ScreenState g_CurrentScreen = SCREEN_MENU;
@@ -184,17 +186,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             changed = true;
             break;
         case SCREEN_GUIDE:
-            if (wParam == VK_ESCAPE) {
-                g_CurrentScreen = SCREEN_MENU;
-                changed = true;
-            }
+            UpdateGuildScreen(g_CurrentScreen, wParam);
+            changed = true;
             break;
 
         case SCREEN_ABOUT:
-            if (wParam == VK_ESCAPE) {
-                g_CurrentScreen = SCREEN_MENU;
-                changed = true;
-            }
+            UpdateAboutScreen(g_CurrentScreen, wParam);
+            changed = true;
             break;
         case SCREEN_EXIT:
             PostQuitMessage(0);
@@ -238,24 +236,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         case SCREEN_MATCH_CONFIG:
             RenderMatchConfigScreen(buffer.hdcMem, g_ConfigSelected, &g_PlayState, w, h);
             break;
-        case SCREEN_GUIDE: {
-            // Vẽ nền xám nhạt giống Menu
-            RECT rect = { 0, 0, w, h };
-            HBRUSH hBg = CreateSolidBrush(Colour::GRAY_LIGHTEST); // Sử dụng bảng màu Colour
-
-            // Dòng thông báo thoát
-            DrawTextCentered(buffer.hdcMem, L"Nhấn ESC để quay lại Menu", h - 100, w, Colour::ORANGE_NORMAL, GlobalFont::Bold);
+        case SCREEN_GUIDE:
+            RenderGuildScreen(buffer.hdcMem, w, h);
             break;
-        }
 
-        case SCREEN_ABOUT: {
-            RECT rect = { 0, 0, w, h };
-            HBRUSH hBg = CreateSolidBrush(Colour::GRAY_LIGHTEST);
-
-            // Dòng thông báo thoát
-            DrawTextCentered(buffer.hdcMem, L"Nhấn ESC để quay lại Menu", h - 100, w, Colour::ORANGE_NORMAL, GlobalFont::Bold);
+        case SCREEN_ABOUT:
+            RenderAboutScreen(buffer.hdcMem, w, h);
             break;
-        }
         }
 
         // Chép từ Buffer ra màn hình chính
