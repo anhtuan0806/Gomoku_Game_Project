@@ -10,6 +10,7 @@
 #include "SystemModules/AudioSystem.h"
 #include "SystemModules/TimeSystem.h"
 #include "RenderAPI/Colours.h"
+#include "RenderAPI/UIScaler.h"
 #include "RenderAPI/Renderer.h"
 #include "RenderAPI/UIComponents.h"
 #include "GameLogic/GameEngine.h"
@@ -37,7 +38,6 @@ std::wstring g_LoadStatus = L"";
 int g_GuildPage = 0;
 
 // Tài nguyên đồ họa
-Sprite g_SpriteX, g_SpriteO;
 ULONG_PTR g_GdiplusToken;
 
 // --- Khai báo hàm Win32 ---
@@ -55,6 +55,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     AddFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Black.ttf", FR_PRIVATE, 0);
     AddFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Italic.ttf", FR_PRIVATE, 0);
 
+    // Thiết lập tỷ lệ màn hình ngay từ ban đầu
+    UIScaler::Update(850, 750);
     GlobalFont::Initialize();
 
     // 2. Tải Cấu hình & Nhạc nền
@@ -87,9 +89,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
-
-    g_SpriteX = LoadPNG(L"Asset/images/x.png");
-    g_SpriteO = LoadPNG(L"Asset/images/o.png");
 
     MSG msg = {};
     auto lastTime = std::chrono::high_resolution_clock::now();
@@ -125,8 +124,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     // 7. Giải phóng tài nguyên
-    FreeSprite(g_SpriteX);
-    FreeSprite(g_SpriteO);
     GlobalFont::Cleanup();
     
     // Gỡ font khỏi bộ nhớ
@@ -142,9 +139,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
-    case WM_SIZE:
+    case WM_SIZE: {
+        int w = LOWORD(lParam);
+        int h = HIWORD(lParam);
+        UIScaler::Update(w, h);
+        GlobalFont::RebuildFonts();
         InvalidateRect(hWnd, NULL, FALSE);
         return DefWindowProc(hWnd, message, wParam, lParam);
+    }
 
     case WM_KEYDOWN: {
         bool changed = false;
@@ -210,11 +212,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
 
+        // Nếu cửa sổ đang thu nhỏ (Iconic), ta không cần vẽ để tránh lỗi tài nguyên 0x0
+        if (IsIconic(hWnd)) {
+            EndPaint(hWnd, &ps);
+            break;
+        }
+
         // Lấy kích thước thực tế vùng vẽ
         RECT clientRect;
         GetClientRect(hWnd, &clientRect);
         int w = clientRect.right - clientRect.left;
         int h = clientRect.bottom - clientRect.top;
+
+        // Bảo vệ: Nếu kích thước bằng 0 (vừa thu nhỏ nhanh hoặc lỗi hệ thống), bỏ qua Render
+        if (w <= 0 || h <= 0) {
+            EndPaint(hWnd, &ps);
+            break;
+        }
 
         // Cơ chế Double Buffering chống chớp màn hình
         DoubleBuffer buffer;
@@ -226,7 +240,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             RenderMenuScreen(buffer.hdcMem, g_MenuSelected, w, h);
             break;
         case SCREEN_PLAY:
-            RenderPlayScreen(buffer.hdcMem, &g_PlayState, w, h, g_SpriteX, g_SpriteO, &g_Config);
+            RenderPlayScreen(buffer.hdcMem, &g_PlayState, w, h, &g_Config);
             break;
         case SCREEN_SETTING:
             RenderSettingScreen(buffer.hdcMem, &g_Config, g_SettingSelected, w, h);

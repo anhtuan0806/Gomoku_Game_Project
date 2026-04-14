@@ -1,5 +1,6 @@
 #include "LoadGameScreen.h"
 #include "../RenderAPI/UIComponents.h"
+#include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
 #include "../SystemModules/SaveLoadSystem.h" 
 #include "../SystemModules/AudioSystem.h"
@@ -71,35 +72,35 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
     DrawProceduralStadium(g, screenWidth, screenHeight);
 
     // 2. Bảng Kính (White Glassmorphism) - rộng và cao hơn để chứa đủ nội dung
-    int panelW = 640;
-    int panelH = 620;
+    int panelW = UIScaler::SX(640);
+    int panelH = UIScaler::SY(620);
     int panelX = (screenWidth - panelW) / 2;
     int panelY = (screenHeight - panelH) / 2;
 
-    Gdiplus::SolidBrush whitePanel(GdipColour::GLASS_WHITE);
+    Gdiplus::SolidBrush whitePanel(Theme::GlassWhite);
     g.FillRectangle(&whitePanel, panelX, panelY, panelW, panelH);
 
-    Gdiplus::Pen panelPen(GdipColour::PANEL_BLUE_BORDER, 3.0f);
+    Gdiplus::Pen panelPen(Theme::PanelBlueBorder, 3.0f);
     g.DrawRectangle(&panelPen, panelX, panelY, panelW, panelH);
 
     // 3. Tiêu đề Pixel Banner (Dấu ấn riêng: Băng ghi hình)
     int bannerCX = screenWidth / 2;
-    int bannerCY = panelY + 40;
-    DrawPixelBanner(g, hdc, L"LỊCH SỬ THI ĐẤU", bannerCX, bannerCY, panelW - 20,
-        Colour::WHITE, RGB(0, 180, 255), "Asset/models/cassette.txt");
+    int bannerCY = panelY + UIScaler::SY(40);
+    DrawPixelBanner(g, hdc, L"LỊCH SỬ THI ĐẤU", bannerCX, bannerCY, panelW - UIScaler::SX(20),
+        Palette::White, RGB(0, 180, 255), "Asset/models/cassette.txt");
 
     // 4. Vẽ các Slot Save Game
-    int slotW    = 500;                           // đủ rộng cho text dài
-    int slotH    = 52;                            // đủ cao để chữ không bị cắt
+    int slotW    = UIScaler::SX(500);                           // đủ rộng cho text dài
+    int slotH    = UIScaler::SY(52);                            // đủ cao để chữ không bị cắt
     int slotX    = panelX + (panelW - slotW) / 2;
-    int startY   = panelY + 115;
-    int spacing  = slotH + 10;                    // khoảng cách giữa các slot
+    int startY   = panelY + UIScaler::SY(115);
+    int spacing  = slotH + UIScaler::SY(10);                    // khoảng cách giữa các slot
 
     SetBkMode(hdc, TRANSPARENT);
 
     for (int i = 0; i < TOTAL_LOAD_ITEMS; i++) {
         std::wstring itemText;
-        COLORREF color = Colour::GRAY_DARKEST;
+        COLORREF color = Palette::GrayDarkest;
         HFONT font = GlobalFont::Bold;
         int yPos = startY + i * spacing;
 
@@ -112,9 +113,9 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
                 font = GlobalFont::Title;
             } 
             else {
-                color = Colour::BLUE_DARKEST;
+                color = Palette::BlueDarkest;
             }
-            RECT btnRect = { panelX, yPos + 6, panelX + panelW, yPos + slotH };
+            RECT btnRect = { panelX, yPos + UIScaler::SY(6), panelX + panelW, yPos + slotH };
             SetTextColor(hdc, color);
             HFONT oldF = (HFONT)SelectObject(hdc, font);
             DrawTextW(hdc, itemText.c_str(), -1, &btnRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
@@ -129,26 +130,26 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
             // Nền hộp slot
             if (i == selectedOption) {
                 int aCol = (int)(160 + sin(g_GlobalAnimTime * 10.0f) * 70);
-                Gdiplus::SolidBrush slotBrush(GdipColour::WithAlpha(GdipColour::SLOT_SELECTED, (BYTE)aCol));
+                Gdiplus::SolidBrush slotBrush(Theme::SlotSelected.WithAlpha((BYTE)aCol));
                 g.FillRectangle(&slotBrush, slotX, yPos, slotW, slotH);
 
                 // Viền sáng khi chọn
-                Gdiplus::Pen selPen(GdipColour::PANEL_BLUE_BORDER, 2.0f);
+                Gdiplus::Pen selPen(Theme::PanelBlueBorder, 2.0f);
                 g.DrawRectangle(&selPen, slotX, yPos, slotW, slotH);
 
-                color = Colour::WHITE;
+                color = Palette::White;
                 itemText = L"▶  " + itemText;
             } 
             else {
-                Gdiplus::SolidBrush slotBrush(GdipColour::SLOT_NORMAL);
+                Gdiplus::SolidBrush slotBrush(Theme::SlotNormal);
                 g.FillRectangle(&slotBrush, slotX, yPos, slotW, slotH);
-                color = exists ? Colour::GRAY_DARKEST : Colour::GRAY_NORMAL;
+                color = exists ? Palette::GrayDarkest : Palette::GrayNormal;
             }
 
             // Vẽ chữ trong slot — RECT khớp đúng kích thước slot
             SetTextColor(hdc, color);
             HFONT oldF = (HFONT)SelectObject(hdc, font);
-            RECT textRect = { slotX + 16, yPos, slotX + slotW - 8, yPos + slotH };
+            RECT textRect = { slotX + UIScaler::SX(16), yPos, slotX + slotW - UIScaler::SX(8), yPos + slotH };
             DrawTextW(hdc, itemText.c_str(), -1, &textRect,
                 DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
             SelectObject(hdc, oldF);
@@ -157,16 +158,16 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
 
     // 5. Thông báo lỗi / trạng thái (đủ vùng hiển thị)
     if (!statusMessage.empty()) {
-        int errY = startY + TOTAL_LOAD_ITEMS * spacing + 8;
+        int errY = startY + TOTAL_LOAD_ITEMS * spacing + UIScaler::SY(8);
         // Nền đỏ nhạt
         Gdiplus::SolidBrush errBg(Gdiplus::Color(160, 200, 20, 20));
-        g.FillRectangle(&errBg, panelX + 10, errY, panelW - 20, 38);
-        DrawTextCentered(hdc, statusMessage, errY + 8, screenWidth, Colour::WHITE, GlobalFont::Bold);
+        g.FillRectangle(&errBg, panelX + UIScaler::SX(10), errY, panelW - UIScaler::SX(20), UIScaler::SY(38));
+        DrawTextCentered(hdc, statusMessage, errY + UIScaler::SY(8), screenWidth, Palette::White, GlobalFont::Bold);
     }
 
     // 6. Gợi ý phím
     DrawTextCentered(hdc, L"W/S: Chọn Hồ Sơ   |   ENTER: Chạy băng   |   ESC: Quay lại",
-        screenHeight - 50, screenWidth, Colour::WHITE, GlobalFont::Note);
+        screenHeight - UIScaler::SY(50), screenWidth, Palette::White, GlobalFont::Note);
 }
 
 

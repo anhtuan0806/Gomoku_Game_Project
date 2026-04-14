@@ -9,6 +9,16 @@
 // Thời gian cho Animation toàn cục
 extern float g_GlobalAnimTime;
 
+// Struct quản lý trạng thái diễn hoạt (Mới - V5)
+struct PlayerState {
+    int avatarType = 0;
+    std::string currentAction = "idle";
+    int currentFrame = 0;
+    DWORD lastFrameTime = 0;
+    int animationSpeed = 100; // ms per frame
+    bool flipH = false;
+};
+
 // Cấu trúc chứa dữ liệu Ma Trận Pixel (Modular)
 struct PixelModel {
     int width = 0;
@@ -22,17 +32,24 @@ PixelModel LoadPixelModel(const std::string& filePath);
 // Vẽ mô hình Pixel với Palette động
 void DrawPixelModel(Gdiplus::Graphics& g, const PixelModel& model, int cx, int cy, int totalSize, const std::map<int, Gdiplus::Color>& palette);
 
-// Vẽ một Sprite cụ thể lên màn hình có resize động
-void DrawSprite(Gdiplus::Graphics& g, const Sprite& sprite, int x, int y, int width, int height);
-
 // Vẽ văn bản căn giữa
 void DrawTextCentered(HDC hdc, const std::wstring& text, int y, int screenWidth, COLORREF color, HFONT hFont = nullptr);
 
 // Vẽ nền sân vận động bằng giải thuật thay cho ảnh PNG
-void DrawProceduralStadium(Gdiplus::Graphics& g, int screenWidth, int screenHeight);
+// showFlashes: chỉ bật true ở MenuScreen để hiệu ứng khán đài nhấp nháy
+void DrawProceduralStadium(Gdiplus::Graphics& g, int screenWidth, int screenHeight, bool showFlashes = false);
 
-// Vẽ Avatar cầu thủ theo kiểu Pixel Art 8x8 từ ma trận số
+// Vẽ Avatar cầu thủ theo kiểu Pixel Art 8x8 từ ma trận số (hỗ trợ 9 avatar: 0-8)
 void DrawPixelAvatar(Gdiplus::Graphics& g, int x, int y, int size, int avatarType);
+
+// Vẽ animation cầu thủ pixel art multi-frame từ các file .txt
+// animState: 0=IDLE, 1=RUNNING(đang lượt), 2=WIN(thắng), 3=SAD(thua)
+// flipH: lật ngang — dùng cho P2 nhìn vào giữa sân
+void DrawPlayerAnimation(Gdiplus::Graphics& g, int cx, int cy, int size,
+                         int avatarType, int animState, bool flipH = false);
+
+// Vẽ hoạt họa theo thư mục Hành động mới (V5)
+void DrawPixelAction(Gdiplus::Graphics& g, int x, int y, int size, PlayerState& state);
 
 // Vẽ hoạt họa Pixel chuyên dụng cho Khán Đài
 void DrawPixelFootball(Gdiplus::Graphics& g, int cx, int cy, int size);
@@ -44,14 +61,10 @@ void DrawPixelClock(Gdiplus::Graphics& g, int cx, int cy, int size, Gdiplus::Col
 void DrawPixelBanner(Gdiplus::Graphics& g, HDC hdc, const std::wstring& text, int cx, int cy, int panelW, COLORREF textColor, COLORREF glowColor);
 void DrawPixelBanner(Gdiplus::Graphics& g, HDC hdc, const std::wstring& text, int cx, int cy, int panelW, COLORREF textColor, COLORREF glowColor, const std::string& iconModelPath);
 
-// --- HÀM TỔNG HỢP VẼ GAME ---
 // Hàm này sẽ vẽ lưới, các quân cờ hiện có, và ô viền highlight đang chọn
-void DrawGameBoard(HDC hdc, const PlayState* state, int cellSize, int offsetX, int offsetY, const Sprite& spriteX, const Sprite& spriteO);
+void DrawGameBoard(HDC hdc, const PlayState* state, int cellSize, int offsetX, int offsetY);
 
 // Cài đặt màu sắc cho văn bản và chế độ nền trong suốt
-// Scale ảnh trước và lưu vào mảng
-void PreScaleSprite(const Sprite& orig, Sprite& scaled, int width, int height);
-
 void SetTextColour(HDC hdc, COLORREF colour);
 
 #endif // _UI_COMPONENTS_H_

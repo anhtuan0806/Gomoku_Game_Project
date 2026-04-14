@@ -3,195 +3,244 @@
 #include <windows.h>
 #include <gdiplus.h>
 
-namespace Colour {
-    constexpr COLORREF GRAY_LIGHTEST = RGB(245, 245, 245);
-    constexpr COLORREF GRAY_LIGHT = RGB(224, 224, 224);
-    constexpr COLORREF GRAY_NORMAL = RGB(158, 158, 158);
-    constexpr COLORREF GRAY_DARK = RGB(97, 97, 97);
-    constexpr COLORREF GRAY_DARKEST = RGB(33, 33, 33);
+// =============================================================
+// SmartColor: Tự động tương thích với Win32 COLORREF và Gdiplus::Color
+// =============================================================
+struct SmartColor {
+    BYTE a, r, g, b;
 
-    constexpr COLORREF RED_LIGHTEST = RGB(255, 205, 210);
-    constexpr COLORREF RED_LIGHT = RGB(239, 154, 154);
-    constexpr COLORREF RED_NORMAL = RGB(244, 67, 54);
-    constexpr COLORREF RED_DARK = RGB(211, 47, 47);
-    constexpr COLORREF RED_DARKEST = RGB(183, 28, 28);
+    constexpr SmartColor(BYTE a, BYTE r, BYTE g, BYTE b) : a(a), r(r), g(g), b(b) {}
+    constexpr SmartColor(BYTE r, BYTE g, BYTE b) : a(255), r(r), g(g), b(b) {}
 
-    constexpr COLORREF PINK_LIGHTEST = RGB(248, 187, 208);
-    constexpr COLORREF PINK_LIGHT = RGB(240, 98, 146);
-    constexpr COLORREF PINK_NORMAL = RGB(233, 30, 99);
-    constexpr COLORREF PINK_DARK = RGB(194, 24, 91);
-    constexpr COLORREF PINK_DARKEST = RGB(136, 20, 76);
+    // Implicit cast to Win32 COLORREF (Bo qua Alpha)
+    constexpr operator COLORREF() const {
+        return RGB(r, g, b);
+    }
 
-    constexpr COLORREF PURPLE_LIGHTEST = RGB(225, 190, 231);
-    constexpr COLORREF PURPLE_LIGHT = RGB(186, 104, 200);
-    constexpr COLORREF PURPLE_NORMAL = RGB(156, 39, 176);
-    constexpr COLORREF PURPLE_DARK = RGB(123, 31, 162);
-    constexpr COLORREF PURPLE_DARKEST = RGB(74, 20, 140);
+    // Implicit cast to Gdiplus::Color
+    inline operator Gdiplus::Color() const {
+        return Gdiplus::Color(a, r, g, b);
+    }
 
-    constexpr COLORREF BLUE_LIGHTEST = RGB(187, 222, 251);
-    constexpr COLORREF BLUE_LIGHT = RGB(144, 202, 249);
-    constexpr COLORREF BLUE_NORMAL = RGB(33, 150, 243);
-    constexpr COLORREF BLUE_DARK = RGB(25, 118, 210);
-    constexpr COLORREF BLUE_DARKEST = RGB(13, 71, 161);
+    // Explicit alpha modifier (Tao mau moi voi do giam alpha)
+    constexpr SmartColor WithAlpha(BYTE newA) const {
+        return SmartColor(newA, r, g, b);
+    }
+};
 
-    constexpr COLORREF CYAN_LIGHTEST = RGB(178, 235, 242);
-    constexpr COLORREF CYAN_LIGHT = RGB(77, 208, 225);
-    constexpr COLORREF CYAN_NORMAL = RGB(0, 188, 212);
-    constexpr COLORREF CYAN_DARK = RGB(0, 151, 167);
-    constexpr COLORREF CYAN_DARKEST = RGB(0, 96, 100);
+// =============================================================
+// Palette: Bang mau nguyen thuy
+// =============================================================
+namespace Palette {
+    constexpr SmartColor Transparent(0, 0, 0, 0);
+    constexpr SmartColor Black(0, 0, 0);
+    constexpr SmartColor White(255, 255, 255);
+    constexpr SmartColor WhiteSoft(240, 240, 240);
 
-    constexpr COLORREF GREEN_LIGHTEST = RGB(200, 230, 201);
-    constexpr COLORREF GREEN_LIGHT = RGB(165, 214, 167);
-    constexpr COLORREF GREEN_NORMAL = RGB(76, 175, 80);
-    constexpr COLORREF GREEN_DARK = RGB(56, 142, 60);
-    constexpr COLORREF GREEN_DARKEST = RGB(27, 94, 32);
+    constexpr SmartColor GrayLightest(245, 245, 245);
+    constexpr SmartColor GrayLight(224, 224, 224);
+    constexpr SmartColor GrayNormal(158, 158, 158);
+    constexpr SmartColor GrayDark(97, 97, 97);
+    constexpr SmartColor GrayDarkest(33, 33, 33);
 
-    constexpr COLORREF YELLOW_LIGHTEST = RGB(255, 249, 196);
-    constexpr COLORREF YELLOW_LIGHT = RGB(255, 241, 118);
-    constexpr COLORREF YELLOW_NORMAL = RGB(255, 235, 59);
-    constexpr COLORREF YELLOW_DARK = RGB(251, 192, 45);
-    constexpr COLORREF YELLOW_DARKEST = RGB(245, 127, 23);
+    constexpr SmartColor RedLightest(255, 205, 210);
+    constexpr SmartColor RedLight(239, 154, 154);
+    constexpr SmartColor RedNormal(244, 67, 54);
+    constexpr SmartColor RedDark(211, 47, 47);
+    constexpr SmartColor RedDarkest(183, 28, 28);
 
-    constexpr COLORREF ORANGE_LIGHTEST = RGB(255, 224, 178);
-    constexpr COLORREF ORANGE_LIGHT = RGB(255, 183, 77);
-    constexpr COLORREF ORANGE_NORMAL = RGB(255, 152, 0);
-    constexpr COLORREF ORANGE_DARK = RGB(245, 124, 0);
-    constexpr COLORREF ORANGE_DARKEST = RGB(230, 81, 0);
+    constexpr SmartColor PinkLightest(248, 187, 208);
+    constexpr SmartColor PinkLight(240, 98, 146);
+    constexpr SmartColor PinkNormal(233, 30, 99);
+    constexpr SmartColor PinkDark(194, 24, 91);
+    constexpr SmartColor PinkDarkest(136, 20, 76);
 
-    constexpr COLORREF BROWN_LIGHTEST = RGB(215, 204, 200);
-    constexpr COLORREF BROWN_LIGHT = RGB(161, 136, 126);
-    constexpr COLORREF BROWN_NORMAL = RGB(121, 85, 72);
-    constexpr COLORREF BROWN_DARK = RGB(93, 64, 55);
-    constexpr COLORREF BROWN_DARKEST = RGB(62, 39, 35);
+    constexpr SmartColor PurpleLightest(225, 190, 231);
+    constexpr SmartColor PurpleLight(186, 104, 200);
+    constexpr SmartColor PurpleNormal(156, 39, 176);
+    constexpr SmartColor PurpleDark(123, 31, 162);
+    constexpr SmartColor PurpleDarkest(74, 20, 140);
 
-    constexpr COLORREF BLACK = RGB(0, 0, 0);
-    constexpr COLORREF WHITE = RGB(255, 255, 255);
+    constexpr SmartColor BlueLightest(187, 222, 251);
+    constexpr SmartColor BlueLight(144, 202, 249);
+    constexpr SmartColor BlueNormal(33, 150, 243);
+    constexpr SmartColor BlueDark(25, 118, 210);
+    constexpr SmartColor BlueDarkest(13, 71, 161);
+
+    constexpr SmartColor CyanLightest(178, 235, 242);
+    constexpr SmartColor CyanLight(77, 208, 225);
+    constexpr SmartColor CyanNormal(0, 188, 212);
+    constexpr SmartColor CyanDark(0, 151, 167);
+    constexpr SmartColor CyanDarkest(0, 96, 100);
+
+    constexpr SmartColor GreenLightest(200, 230, 201);
+    constexpr SmartColor GreenLight(165, 214, 167);
+    constexpr SmartColor GreenNormal(76, 175, 80);
+    constexpr SmartColor GreenDark(56, 142, 60);
+    constexpr SmartColor GreenDarkest(27, 94, 32);
+
+    constexpr SmartColor YellowLightest(255, 249, 196);
+    constexpr SmartColor YellowLight(255, 241, 118);
+    constexpr SmartColor YellowNormal(255, 235, 59);
+    constexpr SmartColor YellowDark(251, 192, 45);
+    constexpr SmartColor YellowDarkest(245, 127, 23);
+
+    constexpr SmartColor OrangeLightest(255, 224, 178);
+    constexpr SmartColor OrangeLight(255, 183, 77);
+    constexpr SmartColor OrangeNormal(255, 152, 0);
+    constexpr SmartColor OrangeDark(245, 124, 0);
+    constexpr SmartColor OrangeDarkest(230, 81, 0);
+
+    constexpr SmartColor BrownLightest(215, 204, 200);
+    constexpr SmartColor BrownLight(161, 136, 126);
+    constexpr SmartColor BrownNormal(121, 85, 72);
+    constexpr SmartColor BrownDark(93, 64, 55);
+    constexpr SmartColor BrownDarkest(62, 39, 35);
+    
+    constexpr SmartColor DebugMagenta(255, 0, 255);
+
+    // --- Dải màu Da (Skin Gradient) ---
+    constexpr SmartColor SkinLight(255, 224, 189);
+    constexpr SmartColor SkinMid(255, 205, 148);
+    constexpr SmartColor SkinShadow(190, 145, 105);
+
+    // --- Dải màu Tóc/Lông mày (Hair Gradient) ---
+    constexpr SmartColor HairDarkest(35, 25, 20);
+    constexpr SmartColor HairNormal(75, 55, 45);
+    constexpr SmartColor HairHighlight(120, 100, 85);
 }
 
 // =============================================================
-// GdipColour: Mau Gdiplus duoc dat ten san (A, R, G, B)
-// Dung thay cho Gdiplus::Color(a, r, g, b) viet tay trong code
+// Theme: Cac mau the hien y nghia (Semantic colors), bao gom Alpha
 // =============================================================
-namespace GdipColour {
-
-    // ----- Mau trong suot -----
-    const Gdiplus::Color _TRANSPARENT            (0,   0,   0,   0  );
-
-    // ----- Den / Trang -----
-    const Gdiplus::Color BLACK                  (255, 0,   0,   0  );
-    const Gdiplus::Color WHITE                  (255, 255, 255, 255);
-    const Gdiplus::Color WHITE_SOFT             (255, 240, 240, 240);
-
+namespace Theme {
     // ----- Den mo (Overlay / Shadow) -----
-    const Gdiplus::Color SHADOW_LIGHT           (30,  0,   0,   0  ); // Vien pixel nhat
-    const Gdiplus::Color SHADOW_MED             (100, 0,   0,   0  ); // Bong avatar
-    const Gdiplus::Color SHADOW_PANEL           (150, 0,   0,   0  ); // Menu overlay
-    const Gdiplus::Color SHADOW_HEAVY           (180, 0,   0,   0  ); // Glassmorphism panel
-    const Gdiplus::Color SHADOW_OVERLAY         (200, 0,   0,   0  ); // Phu man hinh
+    constexpr SmartColor ShadowLight    = Palette::Black.WithAlpha(30);  // Vien pixel nhat
+    constexpr SmartColor ShadowMed      = Palette::Black.WithAlpha(100); // Bong avatar
+    constexpr SmartColor ShadowPanel    = Palette::Black.WithAlpha(150); // Menu overlay
+    constexpr SmartColor ShadowHeavy    = Palette::Black.WithAlpha(180); // Glassmorphism panel
+    constexpr SmartColor ShadowOverlay  = Palette::Black.WithAlpha(200); // Phu man hinh
 
     // ----- Nen Panel kinh (Glassmorphism) -----
-    const Gdiplus::Color GLASS_WHITE            (220, 255, 255, 255); // Panel trang mo
-    const Gdiplus::Color GLASS_DARK             (200, 15,  20,  30 ); // Panel toi (pause)
-    const Gdiplus::Color GLASS_GLEAM            (150, 255, 255, 255); // Vien trang mo
+    constexpr SmartColor GlassWhite     = Palette::White.WithAlpha(220); // Panel trang mo
+    constexpr SmartColor GlassDark      = SmartColor(200, 15, 20, 30);   // Panel toi (pause)
+    constexpr SmartColor GlassGleam     = Palette::White.WithAlpha(150); // Vien trang mo
 
     // ----- Mau San co (Pitch) -----
-    const Gdiplus::Color PITCH_DARK             (255, 23,  90,  34 ); // Co toi
-    const Gdiplus::Color PITCH_LIGHT            (255, 40,  145, 40 ); // Co sang
-    const Gdiplus::Color PITCH_LINE             (150, 255, 255, 255); // Vach voi
-    const Gdiplus::Color PITCH_DOT              (150, 255, 255, 255); // Cham giua san
+    constexpr SmartColor PitchDark      = SmartColor(255, 23, 90, 34);   // Co toi
+    constexpr SmartColor PitchLight     = SmartColor(255, 40, 145, 40);  // Co sang
+    constexpr SmartColor PitchLine      = Palette::White.WithAlpha(150); // Vach voi
+    constexpr SmartColor PitchDot       = Palette::White.WithAlpha(150); // Cham giua san
 
     // ----- Vien Panel mau chu de -----
-    const Gdiplus::Color PANEL_GREEN_BORDER     (200, 34,  139, 34 ); // Vien xanh la
-    const Gdiplus::Color PANEL_BLUE_BORDER      (180, 0,   150, 255); // Vien xanh lam
-    const Gdiplus::Color PANEL_ORANGE_BORDER    (200, 255, 120, 0  ); // Vien cam vinh quang
-    const Gdiplus::Color PANEL_GOLD_BORDER      (200, 255, 215, 0  ); // Vien vang hoang gia
-    const Gdiplus::Color PANEL_YELLOW_BORDER    (255, 255, 200, 0  ); // Vàng nghệ đậm
+    constexpr SmartColor PanelGreenBorder  = SmartColor(200, 34, 139, 34);  
+    constexpr SmartColor PanelBlueBorder   = SmartColor(180, 0, 150, 255); 
+    constexpr SmartColor PanelOrangeBorder = SmartColor(200, 255, 120, 0); 
+    constexpr SmartColor PanelGoldBorder   = SmartColor(200, 255, 215, 0); 
+    constexpr SmartColor PanelYellowBorder = SmartColor(255, 255, 200, 0); 
 
     // ----- Mau cau thu P1 (Cam / Do-Cam) -----
-    const Gdiplus::Color P1_TURN_PULSE          (30,  255, 150, 0  ); // Nhap nhay luot P1
-    const Gdiplus::Color P1_TURN_BORDER         (200, 255, 150, 0  ); // Vien khi toi luot P1
-    const Gdiplus::Color P1_WATERMARK           (60,  255, 150, 0  ); // Chu cheo nen P1
+    constexpr SmartColor P1TurnPulse    = SmartColor(30, 255, 150, 0);
+    constexpr SmartColor P1TurnBorder   = SmartColor(200, 255, 150, 0);
+    constexpr SmartColor P1Watermark    = SmartColor(60, 255, 150, 0);
 
     // ----- Mau cau thu P2 (Cyan) -----
-    const Gdiplus::Color P2_TURN_PULSE          (30,  0,   255, 255); // Nhap nhay luot P2
-    const Gdiplus::Color P2_TURN_BORDER         (200, 0,   255, 255); // Vien khi toi luot P2
-    const Gdiplus::Color P2_WATERMARK           (60,  0,   255, 255); // Chu cheo nen P2
+    constexpr SmartColor P2TurnPulse    = SmartColor(30, 0, 255, 255);
+    constexpr SmartColor P2TurnBorder   = SmartColor(200, 0, 255, 255);
+    constexpr SmartColor P2Watermark    = SmartColor(60, 0, 255, 255);
 
     // ----- Mau ban co -----
-    const Gdiplus::Color LAST_MOVE_HIGHLIGHT    (150, 255, 255, 0  ); // O vua danh (vang nhat)
-    const Gdiplus::Color WIN_CELL_FILL          (200, 50,  255, 50 ); // O thang (xanh la)
-    const Gdiplus::Color WIN_CELL_BORDER        (200, 0,   255, 80 ); // Vien o thang
+    constexpr SmartColor LastMoveHighlight = SmartColor(150, 255, 255, 0);
+    constexpr SmartColor WinCellFill       = SmartColor(200, 50, 255, 50);
+    constexpr SmartColor WinCellBorder     = SmartColor(200, 0, 255, 80);
 
     // ----- Mau trai bong Pixel -----
-    const Gdiplus::Color FOOTBALL_DARK          (255, 30,  30,  30 ); // Mang den bong
-    const Gdiplus::Color FOOTBALL_LIGHT         (255, 240, 240, 240); // Mang trang bong
+    constexpr SmartColor FootballDark   = SmartColor(255, 30, 30, 30);
+    constexpr SmartColor FootballLight  = Palette::WhiteSoft;
 
     // ----- Mau Cup (Trophy) -----
-    const Gdiplus::Color TROPHY_RIM             (255, 200, 150, 20 ); // Vien vang dong
-    const Gdiplus::Color TROPHY_BODY            (255, 250, 210, 50 ); // Than vang sang
-    const Gdiplus::Color TROPHY_SHINE           (255, 255, 255, 200); // Anh sang cup
+    constexpr SmartColor TrophyRim      = SmartColor(255, 200, 150, 20);
+    constexpr SmartColor TrophyBody     = SmartColor(255, 250, 210, 50);
+    constexpr SmartColor TrophyShine    = Palette::White.WithAlpha(200);
 
     // ----- Palette tieu de "CARO" -----
-    const Gdiplus::Color TITLE_BORDER           (255, 200, 80,  0  ); // Vien cam dam
-    const Gdiplus::Color TITLE_FILL             (255, 255, 220, 0  ); // Loi vang choi
-    const Gdiplus::Color TITLE_SHADOW           (150, 0,   0,   0  ); // Bong do 3D
+    constexpr SmartColor TitleBorder    = SmartColor(255, 200, 80, 0);
+    constexpr SmartColor TitleFill      = SmartColor(255, 255, 220, 0);
+    constexpr SmartColor TitleShadow    = Palette::Black.WithAlpha(150);
 
     // ----- Mau Avatar Pixel -----
-    const Gdiplus::Color AVA_OUTLINE            (255, 30,  30,  30 ); // Vien toc (code 1)
-    const Gdiplus::Color AVA_EYE                (255, 0,   0,   0  ); // Mat (code 5)
-    // P1 - Do Trang
-    const Gdiplus::Color AVA_P1_SKIN            (255, 255, 200, 150);
-    const Gdiplus::Color AVA_P1_SHIRT           (255, 220, 20,  20 );
-    const Gdiplus::Color AVA_P1_ACCENT          (255, 255, 255, 255);
-    // P2 - Lam Vang
-    const Gdiplus::Color AVA_P2_SKIN            (255, 255, 220, 180);
-    const Gdiplus::Color AVA_P2_SHIRT           (255, 30,  100, 255);
-    const Gdiplus::Color AVA_P2_ACCENT          (255, 255, 220, 0  );
-    // Bot Easy - Thep / Dong
-    const Gdiplus::Color AVA_BOT_EASY_BODY      (255, 180, 180, 180);
-    const Gdiplus::Color AVA_BOT_EASY_ACCENT    (255, 200, 100, 50 );
-    // Bot Medium - Luc
-    const Gdiplus::Color AVA_BOT_MED_BODY       (255, 120, 200, 120);
-    const Gdiplus::Color AVA_BOT_MED_DARK       (255, 50,  150, 50 );
-    const Gdiplus::Color AVA_BOT_MED_DARKEST    (255, 20,  100, 20 );
-    // Bot Hard - Den Do
-    const Gdiplus::Color AVA_BOT_HARD_BODY      (255, 80,  40,  40 );
-    const Gdiplus::Color AVA_BOT_HARD_SHIRT     (255, 250, 30,  30 );
-    const Gdiplus::Color AVA_BOT_HARD_DARK      (255, 20,  20,  20 );
-    // Mau loi (debug)
-    const Gdiplus::Color DEBUG_MAGENTA          (255, 255, 0,   255);
+    constexpr SmartColor AvaOutline     = SmartColor(255, 30, 30, 30);
+    constexpr SmartColor AvaEye         = Palette::Black;
+    // P1
+    constexpr SmartColor AvaP1Skin      = SmartColor(255, 255, 200, 150);
+    constexpr SmartColor AvaP1Shirt     = SmartColor(255, 220, 20, 20);
+    constexpr SmartColor AvaP1Accent    = Palette::White;
+    // P2
+    constexpr SmartColor AvaP2Skin      = SmartColor(255, 255, 220, 180);
+    constexpr SmartColor AvaP2Shirt     = SmartColor(255, 30, 100, 255);
+    constexpr SmartColor AvaP2Accent    = SmartColor(255, 255, 220, 0);
+    // Bot Easy
+    constexpr SmartColor AvaBotEasyBody = SmartColor(255, 180, 180, 180);
+    constexpr SmartColor AvaBotEasyAccent = SmartColor(255, 200, 100, 50);
+    // Bot Medium
+    constexpr SmartColor AvaBotMedBody  = SmartColor(255, 120, 200, 120);
+    constexpr SmartColor AvaBotMedDark  = SmartColor(255, 50, 150, 50);
+    constexpr SmartColor AvaBotMedDarkest = SmartColor(255, 20, 100, 20);
+    // Bot Hard
+    constexpr SmartColor AvaBotHardBody = SmartColor(255, 80, 40, 40);
+    constexpr SmartColor AvaBotHardShirt = SmartColor(255, 250, 30, 30);
+    constexpr SmartColor AvaBotHardDark = SmartColor(255, 20,  20, 20);
+    // P3 - Tiền Đạo Số 9 (Áo Tím / Hồng)
+    constexpr SmartColor AvaP3Skin      = SmartColor(255, 255, 195, 145);
+    constexpr SmartColor AvaP3Shirt     = SmartColor(255, 150,  30, 200);
+    constexpr SmartColor AvaP3Accent    = SmartColor(255, 255, 120, 220);
+    // P4 - Thủ Môn (Áo Vàng / Găng Xanh Neon)
+    constexpr SmartColor AvaP4Skin      = SmartColor(255, 245, 200, 140);
+    constexpr SmartColor AvaP4Shirt     = SmartColor(255, 230, 200,  10);
+    constexpr SmartColor AvaP4Accent    = SmartColor(255,  20, 220, 100);
+    // P5 - Hậu Vệ (Áo Bạc / Bạc Hà)
+    constexpr SmartColor AvaP5Skin      = SmartColor(255, 255, 215, 160);
+    constexpr SmartColor AvaP5Shirt     = SmartColor(255, 180, 220, 215);
+    constexpr SmartColor AvaP5Accent    = SmartColor(255,  40, 200, 180);
+    // P6 - Đội Trưởng (Áo Đỏ Đậm / Vàng Kim)
+    constexpr SmartColor AvaP6Skin      = SmartColor(255, 255, 190, 130);
+    constexpr SmartColor AvaP6Shirt     = SmartColor(255, 180,  15,  15);
+    constexpr SmartColor AvaP6Accent    = SmartColor(255, 255, 205,   0);
+    // Animation: Boot (giày) và Football (bóng)
+    constexpr SmartColor AnimBoot       = SmartColor(255,  40,  30,  20);
+    constexpr SmartColor AnimBall       = SmartColor(255,  25,  25,  25);
 
     // ----- Khung nhap ten (Save name box) -----
-    const Gdiplus::Color SAVE_BOX_BORDER        (255, 255, 165, 0  ); // Cam vang
+    constexpr SmartColor SaveBoxBorder  = SmartColor(255, 255, 165, 0);
 
     // ----- Slot load game -----
-    const Gdiplus::Color SLOT_SELECTED          (150, 255, 180, 50 ); // Slot dang chon (alpha co dinh)
-    const Gdiplus::Color SLOT_NORMAL            (100, 200, 200, 200); // Slot binh thuong
+    constexpr SmartColor SlotSelected   = SmartColor(150, 255, 180, 50);
+    constexpr SmartColor SlotNormal     = SmartColor(100, 200, 200, 200);
 
     // ----- Thanh truot am luong (Volume Bar) -----
-    const Gdiplus::Color BAR_TRACK              (255, 200, 200, 200); // Nen thanh truot xam sang
-    const Gdiplus::Color BAR_FILL_SELECTED      (255, 255, 120, 0  ); // Doan da to -- muc chon -- Cam
-    const Gdiplus::Color BAR_FILL_NORMAL        (255, 50,  150, 250); // Doan da to -- khong chon -- Xanh lam
+    constexpr SmartColor BarTrack       = SmartColor(255, 200, 200, 200);
+    constexpr SmartColor BarFillSelected= SmartColor(255, 255, 120, 0);
+    constexpr SmartColor BarFillNormal  = SmartColor(255, 50, 150, 250);
 
     // ----- Flash khan dai -----
-    const Gdiplus::Color CAMERA_FLASH           (255, 255, 255, 255); // Tia chop trang (alpha dung BYTE dong)
+    constexpr SmartColor CameraFlash    = Palette::White; // (alpha dung dong)
 
     // ----- Banner thang (Victory Banner) -----
-    const Gdiplus::Color BANNER_BG_BASE         (220, 0,   0,   0  ); // Nen glassmorphism banner (alpha co dinh)
+    constexpr SmartColor BannerBgBase   = Palette::Black.WithAlpha(220);
 
     // ----- Pitch board -----
-    const Gdiplus::Color BOARD_PITCH            (255, 56,  142, 60 ); // Xanh san co muot
-    const Gdiplus::Color BOARD_BORDER           (255, 255, 255, 255); // Vien trang
-}
+    constexpr SmartColor BoardPitch     = SmartColor(255, 56, 142, 60);
+    constexpr SmartColor BoardBorder    = Palette::White;
 
-// =============================================================
-// GdipColour::WithAlpha - Lay mau tu GdipColour nhung doi alpha
-// Dung cho hieu ung animation alpha dong (pulse, fade)
-// =============================================================
-namespace GdipColour {
-    inline Gdiplus::Color WithAlpha(const Gdiplus::Color& base, BYTE alpha) {
-        return Gdiplus::Color(alpha, base.GetR(), base.GetG(), base.GetB());
-    }
+    // Cập nhật ID cho Cầu thủ Ronaldo (P_CR7)
+    constexpr SmartColor CR7_Outline = Palette::Black;        // ID 1
+    constexpr SmartColor CR7_SkinL = Palette::SkinLight;    // ID 2
+    constexpr SmartColor CR7_SkinM = Palette::SkinMid;      // ID 3
+    constexpr SmartColor CR7_SkinD = Palette::SkinShadow;   // ID 4
+    constexpr SmartColor CR7_HairD = Palette::HairDarkest;  // ID 5
+    constexpr SmartColor CR7_HairN = Palette::HairNormal;   // ID 6
+    constexpr SmartColor CR7_Teeth = Palette::White;        // ID 7
+    constexpr SmartColor CR7_Eye = Palette::Black;        // ID 8
 }
 
 #endif // GAME_COLORS_H

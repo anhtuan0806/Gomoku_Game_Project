@@ -1,5 +1,6 @@
 #include "MatchConfigScreen.h"
 #include "../RenderAPI/UIComponents.h"
+#include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
 #include "../GameLogic/GameEngine.h"
 #include <cmath>
@@ -15,8 +16,14 @@ static int p1AvatarIdx = 0;
 static int p2AvatarIdx = 1;
 static int activeEditing = 0; // 0: None, 1: P1 Edit, 2: P2 Edit
 
-const std::wstring AVATAR_NAMES[] = { L"Tiền Đạo Số 7", L"Nhạc Trưởng Số 10" };
-const std::string AVATAR_PATHS[] = { "Asset/images/avatar_1.png", "Asset/images/avatar_2.png" };
+const std::wstring AVATAR_NAMES[] = {
+    L"Tiền Đạo Số 7",      // Type 0
+    L"Nhạc Trưởng Số 10",  // Type 1
+    L"Ảo Thuật Gia Samba",   // Type 2
+};
+// Mapping: slot 0-2 -> avatarType (0,1,2)
+static const int AVATAR_SLOT_TO_TYPE[3] = { 0, 1, 2 };
+const int TOTAL_HUMAN_AVATARS = 3;
 
 void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, int& selectedOption, WPARAM wParam) {
     if (wParam == 0) {
@@ -106,7 +113,7 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
         switch (selectedOption) {
         case 0: // Đổi Avatar P1 (A/D)
             if (dir != 0) {
-                p1AvatarIdx = (p1AvatarIdx + dir + 2) % 2;
+                p1AvatarIdx = (p1AvatarIdx + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
             }
             break;
         case 1: // Sửa Tên P1 (Enter)
@@ -116,7 +123,7 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
             break;
         case 2: // Đổi Avatar P2 (A/D)
             if (!isPvE && dir != 0) {
-                p2AvatarIdx = (p2AvatarIdx + dir + 2) % 2;
+                p2AvatarIdx = (p2AvatarIdx + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
             }
             break;
         case 3: // Sửa Tên P2 (Enter)
@@ -133,24 +140,31 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
         case 5: // Bắt Đầu
             if (wParam == VK_RETURN || wParam == VK_SPACE) {
                 playState->p1.name = editName1;
-                playState->p1.avatarPath = AVATAR_PATHS[p1AvatarIdx];
+                // Mapping: slot index -> path string cho decodeAvatar
+                static const char* SLOT_PATHS[3] = {
+                    "avatar_0", "avatar_1", "avatar_2"
+                };
+                playState->p1.avatarPath = SLOT_PATHS[p1AvatarIdx];
 
                 if (isPvE) {
-                    std::wstring botName = (playState->difficulty == 1) ? L"Trạm Trưởng Vàng" : (playState->difficulty == 2 ? L"Bot Thiết Giáp" : L"Bóng Đêm Thách Đấu");
+                    std::wstring botName = (playState->difficulty == 1) ? L"Ảo Thuật Gia Samba" : (playState->difficulty == 2 ? L"Bot Thiết Giáp" : L"Bóng Đêm Thách Đấu");
                     playState->p2.name = botName;
                     if (playState->difficulty == 1) {
-                        playState->p2.avatarPath = "Asset/images/bot_easy.png";
+                        playState->p2.avatarPath = "bot_easy";
                     }
                     else if (playState->difficulty == 2) {
-                        playState->p2.avatarPath = "Asset/images/bot_medium.png";
+                        playState->p2.avatarPath = "bot_medium";
                     }
                     else {
-                        playState->p2.avatarPath = "Asset/images/bot_hard.png";
+                        playState->p2.avatarPath = "bot_hard";
                     }
                 }
                 else {
                     playState->p2.name = editName2;
-                    playState->p2.avatarPath = AVATAR_PATHS[p2AvatarIdx];
+                    static const char* SLOT_PATHS[3] = {
+                        "avatar_0", "avatar_1", "avatar_2"
+                    };
+                    playState->p2.avatarPath = SLOT_PATHS[p2AvatarIdx];
                 }
 
                 int bSize = (playState->gameMode == MODE_CARO) ? 15 : 3;
@@ -173,7 +187,7 @@ void DrawColText(HDC hdc, const std::wstring& text, int x, int y, int width, COL
     HFONT oldFont = (HFONT)SelectObject(hdc, font);
     SetBkMode(hdc, TRANSPARENT);
     // Tăng vùng đệm chiều cao từ 42 lên 80 để các Font to (GlobalFont::Title) không bị xén đỉnh/đáy
-    RECT rect = { x, y, x + width, y + 80 };
+    RECT rect = { x, y, x + width, y + UIScaler::SY(80) };
     DrawTextW(hdc, text.c_str(), -1, &rect, format | DT_VCENTER | DT_SINGLELINE);
     SelectObject(hdc, oldFont);
 }
@@ -186,28 +200,28 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
     DrawProceduralStadium(g, screenWidth, screenHeight);
 
     // Khung Trắng Kính (White Glassmorphism)
-    Gdiplus::SolidBrush whitePanel(GdipColour::GLASS_WHITE);
-    int panelW = 750;
-    int panelH = 500;
+    Gdiplus::SolidBrush whitePanel(Theme::GlassWhite);
+    int panelW = UIScaler::SX(750);
+    int panelH = UIScaler::SY(500);
     int panelX = (screenWidth - panelW) / 2;
-    int panelY = (screenHeight - panelH) / 2 - 10;
+    int panelY = (screenHeight - panelH) / 2 - UIScaler::SY(10);
 
     g.FillRectangle(&whitePanel, panelX, panelY, panelW, panelH);
 
     // Vien xanh la mem mai quanh panel
-    Gdiplus::Pen panelPen(GdipColour::PANEL_GREEN_BORDER, 3.0f);
+    Gdiplus::Pen panelPen(Theme::PanelGreenBorder, 3.0f);
     g.DrawRectangle(&panelPen, panelX, panelY, panelW, panelH);
 
     // Xử lý 2 Trang
     if (currentPage == 0) {
-        DrawTextCentered(hdc, L"--- 1. HỒ SƠ CHIẾN THUẬT ---", panelY + 30, screenWidth, Colour::BLUE_DARKEST, GlobalFont::Title);
+        DrawTextCentered(hdc, L"--- 1. HỒ SƠ CHIẾN THUẬT ---", panelY + UIScaler::SY(30), screenWidth, Palette::BlueDarkest, GlobalFont::Title);
 
-        int col1X = panelX + 30;
-        int col1W = 320;
-        int col2X = panelX + 370;
-        int col2W = 350;
-        int startY = panelY + 120;
-        int spacing = 50;
+        int col1X = panelX + UIScaler::SX(30);
+        int col1W = UIScaler::SX(320);
+        int col2X = panelX + UIScaler::SX(370);
+        int col2W = UIScaler::SX(350);
+        int startY = panelY + UIScaler::SY(120);
+        int spacing = UIScaler::SY(50);
 
         std::wstring labels[] = {
             L"Khổ sân thi đấu: ",
@@ -230,9 +244,9 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
             // Ẩn Thời Gian khi chế độ PvE (AI tự tính toán)
             if (i == 3 && isPvE_p0) continue;
 
-            COLORREF valColor = Colour::GRAY_DARKEST;
+            COLORREF valColor = Palette::GrayDarkest;
             if (i == 2 && config->matchType == MATCH_PVP) {
-                valColor = Colour::GRAY_NORMAL;
+                valColor = Palette::GrayNormal;
                 values[i] = L"[ Vô Hiệu Hóa ]";
             }
             if (i == selectedOption) {
@@ -241,54 +255,57 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
             }
             
             HFONT fontVal = (i == selectedOption) ? GlobalFont::Bold : GlobalFont::Default;
-            DrawColText(hdc, labels[i], col1X, startY + drawRow * spacing, col1W, Colour::GRAY_DARKEST, GlobalFont::Bold, DT_RIGHT);
+            DrawColText(hdc, labels[i], col1X, startY + drawRow * spacing, col1W, Palette::GrayDarkest, GlobalFont::Bold, DT_RIGHT);
             DrawColText(hdc, values[i], col2X, startY + drawRow * spacing, col2W, valColor, fontVal, DT_LEFT);
             drawRow++;
         }
 
         // Nút Tiếp Theo
-        COLORREF nextColor = Colour::BLUE_DARKEST;
+        COLORREF nextColor = Palette::BlueDarkest;
         if (selectedOption == 5) {
             int gCol = (int)(150 + sin(g_GlobalAnimTime * 15.0f) * 105);
             nextColor = RGB(max(0, min(255, 255 - gCol)), 100, 255); // Pulse Blue/Cyan
         }
-        DrawTextCentered(hdc, L"==> [ TIẾP THEO ] ==>", startY + 5 * spacing + 40, screenWidth, nextColor, (selectedOption == 5) ? GlobalFont::Title : GlobalFont::Bold);
+        DrawTextCentered(hdc, L"==> [ TIẾP THEO ] ==>", startY + 5 * spacing + UIScaler::SY(40), screenWidth, nextColor, (selectedOption == 5) ? GlobalFont::Title : GlobalFont::Bold);
     }
     else {
-        DrawTextCentered(hdc, L"--- 2. HỒ SƠ TUYỂN THỦ ---", panelY + 30, screenWidth, Colour::BLUE_DARKEST, GlobalFont::Title);
+        DrawTextCentered(hdc, L"--- 2. HỒ SƠ TUYỂN THỦ ---", panelY + UIScaler::SY(30), screenWidth, Palette::BlueDarkest, GlobalFont::Title);
 
         int halfW = panelW / 2;
-        int avaSize = 130;
-        int avaY = panelY + 120;
+        int avaSize = UIScaler::S(160); // Tăng từ 130
+        int avaY = panelY + UIScaler::SY(120);
         bool isPvE = (config->matchType == MATCH_PVE);
 
         // --- CỘT TRÁI (P1) ---
         // Draw Watermark Parallax P1 (Kéo lùi góc dưới để tạo cảm giác chéo không gian)
-        DrawColText(hdc, L"ĐỘI P1", panelX - 15, avaY + 30, halfW, RGB(255, 230, 220), GlobalFont::Title, DT_CENTER);
+        DrawColText(hdc, L"ĐỘI P1", panelX - UIScaler::SX(15), avaY + UIScaler::SY(30), halfW, RGB(255, 230, 220), GlobalFont::Title, DT_CENTER);
         
         int avaP1X = panelX + (halfW - avaSize) / 2;
         // Sử dụng Avatar Pixel Procedural ĐÈ lên chữ mờ ở dưới
-        DrawPixelAvatar(g, avaP1X, avaY, avaSize, p1AvatarIdx);
+        DrawPixelAvatar(g, avaP1X, avaY, avaSize, AVATAR_SLOT_TO_TYPE[p1AvatarIdx]);
 
         // Mục 0 = Đổi Avatar P1, Mục 1 = Sửa Tên P1
-        COLORREF avaP1Col = (selectedOption == 0) ? RGB(255, 120, 0) : Colour::GRAY_DARKEST;
-        int textY = avaY + avaSize + 10;
+        COLORREF avaP1Col = (selectedOption == 0) ? RGB(255, 120, 0) : Palette::GrayDarkest;
+        int textY = avaY + avaSize + UIScaler::SY(10);
         if (selectedOption == 0) {
-            int pulse = (int)(sin(g_GlobalAnimTime * 10.0f) * 3);
-            DrawPixelFootball(g, panelX + 30, textY + 40 + pulse, 24);
-            DrawPixelFootball(g, panelX + halfW - 30, textY + 40 - pulse, 24);
+            int pulse = UIScaler::SY((int)(sin(g_GlobalAnimTime * 10.0f) * 3));
+            DrawPixelFootball(g, panelX + UIScaler::SX(30), textY + UIScaler::SY(40) + pulse, UIScaler::S(24));
+            DrawPixelFootball(g, panelX + halfW - UIScaler::SX(30), textY + UIScaler::SY(40) - pulse, UIScaler::S(24));
         }
-        // Tên Avatar (selectedOption==0 = đang chọn avatar)
+        // Tên Avatar (slot 0..5 -> hiển thị tên tương ứng)
         DrawColText(hdc, AVATAR_NAMES[p1AvatarIdx], panelX, textY, halfW, avaP1Col, selectedOption == 0 ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
+        // Chỉ thị slot (ví dụ “< 3/6 >”)
+        std::wstring p1SlotStr = L"< " + std::to_wstring(p1AvatarIdx + 1) + L"/" + std::to_wstring(TOTAL_HUMAN_AVATARS) + L" >";
+        DrawColText(hdc, p1SlotStr, panelX, textY + UIScaler::SY(28), halfW, avaP1Col, GlobalFont::Note, DT_CENTER);
         
         // Tên Player (selectedOption==1 = đang chọn tên)
-        COLORREF nameP1Col = (selectedOption == 1) ? RGB(255, 120, 0) : Colour::GRAY_DARKEST;
+        COLORREF nameP1Col = (selectedOption == 1) ? RGB(255, 120, 0) : Palette::GrayDarkest;
         std::wstring p1DispName = editName1 + ((activeEditing == 1) ? L"_" : L"");
-        DrawColText(hdc, L"Tên: " + p1DispName, panelX, avaY + avaSize + 50, halfW, nameP1Col, selectedOption == 1 ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
+        DrawColText(hdc, L"Tên: " + p1DispName, panelX, avaY + avaSize + UIScaler::SY(50), halfW, nameP1Col, selectedOption == 1 ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
 
         // --- CỘT PHẢI (P2) ---
         // Watermark Parallax P2
-        DrawColText(hdc, L"ĐỘI P2", panelX + halfW + 15, avaY + 30, halfW, RGB(220, 245, 255), GlobalFont::Title, DT_CENTER);
+        DrawColText(hdc, L"ĐỘI P2", panelX + halfW + UIScaler::SX(15), avaY + UIScaler::SY(30), halfW, RGB(220, 245, 255), GlobalFont::Title, DT_CENTER);
         
         int avaP2X = panelX + halfW + (halfW - avaSize) / 2;
         std::wstring p2BotName = L"";
@@ -301,39 +318,73 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         }
 
         // Đè lưới Avatar lên trên chữ nền Watermark
-        DrawPixelAvatar(g, avaP2X, avaY, avaSize, aiAvatarIdx);
+        int p2AvaType = isPvE ? aiAvatarIdx : AVATAR_SLOT_TO_TYPE[p2AvatarIdx];
+        DrawPixelAvatar(g, avaP2X, avaY, avaSize, p2AvaType);
 
         // Mục 2 = Sửa Tên P2, Mục 3 = Đổi Avatar P2 (đối xứng với P1)
-        COLORREF avaP2Col = (selectedOption == 2 && !isPvE) ? RGB(0, 200, 255) : (isPvE ? Colour::GRAY_NORMAL : Colour::GRAY_DARKEST);
-        int textP2Y = avaY + avaSize + 10;
+        COLORREF avaP2Col = (selectedOption == 2 && !isPvE) ? RGB(0, 200, 255) : (isPvE ? Palette::GrayNormal : Palette::GrayDarkest);
+        int textP2Y = avaY + avaSize + UIScaler::SY(10);
         if (selectedOption == 2 && !isPvE) {
-            int pulse = (int)(sin(g_GlobalAnimTime * 10.0f) * 3);
-            DrawPixelFootball(g, panelX + halfW + 30, textP2Y + 40 + pulse, 24);
-            DrawPixelFootball(g, panelX + panelW - 30, textP2Y + 40 - pulse, 24);
+            int pulse = UIScaler::SY((int)(sin(g_GlobalAnimTime * 10.0f) * 3));
+            DrawPixelFootball(g, panelX + halfW + UIScaler::SX(30), textP2Y + UIScaler::SY(40) + pulse, UIScaler::S(24));
+            DrawPixelFootball(g, panelX + panelW - UIScaler::SX(30), textP2Y + UIScaler::SY(40) - pulse, UIScaler::S(24));
         }
         // Tên Avatar P2 (selectedOption==2 = đang chọn avatar P2)
         std::wstring p2AvaStr = isPvE ? L"[ ĐÃ KHÓA ]" : AVATAR_NAMES[p2AvatarIdx];
         DrawColText(hdc, p2AvaStr, panelX + halfW, textP2Y, halfW, avaP2Col, (selectedOption == 2 && !isPvE) ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
+        // Chỉ thị slot P2
+        if (!isPvE) {
+            std::wstring p2SlotStr = L"< " + std::to_wstring(p2AvatarIdx + 1) + L"/" + std::to_wstring(TOTAL_HUMAN_AVATARS) + L" >";
+            DrawColText(hdc, p2SlotStr, panelX + halfW, textP2Y + UIScaler::SY(28), halfW,
+                (selectedOption == 2) ? RGB(0, 200, 255) : Palette::GrayDark, GlobalFont::Note, DT_CENTER);
+        }
         
         // Tên Player P2 (selectedOption==3 = đang chọn tên P2)
-        COLORREF nameP2Col = (selectedOption == 3 && !isPvE) ? RGB(0, 200, 255) : (isPvE ? Colour::GRAY_NORMAL : Colour::GRAY_DARKEST);
+        COLORREF nameP2Col = (selectedOption == 3 && !isPvE) ? RGB(0, 200, 255) : (isPvE ? Palette::GrayNormal : Palette::GrayDarkest);
         std::wstring p2DispName = isPvE ? p2BotName : editName2 + ((activeEditing == 2) ? L"_" : L"");
-        DrawColText(hdc, L"Tên: " + p2DispName, panelX + halfW, avaY + avaSize + 50, halfW, nameP2Col, (selectedOption == 3 && !isPvE) ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
+        DrawColText(hdc, L"Tên: " + p2DispName, panelX + halfW, avaY + avaSize + UIScaler::SY(50), halfW, nameP2Col, (selectedOption == 3 && !isPvE) ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
 
         // --- BUTTONS BÊN DƯỚI DÀN HÀNG NGANG ---
-        int botY = panelY + panelH - 80;
+        int botY = panelY + panelH - UIScaler::SY(80);
         
-        COLORREF backCol = (selectedOption == 4) ? RGB(255, 0, 0) : Colour::GRAY_DARK; // Màu đỏ khi back
-        DrawColText(hdc, L"< QUAY LẠI CÀI ĐẶT SÂN", panelX + 30, botY, halfW - 30, backCol, selectedOption == 4 ? GlobalFont::Bold : GlobalFont::Default, DT_LEFT);
+        COLORREF backCol = (selectedOption == 4) ? RGB(255, 0, 0) : Palette::GrayDark; // Màu đỏ khi back
+        DrawColText(hdc, L"< QUAY LẠI CÀI ĐẶT SÂN", panelX + UIScaler::SX(30), botY, halfW - UIScaler::SX(30), backCol, selectedOption == 4 ? GlobalFont::Bold : GlobalFont::Default, DT_LEFT);
 
-        COLORREF startCol = Colour::GREEN_DARK;
+        COLORREF startCol = Palette::GreenDark;
         if (selectedOption == 5) {
             int gCol = (int)(150 + sin(g_GlobalAnimTime * 20.0f) * 105);
             startCol = RGB(0, max(0, min(255, gCol)), 0); 
         }
         // Nới rộng RECT về bên trái để khi phóng to ko bị chém mất chữ 'X' do DT_RIGHT đẩy văng ra ngoài
-        DrawColText(hdc, L"XUỐNG SÂN BẮT ĐẦU >", panelX, botY, panelW - 30, startCol, selectedOption == 5 ? GlobalFont::Title : GlobalFont::Bold, DT_RIGHT);
+        DrawColText(hdc, L"XUỐNG SÂN BẮT ĐẦU >", panelX, botY, panelW - UIScaler::SX(30), startCol, selectedOption == 5 ? GlobalFont::Title : GlobalFont::Bold, DT_RIGHT);
+
+        // --- ANIMATION NGOÀI PANEL (tả = P1, hữu = P2) ---
+        {
+            // Vị trí Y căn giữa theo panel, đẩy xuống một chút để đứng thăng bằng
+            int animSize = UIScaler::S(360); 
+            int animCY   = panelY + panelH / 2 + UIScaler::SY(50); 
+
+            // P1: bên trái panel — animation IDLE, nhìn vào trong (flipH=false)
+            static PlayerState cfgP1State;
+            cfgP1State.avatarType = AVATAR_SLOT_TO_TYPE[p1AvatarIdx];
+            cfgP1State.currentAction = "idle";
+            cfgP1State.flipH = false;
+            int leftCX = panelX / 2; // giữa khoảng trắng bên trái
+            DrawPixelAction(g, leftCX, animCY, animSize, cfgP1State);
+
+            // P2: bên phải panel — animation IDLE, nhìn vào trong (flipH=true)
+            static PlayerState cfgP2State;
+            int p2Type = isPvE ? 
+                (config->difficulty == 1 ? 2 : (config->difficulty == 2 ? 3 : 4)) : 
+                AVATAR_SLOT_TO_TYPE[p2AvatarIdx];
+            
+            cfgP2State.avatarType = p2Type;
+            cfgP2State.currentAction = "idle";
+            cfgP2State.flipH = true;
+            int rightCX = panelX + panelW + (screenWidth - panelX - panelW) / 2;
+            DrawPixelAction(g, rightCX, animCY, animSize, cfgP2State);
+        }
     }
     
-    DrawTextCentered(hdc, (activeEditing != 0) ? L"Gõ tên và ấn Enter để chốt" : L"A/D: Thay đổi  |  Enter: Xác nhận  |  ESC: Về Menu", screenHeight - 60, screenWidth, Colour::WHITE, GlobalFont::Note);
+    DrawTextCentered(hdc, (activeEditing != 0) ? L"Gõ tên và ấn Enter để chốt" : L"A/D: Thay đổi  |  Enter: Xác nhận  |  ESC: Về Menu", screenHeight - UIScaler::SY(60), screenWidth, Palette::White, GlobalFont::Note);
 }

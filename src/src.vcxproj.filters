@@ -66,6 +66,9 @@
     <ClInclude Include="RenderAPI\UIComponents.h">
       <Filter>RenderAPI</Filter>
     </ClInclude>
+    <ClInclude Include="RenderAPI\UIScaler.h">
+      <Filter>RenderAPI</Filter>
+    </ClInclude>
     <ClInclude Include="ScreenModules\AboutScreen.h">
       <Filter>ScreenModules</Filter>
     </ClInclude>
@@ -122,6 +125,9 @@
     <ClCompile Include="RenderAPI\UIComponents.cpp">
       <Filter>RenderAPI</Filter>
     </ClCompile>
+    <ClCompile Include="RenderAPI\UIScaler.cpp">
+      <Filter>RenderAPI</Filter>
+    </ClCompile>
     <ClCompile Include="ScreenModules\AboutScreen.cpp">
       <Filter>ScreenModules</Filter>
     </ClCompile>
@@ -167,6 +173,7 @@
     <None Include="Asset\config.ini">
       <Filter>Asset</Filter>
     </None>
+    <None Include="..\README.md" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Asset\models\avatar_0.txt">
@@ -199,11 +206,9 @@
     <Text Include="Asset\lang\vi.txt">
       <Filter>Asset\lang</Filter>
     </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="Asset\images\football.png">
-      <Filter>Asset\images</Filter>
-    </Image>
+    <Text Include="Asset\models\clock.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <Font Include="Asset\font\VT323\VT323-Regular.ttf">

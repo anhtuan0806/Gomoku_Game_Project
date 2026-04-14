@@ -1,5 +1,6 @@
 #include "MenuScreen.h"
 #include "../RenderAPI/UIComponents.h"
+#include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
 #include <cmath>
 #include <map>
@@ -76,9 +77,8 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState& currentState, int& selectedOpt
 void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHeight) {
     Gdiplus::Graphics g(hdc);
     
-    // 0. Nền sân vận động
-    // Vẽ Sân vận động theo cấu trúc Ma Trận Thuật Toán (Procedural)
-    DrawProceduralStadium(g, screenWidth, screenHeight);
+    // 0. Nền sân vận động (showFlashes=true: chỉ Menu mới có hiệu ứng tia chớp khán đài)
+    DrawProceduralStadium(g, screenWidth, screenHeight, true);
 
     // Lớp kính trắng mờ để tạo phong cách Light Mode chuyên nghiệp
     Gdiplus::SolidBrush lightGlassBrush(Gdiplus::Color(80, 255, 255, 255));
@@ -86,28 +86,28 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
 
     // 1. Ve cup Vo Dich Pixel Art va Tieu de Game
     // ... (giữ nguyên logic tâng cúp)
-    int cupYOffset = (int)(sin(g_GlobalAnimTime * 2.5f) * 10.0f);
-    DrawPixelTrophy(g, screenWidth / 2, screenHeight / 4 - 85 + cupYOffset, 100);
+    int cupYOffset = UIScaler::SY((int)(sin(g_GlobalAnimTime * 2.5f) * 10.0f));
+    DrawPixelTrophy(g, screenWidth / 2, screenHeight / 4 - UIScaler::SY(85) + cupYOffset, UIScaler::S(100));
 
     // 1.5 Tải và Vẽ khối Logo Điểm Ảnh khổng lồ bằng hệ thống Load TXT Modular
     static PixelModel titleModel;
     static std::map<int, Gdiplus::Color> titlePalette;
     if (!titleModel.isLoaded) {
         titleModel = LoadPixelModel("Asset/models/title_caro.txt");
-        titlePalette[1] = GdipColour::TITLE_BORDER;
-        titlePalette[2] = GdipColour::TITLE_FILL;
-        titlePalette[3] = GdipColour::TITLE_SHADOW;
+        titlePalette[1] = Theme::TitleBorder;
+        titlePalette[2] = Theme::TitleFill;
+        titlePalette[3] = Theme::TitleShadow;
     }
 
-    int titleYOffset = (int)(sin(g_GlobalAnimTime * 2.0f) * 6.0f);
+    int titleYOffset = UIScaler::SY((int)(sin(g_GlobalAnimTime * 2.0f) * 6.0f));
     
-    DrawPixelModel(g, titleModel, screenWidth / 2, screenHeight / 4 + 20 + titleYOffset, 500, titlePalette);
+    DrawPixelModel(g, titleModel, screenWidth / 2, screenHeight / 4 + UIScaler::SY(20) + titleYOffset, UIScaler::S(500), titlePalette);
     
-    DrawTextCentered(hdc, L"CHAMPIONS LEAGUE", screenHeight / 4 + 75 + titleYOffset, screenWidth, Colour::BLUE_DARKEST, GlobalFont::Title);
+    DrawTextCentered(hdc, L"CHAMPIONS LEAGUE", screenHeight / 4 + UIScaler::SY(75) + titleYOffset, screenWidth, Palette::BlueDarkest, GlobalFont::Title);
 
     // 2. In danh sách các mục Menu
-    int startY = screenHeight / 2 + 10;
-    int spacing = 55;
+    int startY = screenHeight / 2 + UIScaler::SY(10);
+    int spacing = UIScaler::SY(55);
 
     for (int i = 0; i < TOTAL_MENU_ITEMS; i++) {
         int currentY = startY + i * spacing;
@@ -119,17 +119,17 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
             int gCol = (int)(180 + sin(g_GlobalAnimTime * 8.0f) * 75);
             COLORREF dynColor = RGB(0, max(0, min(255, gCol)), 255); 
 
-            int wStrOffset = (int)highlightedText.length() * 18 + 70; 
-            DrawPixelFootball(g, screenWidth / 2 - wStrOffset, currentY + 38, 48);
-            DrawPixelFootball(g, screenWidth / 2 + wStrOffset, currentY + 38, 48);
+            int wStrOffset = UIScaler::S((int)highlightedText.length() * 18 + 70); 
+            DrawPixelFootball(g, screenWidth / 2 - wStrOffset, currentY + UIScaler::SY(38), UIScaler::S(48));
+            DrawPixelFootball(g, screenWidth / 2 + wStrOffset, currentY + UIScaler::SY(38), UIScaler::S(48));
 
             DrawTextCentered(hdc, highlightedText, currentY, screenWidth, dynColor, GlobalFont::Title);
         }
         else {
-            DrawTextCentered(hdc, menuItems[i], currentY + 6, screenWidth, Colour::GRAY_DARKEST, GlobalFont::Bold);
+            DrawTextCentered(hdc, menuItems[i], currentY + UIScaler::SY(6), screenWidth, Palette::GrayDarkest, GlobalFont::Bold);
         }
     }
 
     // 3. Vẽ hướng dẫn điều khiển (Màu tối hơn cho nền sáng)
-    DrawTextCentered(hdc, L"Dùng W/S/UP/DOWN để rê bóng, ENTER để sút (chọn)", screenHeight - 50, screenWidth, Colour::GRAY_DARK, GlobalFont::Note);
+    DrawTextCentered(hdc, L"Dùng W/S/UP/DOWN để rê bóng, ENTER để sút (chọn)", screenHeight - UIScaler::SY(50), screenWidth, Palette::GrayDark, GlobalFont::Note);
 }

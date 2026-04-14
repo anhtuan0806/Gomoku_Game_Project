@@ -1,5 +1,6 @@
 #include "SettingScreen.h"
 #include "../RenderAPI/UIComponents.h"
+#include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
 #include "../SystemModules/AudioSystem.h"
 #include "../SystemModules/ConfigLoader.h" 
@@ -130,7 +131,7 @@ void DrawColTextSetting(HDC hdc, const std::wstring& text, int x, int y, int wid
     SetTextColor(hdc, color);
     HFONT oldFont = (HFONT)SelectObject(hdc, font);
     SetBkMode(hdc, TRANSPARENT);
-    RECT rect = { x, y, x + width, y + 50 };
+    RECT rect = { x, y, x + width, y + UIScaler::SY(50) };
     DrawTextW(hdc, text.c_str(), -1, &rect, format | DT_VCENTER | DT_SINGLELINE);
     SelectObject(hdc, oldFont);
 }
@@ -143,12 +144,12 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
     DrawProceduralStadium(g, screenWidth, screenHeight);
 
     // 2. Bảng Form Kính Trắng — rộng và cao hơn để chứa đủ 7 dòng
-    int panelW = 720;
-    int panelH = 580;
+    int panelW = UIScaler::SX(720);
+    int panelH = UIScaler::SY(580);
     int panelX = (screenWidth - panelW) / 2;
-    int panelY = (screenHeight - panelH) / 2 - 10;
+    int panelY = (screenHeight - panelH) / 2 - UIScaler::SY(10);
 
-    Gdiplus::SolidBrush whitePanel(GdipColour::GLASS_WHITE);
+    Gdiplus::SolidBrush whitePanel(Theme::GlassWhite);
     g.FillRectangle(&whitePanel, panelX, panelY, panelW, panelH);
 
     // Viền xanh lá kỹ thuật
@@ -156,17 +157,17 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
     g.DrawRectangle(&panelPen, panelX, panelY, panelW, panelH);
 
     // 3. Tiêu đề Pixel Banner (Dấu ấn riêng: Bánh răng kỹ thuật)
-    DrawPixelBanner(g, hdc, L"THIẾT LẬP KỸ THUẬT", screenWidth / 2, panelY + 40,
-        panelW - 20, Colour::WHITE, RGB(50, 220, 80), "Asset/models/gears.txt");
+    DrawPixelBanner(g, hdc, L"THIẾT LẬP KỸ THUẬT", screenWidth / 2, panelY + UIScaler::SY(40),
+        panelW - UIScaler::SX(20), Palette::White, RGB(50, 220, 80), "Asset/models/gears.txt");
 
     // 4. Layout 2 cột — Label bên trái, Value/Control bên phải
-    int startY  = panelY + 105;
-    int spacing = 52;                  // đủ cao để chữ không chạm nhau
+    int startY  = panelY + UIScaler::SY(105);
+    int spacing = UIScaler::SY(52);                  // đủ cao để chữ không chạm nhau
 
-    int col1X   = panelX + 16;
-    int col1W   = 300;                 // cột nhãn
-    int col2X   = panelX + 330;
-    int col2W   = panelW - 330 - 16;  // cột giá trị — lấy hết phần còn lại
+    int col1X   = panelX + UIScaler::SX(16);
+    int col1W   = UIScaler::SX(300);                 // cột nhãn
+    int col2X   = panelX + UIScaler::SX(330);
+    int col2W   = panelW - UIScaler::SX(330) - UIScaler::SX(16);  // cột giá trị — lấy hết phần còn lại
 
     SetBkMode(hdc, TRANSPARENT);
 
@@ -174,8 +175,8 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
         std::wstring label = L"";
         std::wstring value = L"";
 
-        COLORREF labelColor = Colour::GRAY_DARKEST;
-        COLORREF valColor   = Colour::GRAY_DARK;
+        COLORREF labelColor = Palette::GrayDarkest;
+        COLORREF valColor   = Palette::GrayDark;
         HFONT fontItem = (i == selectedOption) ? GlobalFont::Bold : GlobalFont::Default;
         bool isDisabled = (i == 1 && !config->isBgmEnabled) || (i == 3 && !config->isSfxEnabled);
 
@@ -227,14 +228,14 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
 
         if (i == 6) {
             // --- Nút Xác Nhận Ra Sân ---
-            COLORREF btnColor = Colour::BLUE_DARKEST;
+            COLORREF btnColor = Palette::BlueDarkest;
             if (i == selectedOption) {
                 int gCol = (int)(150 + sin(g_GlobalAnimTime * 15.0f) * 105);
                 btnColor = RGB(max(0, min(255, 255 - gCol)), 100, 255);
 
                 // Nền highlight nút khi chọn
                 Gdiplus::SolidBrush btnBg(Gdiplus::Color(80, 0, 120, 255));
-                g.FillRectangle(&btnBg, panelX + 60, yPos + 4, panelW - 120, spacing - 8);
+                g.FillRectangle(&btnBg, panelX + UIScaler::SX(60), yPos + UIScaler::SY(4), panelW - UIScaler::SX(120), spacing - UIScaler::SY(8));
             }
             RECT btnRect = { panelX, yPos, panelX + panelW, yPos + spacing };
             SetTextColor(hdc, btnColor);
@@ -257,31 +258,31 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
             // --- Cột phải: thanh trượt âm lượng (GIỮ NGUYÊN THANH BAR) ---
             if (i == 1 || i == 3) {
                 int vol  = (i == 1) ? config->bgmVolume : config->sfxVolume;
-                int barX = col2X + 4;
-                int barY = yPos + (spacing - 16) / 2;
-                int barW = 220;
-                int barH = 14;
+                int barX = col2X + UIScaler::SX(4);
+                int barY = yPos + (spacing - UIScaler::SY(16)) / 2;
+                int barW = UIScaler::SX(220);
+                int barH = UIScaler::SY(14);
 
                 // Nền thanh
-                Gdiplus::SolidBrush bgBrush(GdipColour::BAR_TRACK);
+                Gdiplus::SolidBrush bgBrush(Theme::BarTrack);
                 g.FillRectangle(&bgBrush, barX, barY, barW, barH);
 
                 // Phần đã kéo
                 float percent = vol / 100.0f;
                 Gdiplus::Color fillC = isDisabled ? Gdiplus::Color(100, 150, 150, 150) : 
-                                       ((i == selectedOption) ? GdipColour::BAR_FILL_SELECTED : GdipColour::BAR_FILL_NORMAL);
+                                       ((i == selectedOption) ? Theme::BarFillSelected : Theme::BarFillNormal);
                 Gdiplus::SolidBrush fillBrush(fillC);
                 g.FillRectangle(&fillBrush, barX, barY, (int)(barW * percent), barH);
 
                 // Nút kéo (thumb)
-                int thumbX = barX + (int)(barW * percent) - 5;
+                int thumbX = barX + (int)(barW * percent) - UIScaler::SX(5);
                 Gdiplus::Color tC = isDisabled ? Gdiplus::Color(255, 100, 100, 100) : Gdiplus::Color(255, 230, 230, 230);
                 Gdiplus::SolidBrush thumbBrush(tC);
-                g.FillRectangle(&thumbBrush, thumbX, barY - 2, 10, barH + 4);
+                g.FillRectangle(&thumbBrush, thumbX, barY - UIScaler::SY(2), UIScaler::SX(10), barH + UIScaler::SY(4));
 
                 // % hiển thị bên phải thanh
                 DrawColTextSetting(hdc, std::to_wstring(vol) + L"%",
-                    barX + barW + 15, yPos, col2W - barW - 15, valColor, fontItem, DT_LEFT);
+                    barX + barW + UIScaler::SX(15), yPos, col2W - barW - UIScaler::SX(15), valColor, fontItem, DT_LEFT);
             }
             else if (i == 4 || i == 5) {
                 DrawColTextSetting(hdc, value, col2X, yPos, col2W, valColor, fontItem, DT_LEFT);
@@ -291,6 +292,6 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
 
     // 5. Gợi ý phím — nằm dưới cùng màn hình
     DrawTextCentered(hdc, L"A / D: Thay đổi  |  W / S: Chọn mục  |  ESC / Enter: Lưu & Thoát",
-        screenHeight - 48, screenWidth, Colour::WHITE, GlobalFont::Note);
+        screenHeight - UIScaler::SY(48), screenWidth, Palette::White, GlobalFont::Note);
 }
 
