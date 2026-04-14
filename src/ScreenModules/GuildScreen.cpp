@@ -146,7 +146,7 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
     }
 
     // 6. Navigation Hints Arrows
-    float arrowPulse = sin(g_GlobalAnimTime * 4.0f) * 8;
+    float arrowPulse = sin(g_GlobalAnimTime * 4.0f) * 8.0f;
     int arrowY = panelY + panelH / 2 - 25;
     SelectObject(hdc, GlobalFont::Bold);
     SetTextColor(hdc, Colour::BLUE_DARKEST);
