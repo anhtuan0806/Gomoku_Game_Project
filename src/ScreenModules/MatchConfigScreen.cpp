@@ -14,7 +14,6 @@ static std::wstring editName1 = L"Player 1";
 static std::wstring editName2 = L"Player 2";
 static int p1AvatarIdx = 0;
 static int p2AvatarIdx = 1;
-static int activeEditing = 0; // 0: None, 1: P1 Edit, 2: P2 Edit
 
 const std::wstring AVATAR_NAMES[] = {
     L"Tiền Đạo Số 7",      // Type 0
@@ -25,33 +24,79 @@ const std::wstring AVATAR_NAMES[] = {
 static const int AVATAR_SLOT_TO_TYPE[3] = { 0, 1, 2 };
 const int TOTAL_HUMAN_AVATARS = 3;
 
+static bool isEditingName1 = false;
+static bool isEditingName2 = false;
+static std::wstring validationMsg = L"";
+
+bool ValidateNames(PlayState* playState) {
+    bool isPvE = (playState->matchType == MATCH_PVE);
+    if (editName1.empty()) {
+        validationMsg = L"LỖI: Tên P1 không được trống!";
+        return false;
+    }
+    if (editName1.length() < 5 || editName1.length() > 15) {
+        validationMsg = L"LỖI: Tên P1 phải từ 5-15 kí tự!";
+        return false;
+    }
+    if (!isPvE) {
+        if (editName2.empty()) {
+            validationMsg = L"LỖI: Tên P2 không được trống!";
+            return false;
+        }
+        if (editName2.length() < 5 || editName2.length() > 15) {
+            validationMsg = L"LỖI: Tên P2 phải từ 5-15 kí tự!";
+            return false;
+        }
+        if (editName1 == editName2) {
+            validationMsg = L"LỖI: Tên hai cầu thủ không được trùng nhau!";
+            return false;
+        }
+    }
+    validationMsg = L"";
+    return true;
+}
+
 void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, int& selectedOption, WPARAM wParam) {
     if (wParam == 0) {
         return;
     }
 
-    // --- TRƯỜNG HỢP 1: ĐANG NHẬP TÊN (CHỈ Ở TRANG 2) ---
-    if (activeEditing != 0 && currentPage == 1) {
-        std::wstring& targetName = (activeEditing == 1) ? editName1 : editName2;
+    bool isChar = (wParam & 0x10000);
+    wchar_t ch = (wchar_t)(wParam & 0xFFFF);
 
-        if (wParam == VK_RETURN) { // Nhấn Enter để hoàn tất nhập
-            activeEditing = 0;
+    if (!isChar) validationMsg = L""; // Xóa lỗi khi người dùng thao tác phím điều hướng
+
+    // --- TRƯỜNG HỢP: ĐANG TRONG CHẾ ĐỘ NHẬP LIỆU TRỰC TIẾP ---
+    if (isEditingName1 || isEditingName2) {
+        std::wstring& target = isEditingName1 ? editName1 : editName2;
+        
+        if (!isChar) {
+            if (wParam == VK_RETURN || wParam == VK_ESCAPE) {
+                isEditingName1 = false;
+                isEditingName2 = false;
+                ValidateNames(playState); // Kiểm tra ngay sau khi đặt tên
+                return;
+            }
+            if (wParam == VK_BACK) {
+                if (!target.empty()) target.pop_back();
+                return;
+            }
+            // Ngăn chặn các phím di chuyển (W,A,S,D, Up, Down...) bị lọt xuống dưới khi đang edit
+            return; 
+        } else {
+            // Nhận ký tự Unicode trực tiếp từ WM_CHAR (UniKey đã xử lý dấu)
+            if (ch >= 32 && target.length() < 15) {
+                target += ch;
+            }
             return;
         }
-        if (wParam == VK_BACK) { // Xóa ký tự
-            if (!targetName.empty()) targetName.pop_back();
-            return;
-        }
-        // Nhận ký tự
-        if (targetName.length() < 12 && ((wParam >= 'A' && wParam <= 'Z') || (wParam >= 'a' && wParam <= 'z') || (wParam >= '0' && wParam <= '9') || wParam == VK_SPACE)) {
-            targetName += (wchar_t)wParam;
-        }
-        return;
     }
 
-    int totalItems = (currentPage == 0) ? PAGE_0_ITEMS : PAGE_1_ITEMS;
+    // --- TRƯỜNG HỢP: DI CHUYỂN MENU VÀ CÀI ĐẶT ---
+    if (isChar) return; // Không xử lý WM_CHAR khi không edit
 
-    // --- TRƯỜNG HỢP 2: DI CHUYỂN MENU ---
+    int totalItems = (currentPage == 0) ? PAGE_0_ITEMS : PAGE_1_ITEMS;
+    
     if (wParam == 'W' || wParam == 'w' || wParam == VK_UP) {
         do {
             selectedOption = (selectedOption - 1 + totalItems) % totalItems;
@@ -118,7 +163,8 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
             break;
         case 1: // Sửa Tên P1 (Enter)
             if (wParam == VK_RETURN) {
-                activeEditing = 1;
+                isEditingName1 = true;
+                editName1 = L""; // Xóa để nhập mới cho lẹ
             }
             break;
         case 2: // Đổi Avatar P2 (A/D)
@@ -128,7 +174,8 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
             break;
         case 3: // Sửa Tên P2 (Enter)
             if (!isPvE && wParam == VK_RETURN) {
-                activeEditing = 2;
+                isEditingName2 = true;
+                editName2 = L"";
             }
             break;
         case 4: // Quay lại
@@ -139,6 +186,9 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
             break;
         case 5: // Bắt Đầu
             if (wParam == VK_RETURN || wParam == VK_SPACE) {
+                if (!ValidateNames(playState)) return;
+
+                // Nếu hợp lệ thì tiến hành vào trận
                 playState->p1.name = editName1;
                 // Mapping: slot index -> path string cho decodeAvatar
                 static const char* SLOT_PATHS[3] = {
@@ -170,10 +220,8 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
                 int bSize = (playState->gameMode == MODE_CARO) ? 15 : 3;
                 initNewMatch(playState, playState->gameMode, playState->matchType, bSize, playState->countdownTime, playState->difficulty, playState->targetScore, 15);
                 
-                // Trả về trạng thái ban đầu cho lần sau
                 currentPage = 0;
                 selectedOption = 0;
-                activeEditing = 0;
                 currentState = SCREEN_PLAY;
             }
             break;
@@ -300,7 +348,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         
         // Tên Player (selectedOption==1 = đang chọn tên)
         COLORREF nameP1Col = (selectedOption == 1) ? RGB(255, 120, 0) : Palette::GrayDarkest;
-        std::wstring p1DispName = editName1 + ((activeEditing == 1) ? L"_" : L"");
+        std::wstring p1DispName = editName1 + (isEditingName1 ? L"_" : L"");
         DrawColText(hdc, L"Tên: " + p1DispName, panelX, avaY + avaSize + UIScaler::SY(50), halfW, nameP1Col, selectedOption == 1 ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
 
         // --- CỘT PHẢI (P2) ---
@@ -341,7 +389,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         
         // Tên Player P2 (selectedOption==3 = đang chọn tên P2)
         COLORREF nameP2Col = (selectedOption == 3 && !isPvE) ? RGB(0, 200, 255) : (isPvE ? Palette::GrayNormal : Palette::GrayDarkest);
-        std::wstring p2DispName = isPvE ? p2BotName : editName2 + ((activeEditing == 2) ? L"_" : L"");
+        std::wstring p2DispName = isPvE ? p2BotName : (editName2 + (isEditingName2 ? L"_" : L""));
         DrawColText(hdc, L"Tên: " + p2DispName, panelX + halfW, avaY + avaSize + UIScaler::SY(50), halfW, nameP2Col, (selectedOption == 3 && !isPvE) ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
 
         // --- BUTTONS BÊN DƯỚI DÀN HÀNG NGANG ---
@@ -386,5 +434,10 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         }
     }
     
-    DrawTextCentered(hdc, (activeEditing != 0) ? L"Gõ tên và ấn Enter để chốt" : L"A/D: Thay đổi  |  Enter: Xác nhận  |  ESC: Về Menu", screenHeight - UIScaler::SY(60), screenWidth, Palette::White, GlobalFont::Note);
+    // --- THÔNG BÁO LỖI VALIDATION ---
+    if (!validationMsg.empty()) {
+        DrawTextCentered(hdc, validationMsg, panelY + panelH - UIScaler::SY(45), screenWidth, RGB(255, 50, 50), GlobalFont::Bold);
+    }
+    
+    DrawTextCentered(hdc, (isEditingName1 || isEditingName2) ? L"Gõ tên và ấn Enter để chốt" : L"A/D: Thay đổi  |  Enter: Nhập Tên Trực Tiếp  |  ESC: Về Menu", screenHeight - UIScaler::SY(60), screenWidth, Palette::White, GlobalFont::Note);
 }

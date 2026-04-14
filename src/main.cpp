@@ -208,6 +208,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         break;
     }
 
+    case WM_CHAR: {
+        bool changed = false;
+        // Gửi ký tự Unicode (Vietnamese) trực tiếp vào các hàm Update
+        // Dùng flag 0x10000 để đánh dấu đây là WM_CHAR chứ không phải WM_KEYDOWN
+        switch (g_CurrentScreen) {
+        case SCREEN_MATCH_CONFIG:
+            UpdateMatchConfigScreen(g_CurrentScreen, &g_PlayState, g_ConfigSelected, wParam | 0x10000);
+            changed = true;
+            break;
+        case SCREEN_PLAY:
+            UpdatePlayScreen(&g_PlayState, g_CurrentScreen, wParam | 0x10000, &g_Config);
+            changed = true;
+            break;
+        case SCREEN_LOAD_GAME:
+            UpdateLoadGameScreen(g_CurrentScreen, &g_PlayState, g_LoadSelected, g_LoadStatus, wParam | 0x10000);
+            changed = true;
+            break;
+        }
+        if (changed) {
+            InvalidateRect(hWnd, NULL, FALSE);
+        }
+        break;
+    }
+
     case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);

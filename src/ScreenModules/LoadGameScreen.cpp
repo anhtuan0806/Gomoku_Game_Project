@@ -7,11 +7,57 @@
 #include "../SystemModules/Localization.h"
 #include "../ApplicationTypes/GameConstants.h"
 
+#include <iostream>
+#include <string>
+#include <windows.h>
+#include <fcntl.h>
+#include <io.h>
+
 const int BACK_OPTION = 5;
 const int TOTAL_LOAD_ITEMS = 6;
 
+static bool isEditingLoadName = false;
+static std::wstring customLoadName = L"";
+
 bool ProcessLoadGameInput(WPARAM wParam, ScreenState& currentState, PlayState* playState, int& selectedOption, std::wstring& statusMessage) {
     bool hasChanged = false;
+    bool isChar = (wParam & 0x10000);
+    wchar_t ch = (wchar_t)(wParam & 0xFFFF);
+
+    if (isEditingLoadName) {
+        if (isChar) {
+            if (ch >= 32 && customLoadName.length() < 24) {
+                customLoadName += ch;
+                hasChanged = true;
+            }
+        } else {
+            if (wParam == VK_BACK) {
+                if (!customLoadName.empty()) customLoadName.pop_back();
+                hasChanged = true;
+            }
+            else if (wParam == VK_ESCAPE) {
+                isEditingLoadName = false;
+                hasChanged = true;
+            }
+            else if (wParam == VK_RETURN) {
+                std::wstring filename = L"Asset/save/" + customLoadName + L".bin";
+                if (LoadMatchData(playState, filename)) {
+                    isEditingLoadName = false;
+                    PlaySFX(L"Asset/audio/success.wav");
+                    playState->status = MATCH_PLAYING;
+                    currentState = SCREEN_PLAY;
+                    statusMessage = L"";
+                } else {
+                    statusMessage = L"Lỗi: Không tìm thấy file '" + customLoadName + L"'";
+                }
+                hasChanged = true;
+            }
+            return true; // Chặn phím không cho lọt xuống
+        }
+        return hasChanged;
+    }
+
+    if (isChar) return false;
 
     if (wParam == 'W' || wParam == VK_UP) {
         selectedOption = (selectedOption - 1 + TOTAL_LOAD_ITEMS) % TOTAL_LOAD_ITEMS;
@@ -29,30 +75,9 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState& currentState, PlayState* p
             statusMessage = L"";
         }
         else {
-            // 1. Lấy đúng đường dẫn từ SaveLoadSystem
-            std::wstring filename = GetSavePath(selectedOption + 1);
-
-            // 2. Kiểm tra file tồn tại trước
-            if (!CheckSaveExists(selectedOption + 1)) {
-                statusMessage = L"Lỗi: Slot này chưa có dữ liệu!";
-                PlaySFX(L"Asset/audio/error.wav");
-            }
-            else {
-                // 3. Thực hiện Load
-                if (LoadMatchData(playState, filename.c_str())) {
-                    PlaySFX(L"Asset/audio/success.wav");
-
-                    // CẬP NHẬT TRẠNG THÁI TRẬN ĐẤU (Rất quan trọng)
-                    playState->status = MATCH_PLAYING;
-
-                    currentState = SCREEN_PLAY;
-                    statusMessage = L"";
-                }
-                else {
-                    statusMessage = L"Lỗi: File lưu bị hỏng hoặc phiên bản cũ. Hãy chơi và lưu lại!";
-                    PlaySFX(L"Asset/audio/error.wav");
-                }
-            }
+            isEditingLoadName = true;
+            customLoadName = L"";
+            statusMessage = L"Mời gõ tên file cần tải...";
         }
         hasChanged = true;
     }
@@ -122,10 +147,11 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
             SelectObject(hdc, oldF);
         } 
         else {
-            // --- Slot Save (i = 0..4) ---
-            bool exists = CheckSaveExists(i + 1);
-            itemText = L"Hồ Sơ " + std::to_wstring(i + 1)
-                     + (exists ? L"   ⬛ BĂNG GHI HÌNH" : L"   ▢  BĂNG TRỐNG");
+            // --- Mục tải qua đường dẫn ---
+            itemText = L"TÀI FILE THEO TÊN (" + std::to_wstring(i + 1) + L")";
+            if (i == selectedOption && isEditingLoadName) {
+                itemText = L"Đang gõ: " + customLoadName + L"_";
+            }
 
             // Nền hộp slot
             if (i == selectedOption) {
@@ -143,6 +169,7 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
             else {
                 Gdiplus::SolidBrush slotBrush(Theme::SlotNormal);
                 g.FillRectangle(&slotBrush, slotX, yPos, slotW, slotH);
+                bool exists = CheckSaveExists(i + 1);
                 color = exists ? Palette::GrayDarkest : Palette::GrayNormal;
             }
 

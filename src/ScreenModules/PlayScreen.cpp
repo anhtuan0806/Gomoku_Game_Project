@@ -11,6 +11,12 @@
 #include "../ApplicationTypes/GameConstants.h"
 #include <future>
 #include <cmath>
+#include <iostream>
+#include <string>
+#include <windows.h>
+#include <fcntl.h>
+#include <io.h>
+#include <cmath>
 
 extern bool UpdateCountdown(PlayState* state, double dt);
 
@@ -18,6 +24,7 @@ static std::future<std::pair<int, int>> g_AIFuture;
 static bool g_AIsCalculating = false;
 
 static float g_WinAnimTime = 0.0f;
+static bool isEditingSaveName = false;
 
 bool UpdatePlayLogic(PlayState* state, double dt) {
     bool needsRedraw = false;
@@ -76,33 +83,39 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
     if (state->status == MATCH_PAUSED) {
         // TRƯỜNG HỢP 1: ĐANG NHẬP TÊN 
         if (g_CurrentSubMenu == SUB_SAVE_NAME_ENTRY) {
+            bool isChar = (wParam & 0x10000);
+            wchar_t ch = (wchar_t)(wParam & 0xFFFF);
+
+            if (isChar) {
+                if (ch >= 32 && g_SaveNameInput.length() < 20) {
+                    g_SaveNameInput += ch;
+                }
+                return true;
+            }
+
             if (wParam == VK_ESCAPE) {
                 g_CurrentSubMenu = SUB_SAVE_SELECT;
+                return true;
+            }
+            if (wParam == VK_BACK) {
+                if (!g_SaveNameInput.empty()) g_SaveNameInput.pop_back();
                 return true;
             }
             if (wParam == VK_RETURN) {
                 if (g_SaveNameInput.empty()) {
                     g_SaveNameInput = L"NEW_SAVE";
                 }
-                else if (SaveMatchData(state, GetSavePath(g_SaveSlotSelected + 1).c_str())) {
+                
+                std::wstring customPath = L"Asset/save/" + g_SaveNameInput + L".bin";
+
+                if (SaveMatchData(state, customPath)) {
                     PlaySFX(L"Asset/audio/success.wav");
                     g_CurrentSubMenu = SUB_MAIN; 
                     g_SaveNameInput = L"";
                 }
                 return true;
             }
-            if (wParam == VK_BACK) {
-                if (!g_SaveNameInput.empty()) { 
-                    g_SaveNameInput.pop_back(); hasChanged = true; 
-                }
-            }
-            else if (g_SaveNameInput.length() < MAX_SAVE_NAME_LEN) {
-                if ((wParam >= '0' && wParam <= '9') || (wParam >= 'A' && wParam <= 'Z') || wParam == VK_SPACE) {
-                    g_SaveNameInput += (wchar_t)wParam;
-                    hasChanged = true;
-                }
-            }
-            return hasChanged;
+            return true; // Chặn mọi phím khác (W,A,S,D...) không cho lọt xuống di chuyển menu
         }
 
         // TRƯỜNG HỢP 2: CHỌN SLOT LƯU
@@ -629,11 +642,11 @@ void RenderPlayScreen(HDC hdc, const PlayState* state, int screenWidth, int scre
             Gdiplus::Pen tbPen(Theme::TitleBorder.WithAlpha(180), 2.0f);
             g.DrawRectangle(&tbPen, boxX, boxY, boxW, boxH);
 
-            std::wstring displayText = g_SaveNameInput + L"_"; 
+            std::wstring displayText = L"Tên: " + g_SaveNameInput + L"_"; 
             DrawTextCentered(hdc, displayText.c_str(), boxY + UIScaler::SY(12), screenWidth, Palette::GrayDarkest, GlobalFont::Bold);
 
-            DrawTextCentered(hdc, L"Nhấn [ ENTER ] để Hoàn Tất", menuY + UIScaler::SY(380), screenWidth, Palette::GreenNormal, GlobalFont::Default);
-            DrawTextCentered(hdc, L"Nhấn [ ESC ] để Hủy", menuY + UIScaler::SY(430), screenWidth, Palette::RedNormal, GlobalFont::Note);
+            DrawTextCentered(hdc, L"Gõ Tên Băng Ghi Hình Trực Tiếp (Hỗ Trợ Dấu)", menuY + UIScaler::SY(380), screenWidth, Palette::GreenNormal, GlobalFont::Default);
+            DrawTextCentered(hdc, L"Nhấn [ ENTER ] để Lưu  |  [ ESC ] để Hủy", menuY + UIScaler::SY(430), screenWidth, Palette::RedNormal, GlobalFont::Note);
         }
     }
     else if (state->status == MATCH_FINISHED) {

@@ -120,7 +120,10 @@ bool SaveMatchData(const PlayState* state, const std::wstring& filename) {
     CreateDirectoryW(L"Asset", NULL);
     CreateDirectoryW(L"Asset/save", NULL);
 
-    std::ofstream file(filename, std::ios::binary);
+    // Sử dụng std::filesystem::path để truyền trực tiếp chuỗi Unicode (wstr)
+    // vào luồng std::ofstream nhằm tránh lỗi encoding ký tự tiếng Việt có dấu.
+    std::filesystem::path savePath(filename);
+    std::ofstream file(savePath, std::ios::binary);
     if (!file.is_open()) {
         return false;
     }
@@ -162,7 +165,8 @@ bool SaveMatchData(const PlayState* state, const std::wstring& filename) {
 }
 
 bool LoadMatchData(PlayState* state, const std::wstring& filename) {
-    std::ifstream file(filename, std::ios::binary);
+    std::filesystem::path loadPath(filename);
+    std::ifstream file(loadPath, std::ios::binary);
     if (!file.is_open()) {
         return false;
     }
