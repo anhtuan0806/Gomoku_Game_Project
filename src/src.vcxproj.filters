@@ -176,25 +176,34 @@
     <None Include="..\README.md" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Asset\models\avatar_0.txt">
-      <Filter>Asset\models</Filter>
-    </Text>
-    <Text Include="Asset\models\avatar_1.txt">
-      <Filter>Asset\models</Filter>
-    </Text>
-    <Text Include="Asset\models\avatar_2.txt">
-      <Filter>Asset\models</Filter>
-    </Text>
-    <Text Include="Asset\models\avatar_3.txt">
-      <Filter>Asset\models</Filter>
-    </Text>
-    <Text Include="Asset\models\avatar_4.txt">
-      <Filter>Asset\models</Filter>
-    </Text>
     <Text Include="Asset\lang\en.txt">
       <Filter>Asset\lang</Filter>
     </Text>
+    <Text Include="Asset\lang\vi.txt">
+      <Filter>Asset\lang</Filter>
+    </Text>
+    <Text Include="Asset\models\badge.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\balloon.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\cassette.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\clock.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\cloud.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
     <Text Include="Asset\models\football.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\gears.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\history_pitch.txt">
       <Filter>Asset\models</Filter>
     </Text>
     <Text Include="Asset\models\title_caro.txt">
@@ -203,14 +212,191 @@
     <Text Include="Asset\models\trophy.txt">
       <Filter>Asset\models</Filter>
     </Text>
-    <Text Include="Asset\lang\vi.txt">
-      <Filter>Asset\lang</Filter>
-    </Text>
-    <Text Include="Asset\models\clock.txt">
+    <Text Include="Asset\models\whistle.txt">
       <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\avt.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\idle\f_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\idle\f_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\run\f_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\run\f_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\run\f_2.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\run\f_3.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\sad\f_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\sad\f_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\win\f_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\win\f_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\win\f_2.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\win\f_3.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\avt.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\idle\f_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\idle\f_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\run\f_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\run\f_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\run\f_2.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\run\f_3.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\sad\f_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\sad\f_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\win\f_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\win\f_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\win\f_2.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\win\f_3.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\avt.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\idle\f_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\idle\f_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\run\f_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\run\f_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\run\f_2.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\run\f_3.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\sad\f_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\sad\f_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\win\f_0.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\win\f_1.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\win\f_2.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\win\f_3.txt">
+      <Filter>Asset\models</Filter>
+    </Text>
+    <Text Include="Asset\font\Be_Vietnam_Pro\OFL.txt">
+      <Filter>Asset\font</Filter>
+    </Text>
+    <Text Include="Asset\font\VT323\OFL.txt">
+      <Filter>Asset\font</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Black.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-BlackItalic.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Bold.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-BoldItalic.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ExtraBold.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ExtraBoldItalic.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ExtraLight.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ExtraLightItalic.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Italic.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Light.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-LightItalic.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Medium.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-MediumItalic.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Regular.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-SemiBold.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-SemiBoldItalic.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Thin.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ThinItalic.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
+    <Font Include="Asset\font\pixellari\Pixellari.ttf">
+      <Filter>Asset\font</Filter>
+    </Font>
     <Font Include="Asset\font\VT323\VT323-Regular.ttf">
       <Filter>Asset\font</Filter>
     </Font>
