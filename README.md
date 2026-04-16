@@ -188,6 +188,8 @@ Bot AI (PLAYER 2) hoạt động trên một luồng riêng biệt (`std::async`
 
 ---
 
-© 2026 Nhóm 3 - 25CTT6. Dự án được phát triển cho mục đích giáo dục.
+© 2026 Nhóm 3 - 25CTT7. Dự án được phát triển cho mục đích giáo dục.
+
 MSV: 24120260 | 24120421 | 24120428 | 24120451
+
 GVHD: Trương Toàn Thịnh.
