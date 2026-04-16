@@ -9,6 +9,7 @@
 #include "SystemModules/ConfigLoader.h"
 #include "SystemModules/AudioSystem.h"
 #include "SystemModules/TimeSystem.h"
+#include "SystemModules/Localization.h"
 #include "RenderAPI/Colours.h"
 #include "RenderAPI/UIScaler.h"
 #include "RenderAPI/Renderer.h"
@@ -61,8 +62,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // 2. Tải Cấu hình & Nhạc nền
     LoadConfig(&g_Config, "Asset/config.ini");
+    LoadLanguageFile(g_Config.currentLang); // Khởi tạo ngôn ngữ trước
+
     if (g_Config.isBgmEnabled) {
-        //PlayBGM("Asset/audio/bgm_menu.wav");
+        PlayBGM("Asset/audio/UEFA_Champions_League.mp3");
+    }
+
+    if (g_Config.isBgmEnabled) {
+        // Tên file mp3 tôi khuyên bạn đổi lại cho an toàn
+        PlayBGM("Asset/audio/c1.mp3");
     }
 
     // 3. Đăng ký lớp cửa sổ

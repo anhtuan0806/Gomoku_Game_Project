@@ -22,12 +22,12 @@ struct PlayerInfo2
 {
     wstring name;
     string avatarPath;
-    char piece;          // 'X' hoặc 'O'      
-    int totalWins;       // Số Bàn Thắng (trong series BO hiện tại)
-    int matchWins;       // Số Trận Thắng BO (đã thắng trọn 1 serie BO)
-    int movesCount;
-    float maxTurnTime;   // Thời gian tối đa cho 1 lượt
-    float totalTimePossessed; // Tổng thời gian giữ bóng (giây), cộng dồn theo phiên
+    char piece;
+    int totalWins = 0;       // Thêm = 0
+    int matchWins = 0;       // Thêm = 0
+    int movesCount = 0;      // Thêm = 0
+    float maxTurnTime = 0.0f;
+    float totalTimePossessed = 0.0f;
 };
 
 // Trạng thái ván đấu

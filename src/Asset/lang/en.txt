@@ -1,1 +1,67 @@
-key=value
+menu_play=NEW GAME
+menu_load=LOAD MATCH
+menu_settings=SETTINGS
+menu_about=ABOUT
+menu_guild=TUTORIAL
+menu_exit=EXIT
+menu_instruct=Use W/S/A/D to move, ENTER to select
+
+setting_title=TECHNICAL SETTINGS
+setting_bgm=Stadium BGM
+setting_bgm_vol=Music Volume
+setting_sfx=Match SFX
+setting_sfx_vol=SFX Volume
+setting_lang=Commentary Language
+setting_theme=Pitch Theme
+btn_on=ON
+btn_off=OFF
+btn_back=RETURN TO TACTICS
+
+about_title=ABOUT US
+about_team=DEVELOPED BY GROUP 3 - 25CTT6
+about_member=MEMBERS
+about_id=STUDENT ID
+about_teacher=INSTRUCTOR: Truong Toan Thinh
+about_tech=TECHNOLOGIES USED
+about_esc=Press [ESC] to return to Main Menu
+
+save_title=SAVE MANAGEMENT
+save_empty=Empty
+save_details=MATCH DETAILS
+save_name=Save Name:
+save_time=Time:
+save_mode=Mode:
+save_opp=Opponent:
+save_score=Score:
+save_btn_load=LOAD GAME
+save_btn_rename=RENAME
+save_btn_delete=DELETE
+save_btn_deselect=DESELECT
+save_btn_back=[ RETURN ]
+
+config_page1=--- 1. TACTICAL PROFILE ---
+config_size=Pitch Size:
+config_type=Matchup:
+config_time=Ball Control (Turn):
+config_bo=Match Format:
+config_next===> [ NEXT ] ===>
+config_page2=--- 2. PLAYER PROFILE ---
+config_locked=[ LOCKED ]
+config_pname=Name: 
+config_back=< BACK TO PITCH SETUP
+config_start=ENTER THE PITCH >
+
+play_format=FORMAT: 
+play_turn=- TURN: 
+play_time=PLAY TIME: 
+play_piece=Piece: 
+play_goals=Goals: 
+play_dribble=Dribbles: 
+play_bowins=BO Wins: 
+
+pause_title=PAUSE
+pause_resume=>> RETURN TO PITCH <<
+pause_bgm=BGM:
+pause_vol=MUSIC VOLUME
+pause_save=RECORD MATCH (SAVE)
+pause_exit=END MATCH

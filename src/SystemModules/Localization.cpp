@@ -1,34 +1,36 @@
 ﻿#include "Localization.h"
 #include <fstream>
 #include <map>
+#include <windows.h>
 
-static std::map<std::string, std::string> g_dictionary;
+static std::map<std::string, std::wstring> g_dictionary;
+
+static std::wstring UTF8ToWString(const std::string& str) {
+    if (str.empty()) return L"";
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+    std::wstring wstrTo(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+    return wstrTo;
+}
 
 void LoadLanguageFile(Language lang) {
     g_dictionary.clear();
     std::string filepath = (lang == APP_LANG_VI) ? "Asset/lang/vi.txt" : "Asset/lang/en.txt";
     std::ifstream file(filepath);
-
-    if (!file.is_open()) {
-        g_dictionary["missing_file"] = "Lỗi: Không tìm thấy tệp ngôn ngữ!";
-        return;
-    }
+    if (!file.is_open()) return;
 
     std::string line;
     while (std::getline(file, line)) {
-        size_t delimiterPos = line.find('=');
-        if (delimiterPos != std::string::npos) {
-            std::string key = line.substr(0, delimiterPos);
-            std::string value = line.substr(delimiterPos + 1);
-            g_dictionary[key] = value;
+        size_t pos = line.find('=');
+        if (pos != std::string::npos) {
+            std::string key = line.substr(0, pos);
+            std::string val = line.substr(pos + 1);
+            g_dictionary[key] = UTF8ToWString(val);
         }
     }
-    file.close();
 }
 
-std::string GetText(const std::string& key) {
-    if (g_dictionary.find(key) != g_dictionary.end()) {
-        return g_dictionary[key];
-    }
-    return key;
+std::wstring GetText(const std::string& key) {
+    if (g_dictionary.find(key) != g_dictionary.end()) return g_dictionary[key];
+    return UTF8ToWString(key);
 }

@@ -1,5 +1,7 @@
 #include "MenuScreen.h"
+#include "../SystemModules/AudioSystem.h"
 #include "../RenderAPI/UIComponents.h"
+#include "../SystemModules/Localization.h"
 #include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
 #include <cmath>
@@ -7,15 +9,6 @@
 
 const int TOTAL_MENU_ITEMS = 6;
 
-// Chuyển sang chuỗi wide-character (L"") để hỗ trợ Unicode tiếng Việt
-const wchar_t* menuItems[TOTAL_MENU_ITEMS] = {
-    L"Bắt Đầu",
-    L"Tải Băng",
-    L"Cài Đặt Sân",
-    L"Hướng Dẫn",
-    L"Giới Thiệu",
-    L"Thoát"
-};
 
 void UpdateMenuScreen(ScreenState& currentState, int& selectedOption, WPARAM wParam) {
     // Bỏ qua nếu không có sự kiện phím hợp lệ
@@ -38,6 +31,7 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState& currentState, int& selectedOpt
         if (selectedOption < 0) {
             selectedOption = TOTAL_MENU_ITEMS - 1;
         }
+        PlaySFX("Asset/audio/move.wav", "sfx_move");
         hasChanged = true;
     }
     else if (wParam == 'S' || wParam == 's' || wParam == VK_DOWN) {
@@ -45,9 +39,11 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState& currentState, int& selectedOpt
         if (selectedOption >= TOTAL_MENU_ITEMS) {
             selectedOption = 0;
         }
+        PlaySFX("Asset/audio/move.wav", "sfx_move");
         hasChanged = true;
     }
     else if (wParam == VK_RETURN || wParam == VK_SPACE) {
+        PlaySFX("Asset/audio/select.wav", "sfx_select");
         switch (selectedOption) {
         case 0: 
             currentState = SCREEN_PLAY; 
@@ -109,6 +105,15 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
     int startY = screenHeight / 2 + UIScaler::SY(10);
     int spacing = UIScaler::SY(55);
 
+    std::wstring menuItems[TOTAL_MENU_ITEMS] = {
+        GetText("menu_play"),
+        GetText("menu_load"),
+        GetText("menu_settings"),
+        GetText("menu_guild"),
+        GetText("menu_about"),
+        GetText("menu_exit")
+    };
+
     for (int i = 0; i < TOTAL_MENU_ITEMS; i++) {
         int currentY = startY + i * spacing;
 
@@ -131,5 +136,5 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
     }
 
     // 3. Vẽ hướng dẫn điều khiển (Màu tối hơn cho nền sáng)
-    DrawTextCentered(hdc, L"Dùng W/S/UP/DOWN để rê bóng, ENTER để sút (chọn)", screenHeight - UIScaler::SY(50), screenWidth, ToCOLORREF(Palette::GrayDark), GlobalFont::Note);
+    DrawTextCentered(hdc, GetText("menu_instruct"), screenHeight - UIScaler::SY(50), screenWidth, ToCOLORREF(Palette::GrayDark), GlobalFont::Note);
 }

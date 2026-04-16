@@ -1,4 +1,5 @@
 #include "SettingScreen.h"
+#include "../SystemModules/Localization.h"
 #include "../RenderAPI/UIComponents.h"
 #include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
@@ -16,16 +17,20 @@ void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int sele
 
     switch (selectedOption) {
     case 0: // Nhạc nền (BGM)
-        if (isEnterPressed) 
+        if (isEnterPressed) {
             config->isBgmEnabled = !config->isBgmEnabled;
-        else 
+        }
+        else {
             config->isBgmEnabled = (direction == 1);
-
-        if (!config->isBgmEnabled) StopBGM();
-        else 
-            //PlayBGM("Asset/audio/bgm_menu.wav");
+        }
+        if (!config->isBgmEnabled) {
+            StopBGM();
+        }
+        else {
+            PlayBGM("Asset/audio/c1.mp3");
+        }
+        PlaySFX("Asset/audio/move.wav", "sfx_move");
         break;
-
     case 1: // Âm lượng BGM
         if (direction != 0) {
             config->bgmVolume += direction * 10;
@@ -35,6 +40,8 @@ void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int sele
             if (config->bgmVolume < 0) {
                 config->bgmVolume = 0;
             }
+            UpdateBGMVolume();
+            PlaySFX("Asset/audio/move.wav", "sfx_move");    
         }
         break;
 
@@ -56,13 +63,17 @@ void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int sele
             if (config->sfxVolume < 0) {
                 config->sfxVolume = 0;
             }
+            PlaySFX("Asset/audio/move.wav", "sfx_move");
         }
         break;
 
     case 4: // Ngôn ngữ
-        if (direction != 0 || isEnterPressed) {
+        if (direction != 0) {
             // Đã sửa lỗi: APP_LANG_VI thay vì APP_LANG_VIETNAMESE
             config->currentLang = (config->currentLang == APP_LANG_VI) ? APP_LANG_EN : APP_LANG_VI;
+            // Nạp lại file từ điển lập tức
+            LoadLanguageFile(config->currentLang);
+            PlaySFX("Asset/audio/move.wav", "sfx_move");
         }
         break;
 
@@ -105,21 +116,25 @@ void UpdateSettingScreen(ScreenState& currentState, GameConfig* config, int& sel
         do {
             selectedOption = (selectedOption - 1 < 0) ? TOTAL_SETTING_ITEMS - 1 : selectedOption - 1;
         } while ((selectedOption == 1 && !config->isBgmEnabled) || (selectedOption == 3 && !config->isSfxEnabled));
+        PlaySFX("Asset/audio/move.wav", "sfx_move");
         return;
     }
     else if (keyCode == 'S' || keyCode == VK_DOWN) {
         do {
             selectedOption = (selectedOption + 1 >= TOTAL_SETTING_ITEMS) ? 0 : selectedOption + 1;
         } while ((selectedOption == 1 && !config->isBgmEnabled) || (selectedOption == 3 && !config->isSfxEnabled));
+        PlaySFX("Asset/audio/move.wav", "sfx_move");
         return;
     }
 
     int direction = 0;
     if (keyCode == 'D' || keyCode == VK_RIGHT) {
         direction = 1;
+        PlaySFX("Asset/audio/move.wav", "sfx_move");
     }
     if (keyCode == 'A' || keyCode == VK_LEFT) {
         direction = -1;
+        PlaySFX("Asset/audio/move.wav", "sfx_move");
     }
 
     bool isEnterPressed = (keyCode == VK_RETURN);

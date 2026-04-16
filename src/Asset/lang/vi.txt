@@ -1,1 +1,67 @@
-key=value
+menu_play=CHƠI MỚI
+menu_load=TẢI TRẬN
+menu_settings=CÀI ĐẶT
+menu_about=THÔNG TIN
+menu_guild=HƯỚNG DẪN
+menu_exit=THOÁT
+menu_instruct=Dùng W/S/A/D để rê bóng, ENTER để sút (chọn)
+
+setting_title=THIẾT LẬP KỸ THUẬT
+setting_bgm=Nhạc nền Sân
+setting_bgm_vol=Âm lượng Nhạc
+setting_sfx=Tạp âm Thi đấu (SFX)
+setting_sfx_vol=Âm lượng SFX
+setting_lang=Ngôn ngữ Bình luận
+setting_theme=Chủ đề Nền
+btn_on=BẬT
+btn_off=TẮT
+btn_back=QUAY LẠI CHỈ ĐẠO
+
+about_title=GIỚI THIỆU
+about_team=THỰC HIỆN BỞI NHÓM 3 - 25CTT6
+about_member=THÀNH VIÊN
+about_id=MSSV
+about_teacher=GIẢNG VIÊN HƯỚNG DẪN: Trương Toàn Thịnh
+about_tech=CÔNG NGHỆ SỬ DỤNG
+about_esc=Nhấn [ESC] để quay lại Menu chính
+
+save_title=QUẢN LÝ BẢN LƯU
+save_empty=Trống
+save_details=THÔNG TIN CHI TIẾT
+save_name=Tên lưu:
+save_time=Thời gian:
+save_mode=Chế độ:
+save_opp=Đối thủ:
+save_score=Tỷ số:
+save_btn_load=TẢI GAME
+save_btn_rename=ĐỔI TÊN
+save_btn_delete=XÓA
+save_btn_deselect=BỎ CHỌN
+save_btn_back=[ TRỞ VỀ ]
+
+config_page1=--- 1. HỒ SƠ CHIẾN THUẬT ---
+config_size=Khổ sân thi đấu:
+config_type=Bảng Bốc Thăm:
+config_time=Kiểm soát bóng (Lượt):
+config_bo=Thể thức phân định:
+config_next===> [ TIẾP THEO ] ===>
+config_page2=--- 2. HỒ SƠ TUYỂN THỦ ---
+config_locked=[ ĐÃ KHÓA ]
+config_pname=Tên: 
+config_back=< QUAY LẠI CÀI ĐẶT SÂN
+config_start=XUỐNG SÂN BẮT ĐẦU >
+
+play_format=THỂ THỨC: 
+play_turn=- LƯỢT: 
+play_time=ĐÃ CHƠI: 
+play_piece=Cầu thủ: 
+play_goals=Bàn thắng: 
+play_dribble=Dẫn bóng: 
+play_bowins=Trận thắng BO: 
+
+pause_title=TẠM DỪNG
+pause_resume=>> TRỞ LẠI SÂN <<
+pause_bgm=NHẠC NỀN:
+pause_vol=ÂM LƯỢNG NHẠC
+pause_save=GHI HÌNH TRẬN ĐẤU
+pause_exit=KẾT THÚC TRẬN ĐẤU
