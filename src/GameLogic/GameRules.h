@@ -5,12 +5,14 @@
 #include <utility>
 #include "../ApplicationTypes/PlayState.h"
 
-// Kiểm tra xem ô cờ có đánh được không
+// Kiểm tra ô có hợp lệ để đánh không
 bool isValidMove(const PlayState* state, int row, int col);
 
-// Kiểm tra trạng thái trận đấu. 
-// Kiểm tra trạng thái trận đấu. Nếu ai thắng, thêm danh sách tọa độ vào outWinCells nếu con trỏ khác nullptr.
-// Trả về: CELL_PLAYER1 (1 thắng), CELL_PLAYER2 (2 thắng), CELL_EMPTY (Hòa), hoặc -1 (Chưa kết thúc)
-int checkWinCondition(const PlayState* state, int lastRow, int lastCol, std::vector<std::pair<int, int>>* outWinCells = nullptr);
+// Kiểm tra trạng thái trận đấu sau nước đi tại (lastRow, lastCol).
+// outWinCells: nếu khác nullptr, sẽ được fill toàn bộ ô thuộc chuỗi thắng (FIX: đủ ô).
+// Trả về: CELL_PLAYER1 (P1 thắng), CELL_PLAYER2 (P2 thắng),
+//         CELL_EMPTY (Hòa), hoặc -1 (Chưa kết thúc)
+int checkWinCondition(const PlayState* state, int lastRow, int lastCol,
+    std::vector<std::pair<int, int>>* outWinCells = nullptr);
 
 #endif // _GAME_RULES_H_

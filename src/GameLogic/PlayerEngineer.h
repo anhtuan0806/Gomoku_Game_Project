@@ -3,17 +3,12 @@
 
 #include "../ApplicationTypes/PlayState.h"
 
-// Khởi tạo thông tin người chơi
-void initPlayer(PlayerInfo2& player, const wstring& name, const string& avatar, char piece, float maxTime);
+// Khởi tạo thông tin người chơi (gọi 1 lần khi setup match)
+void initPlayer(PlayerInfo2& player, const wstring& name,
+    const string& avatar, char piece, float maxTime);
 
-// Reset thông tin người chơi cho ván đấu mới
-void resetPlayerForNewMatch(PlayerInfo2& player);
+// Reset thống kê lượt (movesCount) cho round mới.
+// totalWins KHÔNG reset ở đây — do initNewMatch quản lý.
+void resetPlayerForRound(PlayerInfo2& player);
 
-// Ghi nhận chiến thắng
-void recordWin(PlayerInfo2& player);
-
-// Cập nhật số nước đi
-void updateMoveStats(PlayerInfo2& player);
-
-
-#endif
+#endif // _PLAYER_ENGINEER_H_
