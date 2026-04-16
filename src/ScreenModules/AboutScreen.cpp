@@ -21,14 +21,14 @@ void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight) {
     g.FillRectangle(&whiteGlassBrush, 0, 0, screenWidth, screenHeight);
 
     // 2. Banner Tiêu đề
-    DrawPixelBanner(g, hdc, L"GIỚI THIỆU", screenWidth / 2, UIScaler::SY(80), UIScaler::SX(500), Palette::White, Palette::CyanNormal);
+    DrawPixelBanner(g, hdc, L"GIỚI THIỆU", screenWidth / 2, UIScaler::SY(80), UIScaler::SX(500), ToCOLORREF(Palette::White), ToCOLORREF(Palette::CyanNormal));
 
     // 3. Logo & Tên Game
     int trophySize = UIScaler::S(60);
     DrawPixelTrophy(g, screenWidth / 2, UIScaler::SY(165), trophySize);
     
-    DrawTextCentered(hdc, L"CARO CHAMPIONS LEAGUE", UIScaler::SY(205), screenWidth, Palette::BlueDarkest, GlobalFont::Title);
-    DrawTextCentered(hdc, L"Version 1.0 (Extreme Edition)", UIScaler::SY(250), screenWidth, Palette::GrayDark, GlobalFont::Note);
+    DrawTextCentered(hdc, L"CARO CHAMPIONS LEAGUE", UIScaler::SY(205), screenWidth, ToCOLORREF(Palette::BlueDarkest), GlobalFont::Title);
+    DrawTextCentered(hdc, L"Version 1.0 (Extreme Edition)", UIScaler::SY(250), screenWidth, ToCOLORREF(Palette::GrayDark), GlobalFont::Note);
 
     // 4. Thông tin phát triển (Light Glassmorphism Panel)
     int panelW = UIScaler::SX(700);
@@ -36,19 +36,19 @@ void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight) {
     int panelX = (screenWidth - panelW) / 2;
     int panelY = UIScaler::SY(280);
 
-    Gdiplus::SolidBrush whitePanel(Theme::GlassWhite);
+    Gdiplus::SolidBrush whitePanel(ToGdiColor(Theme::GlassWhite));
     g.FillRectangle(&whitePanel, panelX, panelY, panelW, panelH);
 
-    Gdiplus::Pen panelPen(Theme::PanelOrangeBorder, 3.0f);
+    Gdiplus::Pen panelPen(ToGdiColor(Theme::PanelOrangeBorder), 3.0f);
     g.DrawRectangle(&panelPen, panelX, panelY, panelW, panelH);
 
     // 3. Tiêu đề Pixel Banner (Chỉ giữ lại viền và icon làm vật trang trí)
     DrawPixelBanner(g, hdc, L"", screenWidth / 2, panelY + UIScaler::SY(40), 
-        panelW - UIScaler::SX(20), Palette::White, RGB(255, 120, 0), "Asset/models/history_pitch.txt");
+        panelW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(255, 120, 0), "Asset/models/bg/history_pitch.txt");
 
     // 4. Nội dung About
     SetBkMode(hdc, TRANSPARENT);
-    DrawTextCentered(hdc, L"THỰC HIỆN BỞI NHÓM 3 - 25CTT6", panelY + UIScaler::SY(80), screenWidth, Palette::GrayDarkest, GlobalFont::Bold);
+    DrawTextCentered(hdc, L"THỰC HIỆN BỞI NHÓM 3 - 25CTT6", panelY + UIScaler::SY(80), screenWidth, ToCOLORREF(Palette::GrayDarkest), GlobalFont::Bold);
 
     int rowH = UIScaler::SY(35);
     int tableW = UIScaler::SX(600);
@@ -72,7 +72,7 @@ void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight) {
 
     // Header Text
     HFONT oldF = (HFONT)SelectObject(hdc, GlobalFont::Bold);
-    SetTextColor(hdc, Palette::White);
+    SetTextColor(hdc, ToCOLORREF(Palette::White));
     RECT rHeader1 = { tableX, tableY, tableX + col1W, tableY + rowH };
     RECT rHeader2 = { tableX + col1W, tableY, tableX + tableW, tableY + rowH };
     DrawTextW(hdc, L"THÀNH VIÊN", -1, &rHeader1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
@@ -80,7 +80,7 @@ void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight) {
 
     // Body Text
     SelectObject(hdc, GlobalFont::Default);
-    SetTextColor(hdc, Palette::GrayDarkest);
+    SetTextColor(hdc, ToCOLORREF(Palette::GrayDarkest));
     struct Member { std::wstring name; std::wstring ms; };
     Member list[] = {
         { L"Trương Tuấn Anh", L"24120260" },
@@ -99,12 +99,12 @@ void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight) {
 
     // Giảng viên hướng dẫn & Công nghệ
     int lineY = tableY + tableH + UIScaler::SY(20);
-    DrawTextCentered(hdc, L"GIẢNG VIÊN HƯỚNG DẪN: Trương Toàn Thịnh", lineY, screenWidth, Palette::BlueDarkest, GlobalFont::Bold);
+    DrawTextCentered(hdc, L"GIẢNG VIÊN HƯỚNG DẪN: Trương Toàn Thịnh", lineY, screenWidth, ToCOLORREF(Palette::BlueDarkest), GlobalFont::Bold);
 
     lineY += UIScaler::SY(35);
-    DrawTextCentered(hdc, L"CÔNG NGHỆ SỬ DỤNG", lineY, screenWidth, Palette::GrayDark, GlobalFont::Bold);
+    DrawTextCentered(hdc, L"CÔNG NGHỆ SỬ DỤNG", lineY, screenWidth, ToCOLORREF(Palette::GrayDark), GlobalFont::Bold);
     lineY += UIScaler::SY(28);
-    DrawTextCentered(hdc, L"C++ / Win32 API / GDI+ (Raster & Procedural)", lineY, screenWidth, Palette::GrayDark, GlobalFont::Default);
+    DrawTextCentered(hdc, L"C++ / Win32 API / GDI+ (Raster & Procedural)", lineY, screenWidth, ToCOLORREF(Palette::GrayDark), GlobalFont::Default);
 
     // 5. Nút thoát
     int pulse = (int)(sin(g_GlobalAnimTime * 4.0f) * 30 + 100);

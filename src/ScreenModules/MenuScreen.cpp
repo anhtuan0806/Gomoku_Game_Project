@@ -93,17 +93,17 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
     static PixelModel titleModel;
     static std::map<int, Gdiplus::Color> titlePalette;
     if (!titleModel.isLoaded) {
-        titleModel = LoadPixelModel("Asset/models/title_caro.txt");
-        titlePalette[1] = Theme::TitleBorder;
-        titlePalette[2] = Theme::TitleFill;
-        titlePalette[3] = Theme::TitleShadow;
+        titleModel = LoadPixelModel("Asset/models/bg/title_caro.txt");
+        titlePalette[1] = ToGdiColor(Theme::TitleBorder);
+        titlePalette[2] = ToGdiColor(Theme::TitleFill);
+        titlePalette[3] = ToGdiColor(Theme::TitleShadow);
     }
 
     int titleYOffset = UIScaler::SY((int)(sin(g_GlobalAnimTime * 2.0f) * 6.0f));
     
     DrawPixelModel(g, titleModel, screenWidth / 2, screenHeight / 4 + UIScaler::SY(20) + titleYOffset, UIScaler::S(500), titlePalette);
     
-    DrawTextCentered(hdc, L"CHAMPIONS LEAGUE", screenHeight / 4 + UIScaler::SY(75) + titleYOffset, screenWidth, Palette::BlueDarkest, GlobalFont::Title);
+    DrawTextCentered(hdc, L"CHAMPIONS LEAGUE", screenHeight / 4 + UIScaler::SY(75) + titleYOffset, screenWidth, ToCOLORREF(Palette::BlueDarkest), GlobalFont::Title);
 
     // 2. In danh sách các mục Menu
     int startY = screenHeight / 2 + UIScaler::SY(10);
@@ -126,10 +126,10 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
             DrawTextCentered(hdc, highlightedText, currentY, screenWidth, dynColor, GlobalFont::Title);
         }
         else {
-            DrawTextCentered(hdc, menuItems[i], currentY + UIScaler::SY(6), screenWidth, Palette::GrayDarkest, GlobalFont::Bold);
+            DrawTextCentered(hdc, menuItems[i], currentY + UIScaler::SY(6), screenWidth, ToCOLORREF(Palette::GrayDarkest), GlobalFont::Bold);
         }
     }
 
     // 3. Vẽ hướng dẫn điều khiển (Màu tối hơn cho nền sáng)
-    DrawTextCentered(hdc, L"Dùng W/S/UP/DOWN để rê bóng, ENTER để sút (chọn)", screenHeight - UIScaler::SY(50), screenWidth, Palette::GrayDark, GlobalFont::Note);
+    DrawTextCentered(hdc, L"Dùng W/S/UP/DOWN để rê bóng, ENTER để sút (chọn)", screenHeight - UIScaler::SY(50), screenWidth, ToCOLORREF(Palette::GrayDark), GlobalFont::Note);
 }

@@ -78,13 +78,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // 4. Tạo cửa sổ (Kích thước 850x750 để bàn cờ 15x15 nằm cân đối)
     HWND hWnd = CreateWindowExW(
-        0, CLASS_NAME, L"Caro & Tic-Tac-Toe - Ultimate Edition",
-        WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 850, 750,
+        0, CLASS_NAME, L"CARO: Champions League",
+        WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 1280, 720,
         NULL, NULL, hInstance, NULL
     );
 
     if (hWnd == NULL) {
         return 0;
+    }
+
+    // Thiết lập Icon cho cửa sổ từ file ảnh
+    {
+        HICON hIcon = NULL;
+        Gdiplus::Bitmap* bmp = Gdiplus::Bitmap::FromFile(L"Asset/icon.png");
+        if (bmp && bmp->GetLastStatus() == Gdiplus::Ok) {
+            bmp->GetHICON(&hIcon);
+            SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+            SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+            delete bmp;
+        }
     }
 
     ShowWindow(hWnd, nCmdShow);

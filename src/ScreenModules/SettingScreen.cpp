@@ -149,7 +149,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
     int panelX = (screenWidth - panelW) / 2;
     int panelY = (screenHeight - panelH) / 2 - UIScaler::SY(10);
 
-    Gdiplus::SolidBrush whitePanel(Theme::GlassWhite);
+    Gdiplus::SolidBrush whitePanel(ToGdiColor(Theme::GlassWhite));
     g.FillRectangle(&whitePanel, panelX, panelY, panelW, panelH);
 
     // Viền xanh lá kỹ thuật
@@ -158,7 +158,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
 
     // 3. Tiêu đề Pixel Banner (Dấu ấn riêng: Bánh răng kỹ thuật)
     DrawPixelBanner(g, hdc, L"THIẾT LẬP KỸ THUẬT", screenWidth / 2, panelY + UIScaler::SY(40),
-        panelW - UIScaler::SX(20), Palette::White, RGB(50, 220, 80), "Asset/models/gears.txt");
+        panelW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(50, 220, 80), "Asset/models/bg/gears.txt");
 
     // 4. Layout 2 cột — Label bên trái, Value/Control bên phải
     int startY  = panelY + UIScaler::SY(105);
@@ -175,8 +175,8 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
         std::wstring label = L"";
         std::wstring value = L"";
 
-        COLORREF labelColor = Palette::GrayDarkest;
-        COLORREF valColor   = Palette::GrayDark;
+        COLORREF labelColor = ToCOLORREF(Palette::GrayDarkest);
+        COLORREF valColor   = ToCOLORREF(Palette::GrayDark);
         HFONT fontItem = (i == selectedOption) ? GlobalFont::Bold : GlobalFont::Default;
         bool isDisabled = (i == 1 && !config->isBgmEnabled) || (i == 3 && !config->isSfxEnabled);
 
@@ -228,7 +228,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
 
         if (i == 6) {
             // --- Nút Xác Nhận Ra Sân ---
-            COLORREF btnColor = Palette::BlueDarkest;
+            COLORREF btnColor = ToCOLORREF(Palette::BlueDarkest);
             if (i == selectedOption) {
                 int gCol = (int)(150 + sin(g_GlobalAnimTime * 15.0f) * 105);
                 btnColor = RGB(max(0, min(255, 255 - gCol)), 100, 255);
@@ -264,13 +264,13 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
                 int barH = UIScaler::SY(14);
 
                 // Nền thanh
-                Gdiplus::SolidBrush bgBrush(Theme::BarTrack);
+                Gdiplus::SolidBrush bgBrush(ToGdiColor(Theme::BarTrack));
                 g.FillRectangle(&bgBrush, barX, barY, barW, barH);
 
                 // Phần đã kéo
                 float percent = vol / 100.0f;
                 Gdiplus::Color fillC = isDisabled ? Gdiplus::Color(100, 150, 150, 150) : 
-                                       ((i == selectedOption) ? Theme::BarFillSelected : Theme::BarFillNormal);
+                                       ((i == selectedOption) ? ToGdiColor(Theme::BarFillSelected) : ToGdiColor(Theme::BarFillNormal));
                 Gdiplus::SolidBrush fillBrush(fillC);
                 g.FillRectangle(&fillBrush, barX, barY, (int)(barW * percent), barH);
 
@@ -292,6 +292,6 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
 
     // 5. Gợi ý phím — nằm dưới cùng màn hình
     DrawTextCentered(hdc, L"A / D: Thay đổi  |  W / S: Chọn mục  |  ESC / Enter: Lưu & Thoát",
-        screenHeight - UIScaler::SY(48), screenWidth, Palette::White, GlobalFont::Note);
+        screenHeight - UIScaler::SY(48), screenWidth, ToCOLORREF(Palette::White), GlobalFont::Note);
 }
 

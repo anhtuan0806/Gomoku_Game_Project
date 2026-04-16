@@ -20,6 +20,10 @@ void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize
     // Reset điểm số về 0 cho trận đấu mới
     state->p1.totalWins = 0;
     state->p2.totalWins = 0;
+    state->p1.matchWins = 0;
+    state->p2.matchWins = 0;
+    state->p1.totalTimePossessed = 0.0f;
+    state->p2.totalTimePossessed = 0.0f;
 
     // Khởi tạo thời gian lượt chờ cho PlayerInfo2 (quan trọng để ResetTimer không bị 0)
     state->p1.maxTurnTime = static_cast<float>(countdownTime);
@@ -180,7 +184,22 @@ bool processMove(PlayState* state, int row, int col)
     if (winStatus != -1) { 
         if (winStatus == CELL_PLAYER1) state->p1.totalWins++;
         else if (winStatus == CELL_PLAYER2) state->p2.totalWins++;
-        
+
+        // Kiểm tra xem đã thắng trọn series BO chưa
+        int winRequired = (state->targetScore + 1) / 2; // BO1=1, BO3=2, BO5=3
+        if (state->targetScore > 1) {
+            // Dùng targetScore trực tiếp làm mục tiêu bàn thắng
+            winRequired = state->targetScore;
+        }
+        bool seriesWon = (state->p1.totalWins >= winRequired || state->p2.totalWins >= winRequired);
+        if (seriesWon) {
+            if (state->p1.totalWins >= winRequired) state->p1.matchWins++;
+            else state->p2.matchWins++;
+            // Reset bàn thắng cho series BO tiếp theo (giữ nguyên matchWins)
+            state->p1.totalWins = 0;
+            state->p2.totalWins = 0;
+        }
+
         // Luôn dừng ván đấu để người chơi xem kết quả
         state->status = MATCH_FINISHED;
         state->winner = winStatus;

@@ -4,365 +4,185 @@
 [![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://learn.microsoft.com/en-us/windows/win32/)
 [![Visual Studio 2022](https://img.shields.io/badge/Visual%20Studio%202022-5C2D91?style=for-the-badge&logo=visualstudio&logoColor=white)](https://visualstudio.microsoft.com/vs/)
 [![Engine](https://img.shields.io/badge/Engine-Custom_Win32_GDI%2B-orange?style=for-the-badge)](https://learn.microsoft.com/en-us/windows/win32/gdiplus/-gdiplus-gdi-start)
-[![Status](https://img.shields.io/badge/Status-In_Progress-yellow?style=for-the-badge)](https://github.com/anhtuan0806/Gomoku_Game_Project/releases/tag/v1.0.0)
+[![Status](https://img.shields.io/badge/Status-Stable_v1.0-brightgreen?style=for-the-badge)](https://github.com/anhtuan0806/Gomoku_Game_Project)
 
-Caro Champions League là một trò chơi cờ caro (Gomoku) và Tic-Tac-Toe chạy trên Windows, được xây dựng hoàn toàn bằng C++ thuần với Win32 API và GDI+. Giao diện mang chủ đề bóng đá với đồ họa pixel art được vẽ theo quy trình (procedural), hệ thống animation mượt và âm thanh tích hợp.
+**Caro Champions League** là một trò chơi cờ caro (Gomoku) và Tic-Tac-Toe trên nền tảng Windows. Dự án được phát triển hoàn toàn bằng **C++** kết hợp cùng **Win32 API** và **GDI+**, mang đến trải nghiệm đồ họa Pixel Art cổ điển nhưng tinh tế với các hiệu ứng hiện đại.
+
+---
 
 ## Mục lục
 
-- [Tính năng](#tính-năng)
+- [Tính năng nổi bật](#tính-năng-nổi-bật)
 - [Yêu cầu hệ thống](#yêu-cầu-hệ-thống)
 - [Hướng dẫn build](#hướng-dẫn-build)
 - [Cấu trúc dự án](#cấu-trúc-dự-án)
-- [Kiến trúc chương trình](#kiến-trúc-chương-trình)
 - [Luồng hoạt động](#luồng-hoạt-động)
+- [Hệ thống đồ họa & Animation](#hệ-thống-đồ-họa--animation)
+- [Cơ chế lưu trữ & Metadata](#cơ-chế-lưu-trữ--metadata)
+- [Hệ thống Bot AI](#hệ-thống-bot-ai)
 - [Điều khiển](#điều-khiển)
-- [Tệp cấu hình và lưu game](#tệp-cấu-hình-và-lưu-game)
-- [Hệ thống Asset](#hệ-thống-asset)
 
 ---
 
-## Tính năng
+## Tính năng nổi bật
 
-### Chế độ chơi
-- **Caro (Gomoku):** Bàn cờ 15x15, thắng khi tạo được chuỗi 5 quân liên tiếp theo hàng ngang, dọc hoặc chéo.
-- **Tic-Tac-Toe:** Bàn cờ 3x3, thắng khi tạo được chuỗi 3 quân liên tiếp.
-- **PvP (Player vs Player):** Hai người chơi luân phiên trên cùng một máy.
-- **PvE (Player vs Bot):** Người chơi đối đầu với bot AI với 3 cấp độ khó.
+### 1. Chế độ thi đấu đa dạng
+- **Game Modes:** Caro (15x15) và Tic-Tac-Toe (3x3).
+- **Match Types:** 
+    - **PvP:** Đối đầu trực tiếp giữa hai kỳ thủ.
+    - **PvE:** Thử thách khả năng tư duy với Bot AI thông minh.
+- **Series Thể thức:** Bo1, Bo3, hoặc Bo5. Hệ thống tự động theo dõi số ván thắng trong serie (`matchWins`) để phân định nhà vô địch.
 
-### Thể thức thi đấu
-- **Bo1 / Bo3 / Bo5:** Thể thức phân định thắng bằng số bàn thắng (chạm 1, 2 hoặc 3 bàn).
-- Tự động chuyển sang ván tiếp theo khi chưa đủ số bàn thắng, giữ nguyên tổng điểm.
+### 2. Thống kê trận đấu chuyên sâu
+- **Tỷ lệ kiểm soát bóng:** Đo lường thời gian suy nghĩ và giữ lượt của từng người chơi (`totalTimePossessed`).
+- **Số lần dẫn bóng:** Theo dõi số lượng nước đi thực hiện trong mỗi ván.
+- **Bảng tổng sắp:** Hiển thị chi tiết số bàn thắng và số trận thắng serie ngay trên giao diện thi đấu.
 
-### Trí tuệ nhân tạo (Bot AI)
-- **Cấp 1 - Phân Hạng Đồng (Easy):** Bot đặt quân ngẫu nhiên vào ô trống.
-- **Cấp 2 - Phân Hạng Vàng (Medium):** Phân tích điểm số từng nước đi dựa trên số quân liên tiếp và số đầu mở, ưu tiên phòng thủ gấp đôi tấn công.
-- **Cấp 3 - Thách Đấu (Hard):** Thuật toán Alpha-Beta Pruning với độ sâu 4, kết hợp Move Ordering để cắt tỉa nhánh kém hiệu quả và tăng tốc tìm kiếm.
+### 3. Localization & Font chuyên dụng
+- Hỗ trợ đầy đủ tiếng Việt có dấu với bộ font **Be Vietnam Pro** kết hợp cùng font pixel art **VT323**.
+- Hệ thống ngôn ngữ linh hoạt (Vietnamese/English) được tích hợp sâu vào cấu trúc `GameConfig`. (chưa hoàn thiện)
 
-Bot luôn đánh vai PLAYER 2, chạy trên luồng (thread) riêng (`std::async`) để không làm treo giao diện trong khi tính toán.
-
-### Hệ thống đồng hồ
-- **Chế độ PvP:** Đếm ngược thời gian từng lượt, khi hết giờ tự động chuyển lượt cho đối thủ.
-- **Chế độ PvE:** Đo thời gian tổng đã chơi (không giới hạn lượt).
-- Mỗi người chơi có `maxTurnTime` riêng, được khởi tạo từ `countdownTime` khi bắt đầu trận.
-
-### Undo / Redo
-- Chỉ khả dụng trong chế độ PvE.
-- **Undo (Q):** Rút lại 2 nước đi liên tiếp (nước của người chơi và nước phản hồi của bot).
-- **Redo (E):** Hoàn tác thao tác Undo, tái hiện lại bước đi, đồng thời kiểm tra lại điều kiện thắng.
-- Redo stack bị xóa ngay khi người chơi thực hiện một nước đi mới.
-
-### Lưu và tải game
-- Có tối đa **5 slot** lưu game trong thư mục `Asset/save/`.
-- Thêm **1 slot autosave** (`save_auto.bin`) được lưu tự động.
-- Định dạng lưu là binary có **magic number** (`0xCA05A1E2`) và **version** (`2`) để kiểm tra tính hợp lệ.
-- Toàn bộ trạng thái được serialize theo từng trường (field-by-field), bao gồm ma trận bàn cờ, thông tin người chơi, lịch sử bước đi, redo stack, và thời gian.
-- Khi load, chương trình kiểm tra magic và version; nếu không khớp sẽ từ chối tải và báo lỗi thay vì crash.
-
-### Giao diện và đồ họa
-- **Nền sân vận động procedural:** Cỏ sọc hai màu xen kẽ, vạch kẻ sân (đường giữa sân, vòng tròn trung tâm, khu cấm địa), hiệu ứng camera flash trên khán đài.
-- **Pixel Art thủ tục:** Các đối tượng như logo "CARO", cúp vô địch, trái bóng, và avatar cầu thủ đều được vẽ từ ma trận số nguyên được load từ file `.txt` trong thư mục `Asset/models/`.
-- **Double Buffering:** Toàn bộ frame được vẽ vào bộ đệm ảo trong RAM trước, rồi mới sao chép ra màn hình bằng `BitBlt`, loại bỏ hoàn toàn hiện tượng nhấp nháy.
-- **Font VT323:** Font pixel art được load riêng vào bộ nhớ ứng dụng (`FR_PRIVATE`) dùng làm font chính toàn game, kết hợp **Be Vietnam Pro** để hiển thị tiếng Việt.
-- **Animation thời gian thực:** Biến `g_GlobalAnimTime` tích lũy delta time mỗi frame, dùng làm tham số cho `sin()` để tạo hiệu ứng nhấp nháy, dao động, và pulse trên toàn bộ giao diện.
-- **Glassmorphism:** Panel Pause, bảng cấu hình trận đấu và bảng load game dùng brush màu trắng hoặc đen bán trong suốt để tạo hiệu ứng kính.
-
-### Pause Menu (Menu Tạm Dừng)
-Nhấn `ESC` trong lúc chơi để mở giao diện "Hộp Tác Chiến" với 5 mục:
-1. Tiếp tục thi đấu
-2. Bật / tắt nhạc nền
-3. Điều chỉnh âm lượng SFX
-4. Ghi hình trận (lưu game vào slot)
-5. Rời phòng thay đồ (quay về Menu chính)
-
-Trong luồng lưu game, người chơi chọn slot (1-5), đặt tên cho bản lưu, rồi nhấn Enter.
-
-### Cài đặt
-Màn hình cài đặt có 7 mục điều chỉnh:
-- Nhạc nền (BGM): Bật / Tắt
-- Âm lượng nhạc (0-100, thanh trượt)
-- Hiệu ứng âm thanh (SFX): Bật / Tắt
-- Âm lượng SFX (0-100, thanh trượt)
-- Ngôn ngữ: Tiếng Việt / English
-- Chủ đề nền: Sân Cỏ Anh / Sân Neon / Retro Matrix
-- Nút lưu và thoát
-
-Cài đặt được lưu nhị phân vào `Asset/config.ini`. Nếu file không tồn tại, chương trình tự tạo và áp dụng giá trị mặc định.
+### 4. Undo/Redo & Autosave
+- Khả năng rút lại nước đi và hoàn tác linh hoạt.
+- Cơ chế **Autosave** tự động lưu lại trạng thái sau mỗi nước đi quan trọng, đảm bảo không mất dữ liệu giữa chừng.
 
 ---
 
-## Yêu cầu hệ thống
+## Hệ thống đồ họa & Animation
 
-- **Hệ điều hành:** Windows (Win32 API) ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white)
-- **Trình biên dịch:** Visual Studio 2019 trở lên (MSVC) ![MSVC](https://img.shields.io/badge/MSVC-5C2D91?style=flat-square&logo=visualstudio&logoColor=white)
-- **Thư viện:** GDI+ (`gdiplus.lib`), Windows Multimedia (`winmm.lib`) — đều có sẵn trong Windows SDK, không cần cài thêm.
-- **C++ Standard:** C++17 ![C++17](https://img.shields.io/badge/C++17-00599C?style=flat-square&logo=cplusplus&logoColor=white)
+### Đồ họa Procedural & Pixel Art
+- **Sân vận động:** Được vẽ hoàn toàn bằng thuật toán (procedural), bao gồm cỏ sọc, đường biên, và hiệu ứng đèn flash khán đài (`CameraFlash`) nhấp nháy theo thời gian thực.
+- **Glassmorphism:** Các bảng điều khiển (Pause, Settings, Match Config) sử dụng hiệu ứng kính mờ với độ trong suốt tùy chỉnh (`Theme::GlassWhite`, `Theme::GlassDark`).
+- **Smooth Scaling:** Hệ thống `UIScaler` tự động điều chỉnh tỷ lệ các thành phần UI dựa trên độ phân giải cửa sổ (tối ưu nhất ở 1280x720 hoặc cao hơn).
 
----
-
-## Hướng dẫn build
-
-1. Mở file `src/src.sln` bằng Visual Studio.
-2. Chọn cấu hình `Debug` hoặc `Release`.
-3. Nhấn `Ctrl+Shift+B` để build toàn bộ dự án.
-4. File thực thi (`.exe`) sẽ nằm trong thư mục `src/Debug/` hoặc `src/Release/`.
-5. Sao chép thư mục `src/Asset/` vào cùng thư mục chứa file `.exe` trước khi chạy.
-
-> Chú ý: Chương trình sử dụng đường dẫn tương đối (`Asset/font/...`, `Asset/models/...`, v.v.), nên thư mục `Asset` phải nằm cùng cấp với file `.exe`.
+### Action-Based Animations (V5)
+Hệ thống animation cho avatar được cấu trúc theo các hành động cụ thể:
+- **Hành động:** `idle` (đứng yên), `run` (di chuyển), `sad` (thua cuộc), `win` (thắng cuộc).
+- **Player Cầu thủ:** Tích hợp các model pixel-art chất lượng cao cho **Ronaldo (CR7)**, **Messi (MES)**, và **Neymar (NEY)** với bảng màu (Palette) chuẩn hóa cho từng nhân vật.
+- **Logic:** Sử dụng `DrawPixelAction` để lọc và hiển thị frame chính xác dựa trên trạng thái hiện tại của người chơi.
 
 ---
 
 ## Cấu trúc dự án
 
-```
-Gomoku_Game_Project/
-├── .gitignore
-├── README.md
+```text
+Gomoku_Game_Project/                     
 └── src/
-    ├── src.sln                     -- Giải pháp Visual Studio
-    ├── src.vcxproj                 -- File dự án MSVC
-    ├── main.cpp                    -- Điểm vào WinMain và vòng lặp chính
-    │
-    ├── ApplicationTypes/           -- Kiểu dữ liệu toàn cục
-    │   ├── GameConfig.h            -- Struct GameConfig (âm thanh, ngôn ngữ, chủ đề)
-    │   ├── GameConstants.h         -- Hằng số (kích thước bàn cờ, điều kiện thắng, slot lưu)
-    │   ├── GameState.h             -- Enum ScreenState, PlayMode, MatchType
-    │   └── PlayState.h             -- Struct PlayState (toàn bộ trạng thái ván đấu)
-    │
-    ├── GameLogic/                  -- Logic game cốt lõi
-    │   ├── GameEngine.h / .cpp     -- Khởi tạo trận, xử lý nước đi, chuyển lượt, undo/redo
-    │   ├── GameRules.h / .cpp      -- Kiểm tra nước đi hợp lệ, phát hiện thắng/thua/hòa
-    │   ├── BotAI.h / .cpp          -- Thuật toán AI (Random, heuristic, Alpha-Beta)
-    │   └── PlayerEngineer.h / .cpp -- (Dự phòng / chưa dùng)
-    │
-    ├── RenderAPI/                  -- Hệ thống kết xuất đồ họa
-    │   ├── Colours.h               -- Bảng màu toàn cục (namespace Colour và GdipColour)
-    │   ├── Renderer.h / .cpp       -- GDI+ init/shutdown, quản lý Sprite, Double Buffer, Font
-    │   └── UIComponents.h / .cpp   -- Hàm vẽ UI: bàn cờ, pixel art, banner, sân bóng, avatar
-    │
-    ├── ScreenModules/              -- Màn hình giao diện
-    │   ├── MenuScreen.h / .cpp     -- Menu chính (6 mục)
-    │   ├── MatchConfigScreen.h / .cpp -- Cấu hình trận đấu (2 trang)
-    │   ├── PlayScreen.h / .cpp     -- Màn hình thi đấu chính
-    │   ├── LoadGameScreen.h / .cpp -- Tải game từ slot
-    │   ├── SettingScreen.h / .cpp  -- Cài đặt âm thanh, ngôn ngữ, chủ đề
-    │   ├── AboutScreen.h / .cpp    -- Về chúng tôi 
-    │   └── GuildScreen.h / .cpp    -- Hướng dẫn 
-    │
-    └── SystemModules/              -- Hệ thống hỗ trợ
-        ├── AudioSystem.h / .cpp    -- Phát nhạc nền (MCI) và hiệu ứng âm thanh (PlaySound)
-        ├── ConfigLoader.h / .cpp   -- Đọc/ghi cấu hình nhị phân vào config.ini
-        ├── Localization.h / .cpp   -- Nội địa hóa (stub, chưa triển khai đầy đủ)
-        ├── SaveLoadSystem.h / .cpp -- Lưu/tải trạng thái ván đấu (binary serialization)
-        └── TimeSystem.h / .cpp     -- Đếm ngược lượt, reset timer, hiển thị MM:SS
+    ├── ApplicationTypes/           -- Định nghĩa GameState, PlayState, Config
+    ├── GameLogic/                  -- Xử lý luật chơi, trọng tài và Bot AI
+    ├── RenderAPI/                  -- Lõi đồ họa: Renderer, UIComponents, Colours, UIScaler
+    ├── ScreenModules/              -- Các màn hình GUI (Menu, Play, Settings, About, Guild,...)
+    ├── SystemModules/              -- Hệ thống nền: Audio, SaveLoad, Localization, Time
+    ├── main.cpp                    -- Entry point và Game Loop chính
+    └── src.vcxproj / .filters      -- Cấu trúc project Visual Studio
 ```
 
----
-
-## Kiến trúc chương trình
-
-### Vòng lặp chính (Game Loop)
-
-Chương trình chạy theo mô hình **Event-Driven + Frame Loop**:
-
-1. `PeekMessage` xử lý tất cả sự kiện Windows (`WM_KEYDOWN`, `WM_PAINT`, v.v.) không chặn.
-2. Nếu không có sự kiện, chương trình `Sleep(16)` (~60 fps) rồi tính delta time.
-3. Gọi `UpdatePlayLogic` để cập nhật đồng hồ, kích hoạt bot AI, và cập nhật hoạt ảnh thắng.
-4. Gọi `InvalidateRect` để ép vẽ lại toàn bộ cửa sổ mỗi frame.
-
-### Trạng thái toàn cục
-
-Ba biến toàn cục được quản lý trong `main.cpp`:
-
-| Biến | Kiểu | Mô tả |
-|------|------|-------|
-| `g_CurrentScreen` | `ScreenState` | Màn hình đang hiển thị |
-| `g_Config` | `GameConfig` | Cài đặt âm thanh, ngôn ngữ, chủ đề |
-| `g_PlayState` | `PlayState` | Toàn bộ trạng thái ván đấu hiện tại |
-
-### Điều phối màn hình
-
-`WndProc` đóng vai trò bộ điều phối trung tâm:
-- `WM_KEYDOWN`: Gọi `Update*Screen()` tương ứng với `g_CurrentScreen`.
-- `WM_PAINT`: Gọi `Render*Screen()` tương ứng, vẽ vào `DoubleBuffer` rồi `BitBlt` ra màn hình.
-- `WM_ERASEBKGND`: Trả về 1 để ngăn Windows tự xóa nền (tránh nhấp nháy).
-
-### Hệ thống màu (Colours.h)
-
-Tất cả màu sắc được tập trung trong hai namespace:
-- **`Colour::`** — Các hằng số `COLORREF` dùng cho Win32 GDI (văn bản, đường kẻ).
-- **`GdipColour::`** — Các đối tượng `Gdiplus::Color` dùng cho GDI+ (brush, pen, bán trong suốt). Hàm `WithAlpha()` trong namespace này cho phép thay alpha channel của một màu có sẵn để dùng trong animation.
-
-### Hệ thống Pixel Model
-
-Asset đồ họa pixel art được mã hóa dưới dạng ma trận số nguyên trong file `.txt`:
-- Dòng đầu: `width height`
-- Các dòng tiếp theo: giá trị nguyên với `0` = trong suốt, các giá trị khác ánh xạ tới màu trong palette.
-- Hàm `LoadPixelModel()` đọc file và trả về `struct PixelModel`.
-- Hàm `DrawPixelModel()` vẽ model lên `Gdiplus::Graphics` với kích thước pixel và palette tùy chỉnh.
-- Avatar cầu thủ dùng 5 palette màu khác nhau (P1 đỏ-trắng, P2 lam-vàng, Bot Easy xám, Bot Medium lục, Bot Hard đen-đỏ), ánh xạ qua hàm `GetPaletteColor()`.
+**Directory Asset chi tiết:**
+- `Asset/models/avt_XX/[action]/`: Chứa các frame pixel art theo từng hành động.
+- `Asset/models/bg/`: Các mô hình trang trí.
+- `Asset/font/`: Font pixel (VT323) và font Unicode (Be Vietnam Pro).
+- `Asset/save/`: Các file `slot_N.bin` (Binary format v5).
 
 ---
 
 ## Luồng hoạt động
 
+```mermaid
+graph TD
+    A[Khởi động] --> B[Khởi tạo GDI+ & Load Fonts]
+    B --> C[Đọc GameConfig từ config.ini]
+    C --> D[SCREEN_MENU]
+    
+    D --> E[Bắt đầu] --> F[SCREEN_MATCH_CONFIG]
+    F --> G[SCREEN_PLAY]
+    
+    D --> H[Tải băng] --> I[SCREEN_LOAD_GAME]
+    I --> G
+    
+    D --> J[Cài đặt sân] --> K[SCREEN_SETTING]
+    K --> D
+    
+    D --> L[Hướng dẫn/Giới thiệu]
+    
+    G --> M{Trong trận}
+    M --> |ESC| N[Hộp Tác Chiến - Pause]
+    M --> |Kết thúc| O[Màn hình tóm tắt - Summary]
+    O --> |Chơi lại| G
+    O --> |Thoát| D
 ```
-Khởi động
-    └── Khởi tạo GDI+, load font (VT323, Be Vietnam Pro)
-    └── Đọc GameConfig từ Asset/config.ini
-    └── Tạo cửa sổ Win32 (850x750)
-    └── Vào SCREEN_MENU
 
-SCREEN_MENU  (W/S/Enter)
-    ├── Bắt Đầu         --> SCREEN_MATCH_CONFIG
-    ├── Tải Băng         --> SCREEN_LOAD_GAME
-    ├── Cài Đặt Sân      --> SCREEN_SETTING
-    ├── Hướng Dẫn        --> SCREEN_GUIDE (ESC để thoát)
-    ├── Giới Thiệu       --> SCREEN_ABOUT (ESC để thoát)
-    └── Thoát            --> Kết thúc chương trình
+### Chi tiết luồng màn hình:
+- **SCREEN_MENU**: Điều hướng chính (W/S/Enter).
+- **SCREEN_MATCH_CONFIG**: 
+    - Trang 1: Chọn Chế độ, PvP/PvE, Độ khó, Time, Target Score (Bo).
+    - Trang 2: Chọn Avatar (CR7, MES, NEY,...) và nhập tên.
+- **SCREEN_PLAY**: 
+    - Vòng lặp: Đợi nước đi -> Kiểm tra thắng/thua -> Chuyển lượt (hoặc Bot tính toán).
+    - Hộp Tác Chiến: Lưu game, bật/tắt âm thanh, thoát.
+- **SCREEN_LOAD_GAME**: Hiển thị 5 slot lưu + 1 slot Autosave với đầy đủ Metadata (Ngày, giờ, tỷ số).
 
-SCREEN_MATCH_CONFIG  (2 trang)
-    ├── Trang 1: Chế độ (Caro/Tic-Tac-Toe), PvP/PvE, Độ khó, Thời gian lượt, Bo
-    └── Trang 2: Avatar và tên P1, Avatar và tên P2 --> SCREEN_PLAY
+---
 
-SCREEN_PLAY
-    ├── Đang chơi: Di chuyển cursor (W/A/S/D/mũi tên), đặt quân (Enter/Space)
-    │             Q = Undo, E = Redo (chỉ PvE)
-    │             ESC = pause
-    ├── Pause: Tiếp tục, BGM, SFX, Lưu game, Thoát về Menu
-    └── Kết thúc: Y = chơi lại, N/ESC = về Menu
+## Cơ chế lưu trữ & Metadata
 
-SCREEN_LOAD_GAME  (W/S + Enter)
-    └── Chọn slot 1-5 --> Load binary --> SCREEN_PLAY
+Chương trình sử dụng hệ thống **Serialization** nhị phân mạnh mẽ với các đặc tính:
+- **Version Control:** Hiện hành tại **Version 5**, hỗ trợ đầy đủ match statistics và thông tin serie.
+- **Magic Number:** `0xCA05A1E2` để xác thực tính toàn vẹn.
+- **SaveMetadata:** Mỗi bản lưu bao gồm:
+    - Tên hiển thị tùy chỉnh (Save Name).
+    - Dấu thời gian (Timestamp) tự động.
+    - Toàn bộ lịch sử bước đi (`matchHistory`) và `redoStack`.
+    - Trạng thái bàn cờ 20x20.
 
-SCREEN_SETTING  (W/S + A/D + Enter)
-    └── ESC hoặc chọn "Quay lại" --> lưu config --> SCREEN_MENU
-```
+---
+
+## Hệ thống Bot AI
+
+Bot AI (PLAYER 2) hoạt động trên một luồng riêng biệt (`std::async`) để tránh gây gián đoạn giao diện người dùng:
+1. **Phân Hạng Đồng (Easy):** Nước đi ngẫu nhiên, mô phỏng người chơi mới.
+2. **Phân Hạng Vàng (Medium):** Sử dụng hàm đánh giá heuristic cơ bản, ưu tiên phòng thủ và chặn các chuỗi nguy hiểm.
+3. **Thách Đấu (Hard):** 
+    - **Thuật toán:** Alpha-Beta Pruning.
+    - **Độ sâu tìm kiếm:** 4 lớp (có thể mở rộng).
+    - **Tối ưu:** Move Ordering để cắt tỉa nhánh nhanh chóng, cho phép tính toán hàng triệu trạng thái trong thời gian ngắn.
 
 ---
 
 ## Điều khiển
 
-### Menu chính và các màn hình điều hướng
+### Điều hướng chung
+| Phím | Chức năng |
+| :--- | :--- |
+| **W/S** | Di chuyển lên/xuống giữa các mục |
+| **A/D** | Thay đổi giá trị (Âm lượng, Ngôn ngữ, Chế độ) |
+| **Enter / Space**| Xác nhận / Chọn |
+| **ESC** | Quay lại / Thoát |
 
-| Phím | Tác dụng |
-|------|----------|
-| W / S / Len / Xuong | Di chuyển giữa các mục |
-| Enter / Space | Chọn / Xác nhận |
-| ESC | Thoát / Quay lại |
-
-### Màn hình thi đấu (PlayScreen)
-
-| Phím | Tác dụng |
-|------|----------|
-| W / A / S / D | Di chuyển con trỏ trên bàn cờ |
-| Mũi tên | Di chuyển con trỏ trên bàn cờ |
-| Enter / Space | Đặt quân tại vị trí con trỏ |
-| Q | Undo (chỉ PvE) |
-| E | Redo (chỉ PvE) |
-| ESC | Mở menu tạm dừng |
-
-### Khi kết thúc ván
-
-| Phím | Tác dụng |
-|------|----------|
-| Y | Chơi lại (reset bàn cờ, giữ điểm tổng) |
-| N / ESC | Quay về Menu chính |
-
-### Màn hình cài đặt
-
-| Phím | Tác dụng |
-|------|----------|
-| W / S | Chọn mục |
-| A / D | Thay đổi giá trị |
-| Enter | Bật/tắt (với mục toggle) |
-| ESC | Lưu cài đặt và quay về Menu |
+### Trong trận đấu (PlayScreen)
+| Phím | Chức năng |
+| :--- | :--- |
+| **WASD / Mũi tên**| Di chuyển con trỏ trên sân |
+| **Enter / Space** | Thực hiện cú đặt quân (Đặt bóng) |
+| **Q** | Undo - Rút lại nước đi (PvE) |
+| **E** | Redo - Hoàn tác (PvE) |
+| **ESC** | Mở Hộp Tác Chiến (Pause Menu) |
+| **S** | Lưu game nhanh |
 
 ---
 
-## Tệp cấu hình và lưu game
+## Yêu cầu hệ thống & Build
 
-### Asset/config.ini
+- **OS:** Windows 10/11 (Architecture x86).
+- **IDE:** Visual Studio 2022.
+- **Bộ công cụ:** MSVC C++17 trở lên.
+- **Thư viện:** GDI+ (Window SDK), WinMM (Multimedia).
 
-Lưu nhị phân toàn bộ `struct GameConfig` (24 byte). Cấu trúc gồm:
-- `isBgmEnabled` (bool)
-- `bgmVolume` (int, 0-100)
-- `isSfxEnabled` (bool)
-- `sfxVolume` (int, 0-100)
-- `currentLang` (enum: `APP_LANG_VI` = 0, `APP_LANG_EN` = 1)
-- `currentTheme` (enum: `THEME_CLASSIC` = 0, `THEME_NEON` = 1, `THEME_RETRO` = 2)
-
-### Asset/save/slot_N.bin
-
-Định dạng binary theo thứ tự:
-
-| Thứ tự | Nội dung |
-|--------|----------|
-| 1 | Magic number `0xCA05A1E2` (4 byte) |
-| 2 | Version `2` (4 byte) |
-| 3 | Các trường POD của `PlayState` (gameMode, matchType, isP1Turn, countdownTime, timeRemaining, boardSize, board[20][20], cursorRow, cursorCol, lastMoveRow, lastMoveCol, status, winner, difficulty, targetScore, matchDuration, p1TotalTimeLeft, p2TotalTimeLeft, isMatchTimed) |
-| 4 | Thông tin người chơi P1 (tên Unicode, đường dẫn avatar, piece, totalWins, movesCount, maxTurnTime) |
-| 5 | Thông tin người chơi P2 (tương tự P1) |
-| 6 | Vector winningCells (độ dài + dữ liệu) |
-| 7 | Vector matchHistory (độ dài + dữ liệu) |
-| 8 | Vector redoStack (độ dài + dữ liệu) |
-
-Chương trình bảo vệ chống đọc file hỏng bằng cách giới hạn độ dài chuỗi (<=4096) và kích thước vector (<= 100000).
+**Các bước build:**
+1. Clone repository và mở `src/src.sln`.
+2. Build Solution ở chế độ `Release` / `x86`.
 
 ---
 
-## Hệ thống Asset
-
-### Asset/font/
-
-| Thư mục | Nội dung |
-|---------|----------|
-| `VT323/` | VT323-Regular.ttf — Font pixel art dùng làm VT323Default/Bold/Title/Note |
-| `Be_Vietnam_Pro/` | Regular, Bold, Black, Italic — Dùng để hỗ trợ ký tự tiếng Việt |
-
-Font được load bằng `AddFontResourceExW(..., FR_PRIVATE, 0)` và gỡ khi thoát.
-
-### Asset/models/
-
-Các file `.txt` chứa ma trận pixel art theo định dạng `width height` ở dòng đầu, tiếp theo là các giá trị nguyên:
-
-| File | Kích thước | Nội dung |
-|------|-----------|----------|
-| `title_caro.txt` | 31x8 | Logo "CARO" pixel art 4 chữ cái |
-| `trophy.txt` | (biến) | Cúp vô địch |
-| `football.txt` | (biến) | Trái bóng đá pixel |
-| `avatar_0.txt` | 8x8 | Avatar mặc định / P1 |
-| `avatar_1.txt` | 8x8 | Avatar P2 |
-| `avatar_2.txt` | 8x8 | Avatar Bot Easy |
-| `avatar_3.txt` | 8x8 | Avatar Bot Medium |
-| `avatar_4.txt` | 8x8 | Avatar Bot Hard |
-
-Giá trị 0 = trong suốt. Từ 1 trở lên ánh xạ tới màu tùy theo loại asset (logo dùng palette màu cam-vàng, avatar dùng palette theo từng nhân vật).
-
-### Asset/images/
-
-| File | Nội dung |
-|------|----------|
-| `football.png` | Ảnh PNG trái bóng (dự phòng, chưa dùng chính thức) |
-
-### Asset/lang/
-
-| File | Nội dung |
-|------|----------|
-| `vi.txt` | Chuỗi ngôn ngữ tiếng Việt (chưa triển khai đầy đủ) |
-| `en.txt` | Chuỗi ngôn ngữ tiếng Anh (chưa triển khai đầy đủ) |
-
-### Asset/save/
-
-Chứa các file `slot_1.bin` đến `slot_5.bin` và `save_auto.bin`. Thư mục được tạo tự động nếu chưa tồn tại khi lưu game.
-
----
-
-## Ghi chú kỹ thuật
-
-- **Bot AI chạy bất đồng bộ:** `std::async(std::launch::async, ...)` tránh đóng băng UI khi bot tính toán. Bàn cờ bị khóa (`g_AIsCalculating`) trong lúc chờ.
-- **Sprite caching:** Ảnh quân X/O được scale sẵn vào `g_CachedX` / `g_CachedO` mỗi khi `cellSize` thay đổi, tránh scale lại mỗi frame.
-- **Failsafe timer:** `ResetTimer` kiểm tra `maxTurnTime <= 0` và tự phục hồi về `countdownTime` hoặc 30 giây để tránh crash khi load game cũ.
-- **Âm thanh:** `PlayBGM` dùng MCI (`mciSendString`) để hỗ trợ phát lặp. `PlaySFX` dùng `PlaySoundW` với cờ `SND_ASYNC` để không chặn luồng game. Nhạc nền hiện bị comment out, chỉ SFX còn hoạt động.
-- **Localization:** Hệ thống `Localization` (`lang/vi.txt`, `lang/en.txt`) được khai báo nhưng chưa được tích hợp vào giao diện; toàn bộ chuỗi hiện vẫn hardcode tiếng Việt trong code.
-- **AboutScreen / GuildScreen:** Được khai báo nhưng nội dung chỉ là stub rỗng (file `.cpp` chứa 3 byte).
+© 2026 Nhóm 3 - 25CTT6. Dự án được phát triển cho mục đích giáo dục.
+MSV: 24120260 | 24120421 | 24120428 | 24120451
+GVHD: Trương Toàn Thịnh.

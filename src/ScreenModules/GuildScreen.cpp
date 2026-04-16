@@ -28,9 +28,9 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
     g.FillRectangle(&whiteGlassBrush, 0, 0, screenWidth, screenHeight);
 
     // 2. Banner Tiêu đề (Đổi màu theo trang)
-    COLORREF bannerColors[] = { Palette::OrangeNormal, Palette::CyanNormal, Palette::GreenNormal };
+    COLORREF bannerColors[] = { ToCOLORREF(Palette::OrangeNormal), ToCOLORREF(Palette::CyanNormal), ToCOLORREF(Palette::GreenNormal) };
     std::wstring titles[] = { L"CHẾ ĐỘ CHƠI", L"CÁCH ĐIỀU KHIỂN", L"CƠ CHẾ TRẬN ĐẤU" };
-    DrawPixelBanner(g, hdc, titles[currentPage], screenWidth / 2, UIScaler::SY(70), UIScaler::SX(500), Palette::White, bannerColors[currentPage]);
+    DrawPixelBanner(g, hdc, titles[currentPage], screenWidth / 2, UIScaler::SY(70), UIScaler::SX(500), ToCOLORREF(Palette::White), bannerColors[currentPage]);
 
     // 3. Khung Panel nội dung (Light Mode)
     int panelW = screenWidth - UIScaler::SX(80);
@@ -42,29 +42,29 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
     int colW = panelW / 2;
     int colPadding = UIScaler::SX(35);
 
-    Gdiplus::SolidBrush whitePanel(Theme::GlassWhite);
+    Gdiplus::SolidBrush whitePanel(ToGdiColor(Theme::GlassWhite));
     g.FillRectangle(&whitePanel, panelX, panelY, panelW, panelH);
 
-    Gdiplus::Pen panelPen(Theme::PanelGoldBorder, 3.0f);
+    Gdiplus::Pen panelPen(ToGdiColor(Theme::PanelGoldBorder), 3.0f);
     g.DrawRectangle(&panelPen, panelX, panelY, panelW, panelH);
 
     // 3. Tiêu đề Pixel Banner (Chỉ giữ lại viền và icon làm vật trang trí)
     DrawPixelBanner(g, hdc, L"", screenWidth / 2, panelY + UIScaler::SY(40),
-        panelW - UIScaler::SX(20), Palette::White, RGB(255, 215, 0), "Asset/models/badge.txt");
+        panelW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(255, 215, 0), "Asset/models/bg/badge.txt");
     Gdiplus::Pen dividerPen(Gdiplus::Color(50, 0, 0, 0), 1); // Vạch tối mờ trên nền sáng
 
     if (currentPage == 0) { // TRANG 1: HAI CHẾ ĐỘ CHƠI
-        DrawTextCentered(hdc, L"HÃY CHỌN KỊCH BẢN CHIẾN THUẬT CỦA BẠN", panelY + UIScaler::SY(85), screenWidth, Palette::BlueDarkest, GlobalFont::Bold);
+        DrawTextCentered(hdc, L"HÃY CHỌN KỊCH BẢN CHIẾN THUẬT CỦA BẠN", panelY + UIScaler::SY(85), screenWidth, ToCOLORREF(Palette::BlueDarkest), GlobalFont::Bold);
         
         // Vẽ vạch ngăn đôi cột
         g.DrawLine(&dividerPen, (INT)(panelX + colW), (INT)(panelY + UIScaler::SY(120)), (INT)(panelX + colW), (INT)(panelY + panelH - UIScaler::SY(40)));
 
         // -- CỘT TRÁI: CARO (GOMOKU) --
         int curY = panelY + UIScaler::SY(135);
-        DrawTextCentered(hdc, L"CARO - TRUYỀN THỐNG", curY, screenWidth - colW, Palette::OrangeNormal, GlobalFont::Bold);
+        DrawTextCentered(hdc, L"CARO - TRUYỀN THỐNG", curY, screenWidth - colW, ToCOLORREF(Palette::OrangeNormal), GlobalFont::Bold);
         curY += UIScaler::SY(50);
         RECT rLeft = { panelX + colPadding, curY, panelX + colW - colPadding, panelY + panelH - UIScaler::SY(20) };
-        SetTextColor(hdc, Palette::GrayDarkest);
+        SetTextColor(hdc, ToCOLORREF(Palette::GrayDarkest));
         SelectObject(hdc, GlobalFont::Default);
         std::wstring caroTxt = L"- Kích thước sân: 15x15 ô cực rộng.\n"
                                L"- Luật thắng: Đạt đủ 5 quân cờ liên tiếp theo hàng ngang, dọc hoặc chéo.\n"
@@ -74,7 +74,7 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
 
         // -- CỘT PHẢI: TIC-TAC-TOE --
         curY = panelY + UIScaler::SY(135);
-        DrawTextCentered(hdc, L"TIC-TAC-TOE - TỐC ĐỘ", curY, screenWidth + colW, Palette::CyanNormal, GlobalFont::Bold);
+        DrawTextCentered(hdc, L"TIC-TAC-TOE - TỐC ĐỘ", curY, screenWidth + colW, ToCOLORREF(Palette::CyanNormal), GlobalFont::Bold);
         curY += UIScaler::SY(50);
         RECT rRight = { panelX + colW + colPadding, curY, panelX + panelW - colPadding, panelY + panelH - UIScaler::SY(20) };
         std::wstring tttTxt = L"- Kích thước sân: 3x3 ô nhỏ gọn.\n"
@@ -86,51 +86,51 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
         DrawPixelFootball(g, screenWidth / 2, panelY + panelH - UIScaler::SY(60), UIScaler::S(50));
     }
     else if (currentPage == 1) { // TRANG 2: ĐIỀU KHIỂN & THAO TÁC
-        DrawTextCentered(hdc, L"THAO TÁC LINH HOẠT ĐỂ LÀM CHỦ TRẬN ĐẤU", panelY + UIScaler::SY(85), screenWidth, Palette::BlueDarkest, GlobalFont::Bold);
+        DrawTextCentered(hdc, L"THAO TÁC LINH HOẠT ĐỂ LÀM CHỦ TRẬN ĐẤU", panelY + UIScaler::SY(85), screenWidth, ToCOLORREF(Palette::BlueDarkest), GlobalFont::Bold);
         g.DrawLine(&dividerPen, (INT)(panelX + colW), (INT)(panelY + UIScaler::SY(120)), (INT)(panelX + colW), (INT)(panelY + panelH - UIScaler::SY(40)));
 
         // -- CỘT TRÁI: DI CHUYỂN --
         int curY = panelY + UIScaler::SY(135);
-        DrawTextCentered(hdc, L"DI CHUYỂN TRÊN SÂN", curY, screenWidth - colW, Palette::CyanNormal, GlobalFont::Bold);
+        DrawTextCentered(hdc, L"DI CHUYỂN TRÊN SÂN", curY, screenWidth - colW, ToCOLORREF(Palette::CyanNormal), GlobalFont::Bold);
         curY += UIScaler::SY(60);
-        DrawTextCentered(hdc, L"[Mũi tên] hoặc [WASD]", curY, screenWidth - colW, Palette::GrayDarkest, GlobalFont::Default);
+        DrawTextCentered(hdc, L"[Mũi tên] hoặc [WASD]", curY, screenWidth - colW, ToCOLORREF(Palette::GrayDarkest), GlobalFont::Default);
         curY += UIScaler::SY(35);
-        DrawTextCentered(hdc, L"Di chuyển con trỏ chọn ô.", curY, screenWidth - colW, Palette::GrayDark, GlobalFont::Note);
+        DrawTextCentered(hdc, L"Di chuyển con trỏ chọn ô.", curY, screenWidth - colW, ToCOLORREF(Palette::GrayDark), GlobalFont::Note);
         curY += UIScaler::SY(60);
-        DrawTextCentered(hdc, L"Nhấn giữ để di chuyển nhanh", curY, screenWidth - colW, Palette::BlueDarkest, GlobalFont::Default);
+        DrawTextCentered(hdc, L"Nhấn giữ để di chuyển nhanh", curY, screenWidth - colW, ToCOLORREF(Palette::BlueDarkest), GlobalFont::Default);
 
         // -- CỘT PHẢI: HÀNH ĐỘNG --
         curY = panelY + UIScaler::SY(135);
-        DrawTextCentered(hdc, L"HÀNH ĐỘNG QUYẾT ĐỊNH", curY, screenWidth + colW, Palette::OrangeNormal, GlobalFont::Bold);
+        DrawTextCentered(hdc, L"HÀNH ĐỘNG QUYẾT ĐỊNH", curY, screenWidth + colW, ToCOLORREF(Palette::OrangeNormal), GlobalFont::Bold);
         curY += UIScaler::SY(60);
-        DrawTextCentered(hdc, L"[ENTER] hoặc [SPACE]", curY, screenWidth + colW, Palette::GrayDarkest, GlobalFont::Default);
+        DrawTextCentered(hdc, L"[ENTER] hoặc [SPACE]", curY, screenWidth + colW, ToCOLORREF(Palette::GrayDarkest), GlobalFont::Default);
         curY += UIScaler::SY(35);
-        DrawTextCentered(hdc, L"Xác nhận đặt quân cờ.", curY, screenWidth + colW, Palette::GrayDark, GlobalFont::Note);
+        DrawTextCentered(hdc, L"Xác nhận đặt quân cờ.", curY, screenWidth + colW, ToCOLORREF(Palette::GrayDark), GlobalFont::Note);
         curY += UIScaler::SY(60);
-        DrawTextCentered(hdc, L"[ESC]: Tạm dừng / Menu", curY, screenWidth + colW, Palette::BlueDarkest, GlobalFont::Default);
+        DrawTextCentered(hdc, L"[ESC]: Tạm dừng / Menu", curY, screenWidth + colW, ToCOLORREF(Palette::BlueDarkest), GlobalFont::Default);
         curY += UIScaler::SY(50);
-        DrawTextCentered(hdc, L"[S]: Lưu trận đấu nhanh", curY, screenWidth + colW, Palette::BlueDarkest, GlobalFont::Default);
+        DrawTextCentered(hdc, L"[S]: Lưu trận đấu nhanh", curY, screenWidth + colW, ToCOLORREF(Palette::BlueDarkest), GlobalFont::Default);
 
         DrawPixelAvatar(g, screenWidth / 2 - UIScaler::SX(35), panelY + panelH - UIScaler::SY(100), UIScaler::S(70), 0);
     }
     else if (currentPage == 2) { // TRANG 3: HỆ THỐNG CHI TIẾT
-        DrawTextCentered(hdc, L"THÔNG SỐ TRẬN ĐẤU & CƠ CHẾ AI", panelY + UIScaler::SY(85), screenWidth, Palette::BlueDarkest, GlobalFont::Bold);
+        DrawTextCentered(hdc, L"THÔNG SỐ TRẬN ĐẤU & CƠ CHẾ AI", panelY + UIScaler::SY(85), screenWidth, ToCOLORREF(Palette::BlueDarkest), GlobalFont::Bold);
         
         int curY = panelY + UIScaler::SY(135);
-        SetTextColor(hdc, Palette::GrayDarkest);
+        SetTextColor(hdc, ToCOLORREF(Palette::GrayDarkest));
         SelectObject(hdc, GlobalFont::Default);
         
         auto DrawSystemRow = [&](const std::wstring& title, const std::wstring& desc, COLORREF tCol) {
             DrawTextCentered(hdc, title, curY, screenWidth, tCol, GlobalFont::Bold);
             curY += UIScaler::SY(28);
-            DrawTextCentered(hdc, desc, curY, screenWidth, Palette::GrayDarkest, GlobalFont::Default);
+            DrawTextCentered(hdc, desc, curY, screenWidth, ToCOLORREF(Palette::GrayDarkest), GlobalFont::Default);
             curY += UIScaler::SY(52);
         };
 
-        DrawSystemRow(L"1. CẤP ĐỘ AI", L"Easy: Di chuyển ngẫu nhiên. Medium: Biết chặn đòn đơn giản. Hard: AI tìm kiếm nước đi tối ưu (Legendary).", Palette::CyanNormal);
-        DrawSystemRow(L"2. THỜI GIAN ĐẾM NGƯỢC", L"Mỗi lượt có 15s/30s/45s. Nếu hết giờ mà chưa đi, máy sẽ tự động bỏ lượt hoặc đánh ngẫu nhiên.", Palette::OrangeNormal);
-        DrawSystemRow(L"3. MỤC TIÊU CHIẾN THẮNG", L"Số trận thắng cần đạt để giành cúp. Ví dụ: Target = 3 thì phe nào thắng 3 trận trước sẽ vô địch.", Palette::GreenNormal);
-        DrawSystemRow(L"4. LƯU & TẢI TRẬN", L"Dữ liệu được lưu dưới dạng file nhị phân, đảm bảo bạn có thể tiếp tục hành trình vô địch bất cứ lúc nào.", Palette::GrayDark);
+        DrawSystemRow(L"1. CẤP ĐỘ AI", L"Easy: Di chuyển ngẫu nhiên. Medium: Biết chặn đòn đơn giản. Hard: AI tìm kiếm nước đi tối ưu (Legendary).", ToCOLORREF(Palette::CyanNormal));
+        DrawSystemRow(L"2. THỜI GIAN ĐẾM NGƯỢC", L"Mỗi lượt có 15s/30s/45s. Nếu hết giờ mà chưa đi, máy sẽ tự động bỏ lượt hoặc đánh ngẫu nhiên.", ToCOLORREF(Palette::OrangeNormal));
+        DrawSystemRow(L"3. MỤC TIÊU CHIẾN THẮNG", L"Số bàn thắng cần ghi để thắng trận. Ví dụ: Target = 3 thì phe nào ghi 3 bàn trước sẽ vô địch trận BO đó.", ToCOLORREF(Palette::GreenNormal));
+        DrawSystemRow(L"4. LƯU & TẢI TRẬN", L"Dữ liệu được lưu dưới dạng file nhị phân, đảm bảo bạn có thể tiếp tục hành trình vô địch bất cứ lúc nào.", ToCOLORREF(Palette::GrayDark));
     }
 
     // 5. Page Indicators (Dots)
@@ -138,7 +138,7 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
     int dotSpacing = UIScaler::SX(35);
     int startDotX = screenWidth / 2 - dotSpacing;
     for (int i = 0; i < 3; i++) {
-        Gdiplus::SolidBrush dotBrush(i == currentPage ? Theme::TitleBorder : Theme::ShadowMed);
+        Gdiplus::SolidBrush dotBrush(i == currentPage ? ToGdiColor(Theme::TitleBorder) : ToGdiColor(Theme::ShadowMed));
         int dotR = UIScaler::S(6);
         g.FillEllipse(&dotBrush, startDotX + i * dotSpacing - dotR, dotY - dotR, dotR * 2, dotR * 2);
         if (i == currentPage) {
@@ -152,7 +152,7 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
     float arrowPulse = sin(g_GlobalAnimTime * 4.0f) * UIScaler::SX(8);
     int arrowY = panelY + panelH / 2 - UIScaler::SY(25);
     SelectObject(hdc, GlobalFont::Bold);
-    SetTextColor(hdc, Palette::BlueDarkest);
+    SetTextColor(hdc, ToCOLORREF(Palette::BlueDarkest));
 
     if (currentPage > 0) {
         RECT rLeft = { (int)(UIScaler::SX(25) + arrowPulse), arrowY, (int)(UIScaler::SX(105) + arrowPulse), arrowY + UIScaler::SY(50) };

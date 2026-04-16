@@ -30,24 +30,27 @@ static std::wstring validationMsg = L"";
 
 bool ValidateNames(PlayState* playState) {
     bool isPvE = (playState->matchType == MATCH_PVE);
+    
+    // Auto-fill logic instead of erroring
     if (editName1.empty()) {
-        validationMsg = L"LỖI: Tên P1 không được trống!";
+        editName1 = L"Player 1";
+    }
+    
+    // Unify character limit to 1-15 (consistent with Save name)
+    if (editName1.length() > 15) {
+        validationMsg = L"LỖI: Tên P1 tối đa 15 kí tự!";
         return false;
     }
-    if (editName1.length() < 5 || editName1.length() > 15) {
-        validationMsg = L"LỖI: Tên P1 phải từ 5-15 kí tự!";
-        return false;
-    }
+
     if (!isPvE) {
         if (editName2.empty()) {
-            validationMsg = L"LỖI: Tên P2 không được trống!";
+            editName2 = L"Player 2";
+        }
+        if (editName2.length() > 15) {
+            validationMsg = L"LỖI: Tên P2 tối đa 15 kí tự!";
             return false;
         }
-        if (editName2.length() < 5 || editName2.length() > 15) {
-            validationMsg = L"LỖI: Tên P2 phải từ 5-15 kí tự!";
-            return false;
-        }
-        if (editName1 == editName2) {
+        if (editName1 == editName2 && editName1 != L"Player 1") {
             validationMsg = L"LỖI: Tên hai cầu thủ không được trùng nhau!";
             return false;
         }
@@ -199,15 +202,7 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
                 if (isPvE) {
                     std::wstring botName = (playState->difficulty == 1) ? L"Ảo Thuật Gia Samba" : (playState->difficulty == 2 ? L"Bot Thiết Giáp" : L"Bóng Đêm Thách Đấu");
                     playState->p2.name = botName;
-                    if (playState->difficulty == 1) {
-                        playState->p2.avatarPath = "bot_easy";
-                    }
-                    else if (playState->difficulty == 2) {
-                        playState->p2.avatarPath = "bot_medium";
-                    }
-                    else {
-                        playState->p2.avatarPath = "bot_hard";
-                    }
+                    playState->p2.avatarPath = "avatar_0"; // All bots use Ronaldo
                 }
                 else {
                     playState->p2.name = editName2;
@@ -248,7 +243,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
     DrawProceduralStadium(g, screenWidth, screenHeight);
 
     // Khung Trắng Kính (White Glassmorphism)
-    Gdiplus::SolidBrush whitePanel(Theme::GlassWhite);
+    Gdiplus::SolidBrush whitePanel(ToGdiColor(Theme::GlassWhite));
     int panelW = UIScaler::SX(750);
     int panelH = UIScaler::SY(500);
     int panelX = (screenWidth - panelW) / 2;
@@ -257,12 +252,12 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
     g.FillRectangle(&whitePanel, panelX, panelY, panelW, panelH);
 
     // Vien xanh la mem mai quanh panel
-    Gdiplus::Pen panelPen(Theme::PanelGreenBorder, 3.0f);
+    Gdiplus::Pen panelPen(ToGdiColor(Theme::PanelGreenBorder), 3.0f);
     g.DrawRectangle(&panelPen, panelX, panelY, panelW, panelH);
 
     // Xử lý 2 Trang
     if (currentPage == 0) {
-        DrawTextCentered(hdc, L"--- 1. HỒ SƠ CHIẾN THUẬT ---", panelY + UIScaler::SY(30), screenWidth, Palette::BlueDarkest, GlobalFont::Title);
+        DrawTextCentered(hdc, L"--- 1. HỒ SƠ CHIẾN THUẬT ---", panelY + UIScaler::SY(30), screenWidth, ToCOLORREF(Palette::BlueDarkest), GlobalFont::Title);
 
         int col1X = panelX + UIScaler::SX(30);
         int col1W = UIScaler::SX(320);
@@ -279,7 +274,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
             L"Thể thức phân định: "
         };
         std::wstring values[] = {
-            std::wstring(config->gameMode == MODE_CARO ? L"< Caro Hiện Đại 15x15 >" : L"< Tic-Tac-Toe Sân Cỏ 3x3 >"),
+            std::wstring(config->gameMode == MODE_CARO ? L"< Caro 15x15 >" : L"< Tic-Tac-Toe 3x3 >"),
             std::wstring(config->matchType == MATCH_PVP ? L"< Kinh Điển Cùng Lò (PvP) >" : L"< Thách Đấu Máy (PvE) >"),
             std::wstring(config->difficulty == 1 ? L"< Phân Hạng Đồng >" : (config->difficulty == 2 ? L"< Phân Hạng Vàng >" : L"< Thách Đấu >")),
             L"< " + std::to_wstring(config->countdownTime) + L" Giây >",
@@ -292,9 +287,9 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
             // Ẩn Thời Gian khi chế độ PvE (AI tự tính toán)
             if (i == 3 && isPvE_p0) continue;
 
-            COLORREF valColor = Palette::GrayDarkest;
+            COLORREF valColor = ToCOLORREF(Palette::GrayDarkest);
             if (i == 2 && config->matchType == MATCH_PVP) {
-                valColor = Palette::GrayNormal;
+                valColor = ToCOLORREF(Palette::GrayNormal);
                 values[i] = L"[ Vô Hiệu Hóa ]";
             }
             if (i == selectedOption) {
@@ -303,13 +298,13 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
             }
             
             HFONT fontVal = (i == selectedOption) ? GlobalFont::Bold : GlobalFont::Default;
-            DrawColText(hdc, labels[i], col1X, startY + drawRow * spacing, col1W, Palette::GrayDarkest, GlobalFont::Bold, DT_RIGHT);
+            DrawColText(hdc, labels[i], col1X, startY + drawRow * spacing, col1W, ToCOLORREF(Palette::GrayDarkest), GlobalFont::Bold, DT_RIGHT);
             DrawColText(hdc, values[i], col2X, startY + drawRow * spacing, col2W, valColor, fontVal, DT_LEFT);
             drawRow++;
         }
 
         // Nút Tiếp Theo
-        COLORREF nextColor = Palette::BlueDarkest;
+        COLORREF nextColor = ToCOLORREF(Palette::BlueDarkest);
         if (selectedOption == 5) {
             int gCol = (int)(150 + sin(g_GlobalAnimTime * 15.0f) * 105);
             nextColor = RGB(max(0, min(255, 255 - gCol)), 100, 255); // Pulse Blue/Cyan
@@ -317,7 +312,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         DrawTextCentered(hdc, L"==> [ TIẾP THEO ] ==>", startY + 5 * spacing + UIScaler::SY(40), screenWidth, nextColor, (selectedOption == 5) ? GlobalFont::Title : GlobalFont::Bold);
     }
     else {
-        DrawTextCentered(hdc, L"--- 2. HỒ SƠ TUYỂN THỦ ---", panelY + UIScaler::SY(30), screenWidth, Palette::BlueDarkest, GlobalFont::Title);
+        DrawTextCentered(hdc, L"--- 2. HỒ SƠ TUYỂN THỦ ---", panelY + UIScaler::SY(30), screenWidth, ToCOLORREF(Palette::BlueDarkest), GlobalFont::Title);
 
         int halfW = panelW / 2;
         int avaSize = UIScaler::S(160); // Tăng từ 130
@@ -333,7 +328,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         DrawPixelAvatar(g, avaP1X, avaY, avaSize, AVATAR_SLOT_TO_TYPE[p1AvatarIdx]);
 
         // Mục 0 = Đổi Avatar P1, Mục 1 = Sửa Tên P1
-        COLORREF avaP1Col = (selectedOption == 0) ? RGB(255, 120, 0) : Palette::GrayDarkest;
+        COLORREF avaP1Col = (selectedOption == 0) ? RGB(255, 120, 0) : ToCOLORREF(Palette::GrayDarkest);
         int textY = avaY + avaSize + UIScaler::SY(10);
         if (selectedOption == 0) {
             int pulse = UIScaler::SY((int)(sin(g_GlobalAnimTime * 10.0f) * 3));
@@ -347,8 +342,11 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         DrawColText(hdc, p1SlotStr, panelX, textY + UIScaler::SY(28), halfW, avaP1Col, GlobalFont::Note, DT_CENTER);
         
         // Tên Player (selectedOption==1 = đang chọn tên)
-        COLORREF nameP1Col = (selectedOption == 1) ? RGB(255, 120, 0) : Palette::GrayDarkest;
-        std::wstring p1DispName = editName1 + (isEditingName1 ? L"_" : L"");
+        COLORREF nameP1Col = (selectedOption == 1) ? RGB(255, 120, 0) : ToCOLORREF(Palette::GrayDarkest);
+        bool isActualEditing1 = isEditingName1;
+        bool showCursor1 = isActualEditing1 && ((int)(g_GlobalAnimTime * 2.5f) % 2 == 0);
+        // Luôn cộng thêm 1 ký tự (gạch hoặc khoảng trắng) khi đang edit để giữ vị trí trung tâm cố định
+        std::wstring p1DispName = editName1 + (isActualEditing1 ? (showCursor1 ? L"_" : L" ") : L"");
         DrawColText(hdc, L"Tên: " + p1DispName, panelX, avaY + avaSize + UIScaler::SY(50), halfW, nameP1Col, selectedOption == 1 ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
 
         // --- CỘT PHẢI (P2) ---
@@ -360,9 +358,10 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         int aiAvatarIdx = p2AvatarIdx;
         
         if (isPvE) {
-            if (config->difficulty == 1) { aiAvatarIdx = 2; p2BotName = L"Máy Đồng Bài"; }
-            else if (config->difficulty == 2) { aiAvatarIdx = 3; p2BotName = L"Máy Vàng Trắng"; }
-            else { aiAvatarIdx = 4; p2BotName = L"Vua Thách Đấu"; }
+            aiAvatarIdx = 0; // Forced to Ronaldo
+            if (config->difficulty == 1) { p2BotName = L"Máy Đồng Bài"; }
+            else if (config->difficulty == 2) { p2BotName = L"Máy Vàng Trắng"; }
+            else { p2BotName = L"Vua Thách Đấu"; }
         }
 
         // Đè lưới Avatar lên trên chữ nền Watermark
@@ -370,7 +369,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         DrawPixelAvatar(g, avaP2X, avaY, avaSize, p2AvaType);
 
         // Mục 2 = Sửa Tên P2, Mục 3 = Đổi Avatar P2 (đối xứng với P1)
-        COLORREF avaP2Col = (selectedOption == 2 && !isPvE) ? RGB(0, 200, 255) : (isPvE ? Palette::GrayNormal : Palette::GrayDarkest);
+        COLORREF avaP2Col = (selectedOption == 2 && !isPvE) ? RGB(0, 200, 255) : (isPvE ? ToCOLORREF(Palette::GrayNormal) : ToCOLORREF(Palette::GrayDarkest));
         int textP2Y = avaY + avaSize + UIScaler::SY(10);
         if (selectedOption == 2 && !isPvE) {
             int pulse = UIScaler::SY((int)(sin(g_GlobalAnimTime * 10.0f) * 3));
@@ -384,21 +383,23 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         if (!isPvE) {
             std::wstring p2SlotStr = L"< " + std::to_wstring(p2AvatarIdx + 1) + L"/" + std::to_wstring(TOTAL_HUMAN_AVATARS) + L" >";
             DrawColText(hdc, p2SlotStr, panelX + halfW, textP2Y + UIScaler::SY(28), halfW,
-                (selectedOption == 2) ? RGB(0, 200, 255) : Palette::GrayDark, GlobalFont::Note, DT_CENTER);
+                (selectedOption == 2) ? RGB(0, 200, 255) : ToCOLORREF(Palette::GrayDark), GlobalFont::Note, DT_CENTER);
         }
         
         // Tên Player P2 (selectedOption==3 = đang chọn tên P2)
-        COLORREF nameP2Col = (selectedOption == 3 && !isPvE) ? RGB(0, 200, 255) : (isPvE ? Palette::GrayNormal : Palette::GrayDarkest);
-        std::wstring p2DispName = isPvE ? p2BotName : (editName2 + (isEditingName2 ? L"_" : L""));
+        COLORREF nameP2Col = (selectedOption == 3 && !isPvE) ? RGB(0, 200, 255) : (isPvE ? ToCOLORREF(Palette::GrayNormal) : ToCOLORREF(Palette::GrayDarkest));
+        bool isActualEditing2 = isEditingName2;
+        bool showCursor2 = isActualEditing2 && ((int)(g_GlobalAnimTime * 2.5f) % 2 == 0);
+        std::wstring p2DispName = isPvE ? p2BotName : (editName2 + (isActualEditing2 ? (showCursor2 ? L"_" : L" ") : L""));
         DrawColText(hdc, L"Tên: " + p2DispName, panelX + halfW, avaY + avaSize + UIScaler::SY(50), halfW, nameP2Col, (selectedOption == 3 && !isPvE) ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
 
         // --- BUTTONS BÊN DƯỚI DÀN HÀNG NGANG ---
         int botY = panelY + panelH - UIScaler::SY(80);
         
-        COLORREF backCol = (selectedOption == 4) ? RGB(255, 0, 0) : Palette::GrayDark; // Màu đỏ khi back
+        COLORREF backCol = (selectedOption == 4) ? RGB(255, 0, 0) : ToCOLORREF(Palette::GrayDark); // Màu đỏ khi back
         DrawColText(hdc, L"< QUAY LẠI CÀI ĐẶT SÂN", panelX + UIScaler::SX(30), botY, halfW - UIScaler::SX(30), backCol, selectedOption == 4 ? GlobalFont::Bold : GlobalFont::Default, DT_LEFT);
 
-        COLORREF startCol = Palette::GreenDark;
+        COLORREF startCol = ToCOLORREF(Palette::GreenDark);
         if (selectedOption == 5) {
             int gCol = (int)(150 + sin(g_GlobalAnimTime * 20.0f) * 105);
             startCol = RGB(0, max(0, min(255, gCol)), 0); 
@@ -422,9 +423,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
 
             // P2: bên phải panel — animation IDLE, nhìn vào trong (flipH=true)
             static PlayerState cfgP2State;
-            int p2Type = isPvE ? 
-                (config->difficulty == 1 ? 2 : (config->difficulty == 2 ? 3 : 4)) : 
-                AVATAR_SLOT_TO_TYPE[p2AvatarIdx];
+            int p2Type = isPvE ? 0 : AVATAR_SLOT_TO_TYPE[p2AvatarIdx];
             
             cfgP2State.avatarType = p2Type;
             cfgP2State.currentAction = "idle";
@@ -439,5 +438,5 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         DrawTextCentered(hdc, validationMsg, panelY + panelH - UIScaler::SY(45), screenWidth, RGB(255, 50, 50), GlobalFont::Bold);
     }
     
-    DrawTextCentered(hdc, (isEditingName1 || isEditingName2) ? L"Gõ tên và ấn Enter để chốt" : L"A/D: Thay đổi  |  Enter: Nhập Tên Trực Tiếp  |  ESC: Về Menu", screenHeight - UIScaler::SY(60), screenWidth, Palette::White, GlobalFont::Note);
+    DrawTextCentered(hdc, (isEditingName1 || isEditingName2) ? L"Gõ tên và ấn Enter để chốt" : L"A/D: Thay đổi  |  Enter: Nhập Tên Trực Tiếp  |  ESC: Về Menu", screenHeight - UIScaler::SY(60), screenWidth, ToCOLORREF(Palette::White), GlobalFont::Note);
 }

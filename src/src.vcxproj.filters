@@ -31,6 +31,69 @@
     <Filter Include="Asset\models">
       <UniqueIdentifier>{6f302024-ccc9-43ab-87ea-0d56136f6b35}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Asset\models\avt_00">
+      <UniqueIdentifier>{7f7e28a3-6055-48bd-a0d4-e8cc39b1112d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_01">
+      <UniqueIdentifier>{8f7e28a3-6055-48bd-a0d4-e8cc39b1112e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_02">
+      <UniqueIdentifier>{9f7e28a3-6055-48bd-a0d4-e8cc39b1112f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_03">
+      <UniqueIdentifier>{0f7e28a3-6055-48bd-a0d4-e8cc39b11130}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_00\idle">
+      <UniqueIdentifier>{6a8afd34-f183-43b3-90e7-81a38855b992}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_00\run">
+      <UniqueIdentifier>{4dfe3973-8b11-43d1-a2e2-1aae8fb0d6d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_00\sad">
+      <UniqueIdentifier>{f67b523d-f60e-44b5-b20d-baac88f6aa5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_00\win">
+      <UniqueIdentifier>{ae0ed2f1-35f1-4a11-93cc-c8cb0f83845c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_01\idle">
+      <UniqueIdentifier>{556e73b1-bc55-4f1c-9f48-32958de6a6aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_01\run">
+      <UniqueIdentifier>{cc7012b3-7fa8-4949-8197-35a7f1fd6a5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_01\sad">
+      <UniqueIdentifier>{ba4bbc7e-98fc-4465-8579-4593d2133de2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_01\win">
+      <UniqueIdentifier>{e4cb1ae7-e0ae-4b4c-9cf6-48db94876700}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_02\idle">
+      <UniqueIdentifier>{48f42034-bcba-4509-96c3-d6e058b70038}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_02\run">
+      <UniqueIdentifier>{0c619f62-2d88-4dc7-b12d-f3036d5ec24d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_02\sad">
+      <UniqueIdentifier>{89eb7989-abf4-47e3-8f28-d8fa9fe7a93c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_02\win">
+      <UniqueIdentifier>{e6ba922a-069f-4c0f-82aa-76ab013c9e74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_03\idle">
+      <UniqueIdentifier>{c2b2a4b8-d34c-40f0-b3b7-7ef69064cfff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_03\run">
+      <UniqueIdentifier>{e15991ad-17bd-409f-b430-cd4ff4517cec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_03\sad">
+      <UniqueIdentifier>{030b1a88-988f-44db-a280-9e1279eb34ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\avt_03\win">
+      <UniqueIdentifier>{1283dc5f-5390-4375-9889-896065883be0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asset\models\bg">
+      <UniqueIdentifier>{1f7e28a3-6055-48bd-a0d4-e8cc39b11131}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Asset\font">
       <UniqueIdentifier>{689f72e1-9530-4aeb-83f2-7ab07f7d7844}</UniqueIdentifier>
     </Filter>
@@ -168,6 +231,9 @@
     <ClCompile Include="GameLogic\PlayerEngineer.cpp">
       <Filter>GameLogic</Filter>
     </ClCompile>
+    <ClCompile Include="RenderAPI\Colours.cpp">
+      <Filter>RenderAPI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Asset\config.ini">
@@ -182,155 +248,194 @@
     <Text Include="Asset\lang\vi.txt">
       <Filter>Asset\lang</Filter>
     </Text>
-    <Text Include="Asset\models\badge.txt">
-      <Filter>Asset\models</Filter>
+    <Text Include="Asset\models\bg\badge.txt">
+      <Filter>Asset\models\bg</Filter>
     </Text>
-    <Text Include="Asset\models\balloon.txt">
-      <Filter>Asset\models</Filter>
+    <Text Include="Asset\models\bg\balloon.txt">
+      <Filter>Asset\models\bg</Filter>
     </Text>
-    <Text Include="Asset\models\cassette.txt">
-      <Filter>Asset\models</Filter>
+    <Text Include="Asset\models\bg\cassette.txt">
+      <Filter>Asset\models\bg</Filter>
     </Text>
-    <Text Include="Asset\models\clock.txt">
-      <Filter>Asset\models</Filter>
+    <Text Include="Asset\models\bg\clock.txt">
+      <Filter>Asset\models\bg</Filter>
     </Text>
-    <Text Include="Asset\models\cloud.txt">
-      <Filter>Asset\models</Filter>
+    <Text Include="Asset\models\bg\cloud.txt">
+      <Filter>Asset\models\bg</Filter>
     </Text>
-    <Text Include="Asset\models\football.txt">
-      <Filter>Asset\models</Filter>
+    <Text Include="Asset\models\bg\football.txt">
+      <Filter>Asset\models\bg</Filter>
     </Text>
-    <Text Include="Asset\models\gears.txt">
-      <Filter>Asset\models</Filter>
+    <Text Include="Asset\models\bg\gears.txt">
+      <Filter>Asset\models\bg</Filter>
     </Text>
-    <Text Include="Asset\models\history_pitch.txt">
-      <Filter>Asset\models</Filter>
+    <Text Include="Asset\models\bg\history_pitch.txt">
+      <Filter>Asset\models\bg</Filter>
     </Text>
-    <Text Include="Asset\models\title_caro.txt">
-      <Filter>Asset\models</Filter>
+    <Text Include="Asset\models\bg\title_caro.txt">
+      <Filter>Asset\models\bg</Filter>
     </Text>
-    <Text Include="Asset\models\trophy.txt">
-      <Filter>Asset\models</Filter>
+    <Text Include="Asset\models\bg\trophy.txt">
+      <Filter>Asset\models\bg</Filter>
     </Text>
-    <Text Include="Asset\models\whistle.txt">
-      <Filter>Asset\models</Filter>
+    <Text Include="Asset\models\bg\whistle.txt">
+      <Filter>Asset\models\bg</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\avt.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\idle\f_0.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00\idle</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\idle\f_1.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00\idle</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\idle\f_2.txt">
+      <Filter>Asset\models\avt_00\idle</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\idle\f_3.txt">
+      <Filter>Asset\models\avt_00\idle</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\run\f_0.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00\run</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\run\f_1.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00\run</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\run\f_2.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00\run</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\run\f_3.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00\run</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\sad\f_0.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00\sad</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\sad\f_1.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00\sad</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\sad\f_2.txt">
+      <Filter>Asset\models\avt_00\sad</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_00\sad\f_3.txt">
+      <Filter>Asset\models\avt_00\sad</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\win\f_0.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00\win</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\win\f_1.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00\win</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\win\f_2.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00\win</Filter>
     </Text>
     <Text Include="Asset\models\avt_00\win\f_3.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_00\win</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\avt.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\idle\f_0.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01\idle</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\idle\f_1.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01\idle</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\idle\f_2.txt">
+      <Filter>Asset\models\avt_01\idle</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\idle\f_3.txt">
+      <Filter>Asset\models\avt_01\idle</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\run\f_0.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01\run</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\run\f_1.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01\run</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\run\f_2.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01\run</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\run\f_3.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01\run</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\sad\f_0.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01\sad</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\sad\f_1.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01\sad</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\sad\f_2.txt">
+      <Filter>Asset\models\avt_01\sad</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_01\sad\f_3.txt">
+      <Filter>Asset\models\avt_01\sad</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\win\f_0.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01\win</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\win\f_1.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01\win</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\win\f_2.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01\win</Filter>
     </Text>
     <Text Include="Asset\models\avt_01\win\f_3.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_01\win</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\avt.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\idle\f_0.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02\idle</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\idle\f_1.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02\idle</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\idle\f_2.txt">
+      <Filter>Asset\models\avt_02\idle</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\idle\f_3.txt">
+      <Filter>Asset\models\avt_02\idle</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\run\f_0.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02\run</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\run\f_1.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02\run</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\run\f_2.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02\run</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\run\f_3.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02\run</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\sad\f_0.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02\sad</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\sad\f_1.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02\sad</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\sad\f_2.txt">
+      <Filter>Asset\models\avt_02\sad</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_02\sad\f_3.txt">
+      <Filter>Asset\models\avt_02\sad</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\win\f_0.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02\win</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\win\f_1.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02\win</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\win\f_2.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02\win</Filter>
     </Text>
     <Text Include="Asset\models\avt_02\win\f_3.txt">
-      <Filter>Asset\models</Filter>
+      <Filter>Asset\models\avt_02\win</Filter>
+    </Text>
+    <Text Include="Asset\models\avt_03\avt.txt">
+      <Filter>Asset\models\avt_03</Filter>
     </Text>
     <Text Include="Asset\font\Be_Vietnam_Pro\OFL.txt">
       <Filter>Asset\font</Filter>

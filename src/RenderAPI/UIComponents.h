@@ -42,11 +42,6 @@ void DrawProceduralStadium(Gdiplus::Graphics& g, int screenWidth, int screenHeig
 // Vẽ Avatar cầu thủ theo kiểu Pixel Art 8x8 từ ma trận số (hỗ trợ 9 avatar: 0-8)
 void DrawPixelAvatar(Gdiplus::Graphics& g, int x, int y, int size, int avatarType);
 
-// Vẽ animation cầu thủ pixel art multi-frame từ các file .txt
-// animState: 0=IDLE, 1=RUNNING(đang lượt), 2=WIN(thắng), 3=SAD(thua)
-// flipH: lật ngang — dùng cho P2 nhìn vào giữa sân
-void DrawPlayerAnimation(Gdiplus::Graphics& g, int cx, int cy, int size,
-                         int avatarType, int animState, bool flipH = false);
 
 // Vẽ hoạt họa theo thư mục Hành động mới (V5)
 void DrawPixelAction(Gdiplus::Graphics& g, int x, int y, int size, PlayerState& state);

@@ -13,7 +13,8 @@ enum MatchStatus
 {
     MATCH_PLAYING,
     MATCH_PAUSED,
-    MATCH_FINISHED
+    MATCH_FINISHED,
+    MATCH_SUMMARY
 };
 
 // Thông tin người chơi (mới)
@@ -22,9 +23,11 @@ struct PlayerInfo2
     wstring name;
     string avatarPath;
     char piece;          // 'X' hoặc 'O'      
-    int totalWins;
+    int totalWins;       // Số Bàn Thắng (trong series BO hiện tại)
+    int matchWins;       // Số Trận Thắng BO (đã thắng trọn 1 serie BO)
     int movesCount;
-    float maxTurnTime;  // Thời gian tối đa cho 1 lượt
+    float maxTurnTime;   // Thời gian tối đa cho 1 lượt
+    float totalTimePossessed; // Tổng thời gian giữ bóng (giây), cộng dồn theo phiên
 };
 
 // Trạng thái ván đấu
@@ -69,6 +72,9 @@ struct PlayState
     int p1TotalTimeLeft;
     int p2TotalTimeLeft;
     bool isMatchTimed;    // Có bật giới hạn thời gian cả trận không
+
+    std::wstring saveName;      // Tên hiển thị của bản lưu
+    std::wstring saveTimestamp; // Thời gian lưu (Ngày/Giờ)
 };
 
 #endif // _PLAY_STATE_H
