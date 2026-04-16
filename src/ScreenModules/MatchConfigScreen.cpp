@@ -103,18 +103,24 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
     if (wParam == 'W' || wParam == 'w' || wParam == VK_UP) {
         do {
             selectedOption = (selectedOption - 1 + totalItems) % totalItems;
-        } while (currentPage == 0 && (
-            (selectedOption == 2 && playState->matchType == MATCH_PVP) || // Bỏ qua Độ Khó nếu PVP
-            (selectedOption == 3 && playState->matchType == MATCH_PVE)    // Bỏ qua Thời gian nếu PVE
-        ));
+        } while (
+            (currentPage == 0 && (
+                (selectedOption == 2 && playState->matchType == MATCH_PVP) || // Bỏ qua Độ Khó nếu PVP
+                (selectedOption == 3 && playState->matchType == MATCH_PVE)    // Bỏ qua Thời gian nếu PVE
+            )) ||
+            (currentPage == 1 && playState->matchType == MATCH_PVE && (selectedOption == 2 || selectedOption == 3)) // Bỏ qua Avatar/Tên P2 nếu PvE
+        );
     }
     else if (wParam == 'S' || wParam == 's' || wParam == VK_DOWN) {
         do {
             selectedOption = (selectedOption + 1) % totalItems;
-        } while (currentPage == 0 && (
-            (selectedOption == 2 && playState->matchType == MATCH_PVP) ||
-            (selectedOption == 3 && playState->matchType == MATCH_PVE)
-        ));
+        } while (
+            (currentPage == 0 && (
+                (selectedOption == 2 && playState->matchType == MATCH_PVP) ||
+                (selectedOption == 3 && playState->matchType == MATCH_PVE)
+            )) ||
+            (currentPage == 1 && playState->matchType == MATCH_PVE && (selectedOption == 2 || selectedOption == 3))
+        );
     }
 
     int dir = (wParam == 'D' || wParam == 'd' || wParam == VK_RIGHT) ? 1 : ((wParam == 'A' || wParam == 'a' || wParam == VK_LEFT) ? -1 : 0);
@@ -286,12 +292,10 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         for (int i = 0; i < 5; i++) {
             // Ẩn Thời Gian khi chế độ PvE (AI tự tính toán)
             if (i == 3 && isPvE_p0) continue;
+            // Ẩn Độ Khó khi chế độ PvP (không có máy)
+            if (i == 2 && config->matchType == MATCH_PVP) continue;
 
             COLORREF valColor = ToCOLORREF(Palette::GrayDarkest);
-            if (i == 2 && config->matchType == MATCH_PVP) {
-                valColor = ToCOLORREF(Palette::GrayNormal);
-                values[i] = L"[ Vô Hiệu Hóa ]";
-            }
             if (i == selectedOption) {
                 int rCol = (int)(180 + sin(g_GlobalAnimTime * 12.0f) * 75);
                 valColor = RGB(255, max(0, min(255, 255 - rCol)), 0); 
