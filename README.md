@@ -31,7 +31,7 @@
 - **Match Types:** 
     - **PvP:** Đối đầu trực tiếp giữa hai kỳ thủ.
     - **PvE:** Thử thách khả năng tư duy với Bot AI thông minh.
-- **Series Thể thức:** Bo1, Bo3, hoặc Bo5. Hệ thống tự động theo dõi số ván thắng trong serie (`matchWins`) để phân định nhà vô địch.
+- **Series Thể thức:** Bo1, Bo3, Bo5. Hệ thống tự động theo dõi số bàn thắng (`totalWins`) để tính điểm trận (`matchWins`) và phân định nhà vô địch serie.
 
 ### 2. Thống kê trận đấu chuyên sâu
 - **Tỷ lệ kiểm soát bóng:** Đo lường thời gian suy nghĩ và giữ lượt của từng người chơi (`totalTimePossessed`).
@@ -69,7 +69,7 @@ Hệ thống animation cho avatar được cấu trúc theo các hành động c
 Gomoku_Game_Project/                     
 └── src/
     ├── ApplicationTypes/           -- Định nghĩa GameState, PlayState, Config
-    ├── GameLogic/                  -- Xử lý luật chơi, trọng tài và Bot AI
+    ├── GameLogic/                  -- Xử lý luật chơi, trọng tài (Rules/Engine/Engineer) và Bot AI
     ├── RenderAPI/                  -- Lõi đồ họa: Renderer, UIComponents, Colours, UIScaler
     ├── ScreenModules/              -- Các màn hình GUI (Menu, Play, Settings, About, Guild,...)
     ├── SystemModules/              -- Hệ thống nền: Audio, SaveLoad, Localization, Time
@@ -142,9 +142,14 @@ Bot AI (PLAYER 2) hoạt động trên một luồng riêng biệt (`std::async`
 1. **Phân Hạng Đồng (Easy):** Nước đi ngẫu nhiên, mô phỏng người chơi mới.
 2. **Phân Hạng Vàng (Medium):** Sử dụng hàm đánh giá heuristic cơ bản, ưu tiên phòng thủ và chặn các chuỗi nguy hiểm.
 3. **Thách Đấu (Hard):** 
-    - **Thuật toán:** Alpha-Beta Pruning.
-    - **Độ sâu tìm kiếm:** 4 lớp (có thể mở rộng).
-    - **Tối ưu:** Move Ordering để cắt tỉa nhánh nhanh chóng, cho phép tính toán hàng triệu trạng thái trong thời gian ngắn.
+    - **Thuật toán:** Alpha-Beta Pruning kết hợp **Zobrist Hashing**.
+    - **Tối ưu hiệu năng:** 
+        - **Transposition Table (TT):** Lưu trữ 1,048,576 trạng thái đã tính toán (~32MB RAM) giúp bỏ qua các nhánh trùng lặp.
+        - **Incremental Evaluation:** Đánh giá điểm bàn cờ dựa trên nước đi mới thay vì quét lại từ đầu.
+        - **Move Ordering:** Ưu tiên duyệt các nước đi có tiềm năng cao để tối đa hóa khả năng cắt tỉa nhánh.
+        - **Branching Limit:** Giới hạn nhánh (12) tại các nút sâu để duy trì tốc độ phản hồi < 500ms.
+    - **Độ sâu tìm kiếm:** 5 lớp (có thể mở rộng tùy cấu hình).
+    - **Chiến thuật:** Phát hiện và xử lý ngay lập tức các mối đe dọa thắng/thua (Immediate Win/Block).
 
 ---
 
