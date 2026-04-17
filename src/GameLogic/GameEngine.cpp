@@ -209,11 +209,11 @@ bool processMove(PlayState* state, int row, int col) {
         state->status = MATCH_FINISHED;
         state->winner = winStatus;
 
-        PlaySFX("Asset/audio/Tiengcoi.wav", "sfx_whistle");
-        PlaySFX("Asset/audio/TiengKhanGia_Het_Tran.wav", "sfx_crowd");
+        PlaySFX("sfx_whistle");
+        PlaySFX("sfx_crowd");
 
         // Bonus quả "Siuuu" thương hiệu
-        PlaySFX("Asset/audio/siuuu.wav", "sfx_siu");
+        PlaySFX("sfx_siu");
     }
     else {
         switchTurn(state);

@@ -112,7 +112,7 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
             )) ||
             (currentPage == 1 && playState->matchType == MATCH_PVE && (selectedOption == 2 || selectedOption == 3)) // Bỏ qua Avatar/Tên P2 nếu PvE
         );
-        PlaySFX("Asset/audio/move.wav", "sfx_move");
+        PlaySFX("sfx_move");
     }
     else if (wParam == 'S' || wParam == 's' || wParam == VK_DOWN) {
         do {
@@ -124,7 +124,7 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
             )) ||
             (currentPage == 1 && playState->matchType == MATCH_PVE && (selectedOption == 2 || selectedOption == 3))
         );
-        PlaySFX("Asset/audio/move.wav", "sfx_move");
+        PlaySFX("sfx_move");
     }
 
     int dir = (wParam == 'D' || wParam == 'd' || wParam == VK_RIGHT) ? 1 : ((wParam == 'A' || wParam == 'a' || wParam == VK_LEFT) ? -1 : 0);
@@ -134,13 +134,13 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
         case 0: // Chế độ
             if (dir != 0) {
                 playState->gameMode = (playState->gameMode == MODE_CARO) ? MODE_TIC_TAC_TOE : MODE_CARO;
-                PlaySFX("Asset/audio/move.wav", "sfx_move"); 
+                PlaySFX("sfx_move"); 
             }
             break;
         case 1: // PvP / PvE
             if (dir != 0) {
                 playState->matchType = (playState->matchType == MATCH_PVP) ? MATCH_PVE : MATCH_PVP;
-                PlaySFX("Asset/audio/move.wav", "sfx_move");
+                PlaySFX("sfx_move");
             }
             break;
         case 2: // Độ khó
@@ -148,7 +148,7 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
                 playState->difficulty += dir;
                 if (playState->difficulty < 1) playState->difficulty = 3;
                 if (playState->difficulty > 3) playState->difficulty = 1;
-                PlaySFX("Asset/audio/move.wav", "sfx_move"); 
+                PlaySFX("sfx_move"); 
             }
             break;
         case 3: // Thời gian
@@ -156,7 +156,7 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
                 playState->countdownTime += dir * 5;
                 if (playState->countdownTime < 10) playState->countdownTime = 10;
                 if (playState->countdownTime > 60) playState->countdownTime = 60;
-                PlaySFX("Asset/audio/move.wav", "sfx_move");
+                PlaySFX("sfx_move");
             }
 
             break;
@@ -165,7 +165,7 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
                 playState->targetScore += dir * 2;
                 if (playState->targetScore < 1) playState->targetScore = 5;
                 if (playState->targetScore > 5) playState->targetScore = 1;
-                PlaySFX("Asset/audio/move.wav", "sfx_move");
+                PlaySFX("sfx_move");
             }
             break;
         case 5: // Tiếp Theo
@@ -236,7 +236,7 @@ void UpdateMatchConfigScreen(ScreenState& currentState, PlayState* playState, in
                 initNewMatch(playState, playState->gameMode, playState->matchType, bSize, playState->countdownTime, playState->difficulty, playState->targetScore, 15);
                 
                 StopBGM(); // Tắt nhạc menu Champions League
-                PlaySFX("Asset/audio/Tiengcoi.wav", "sfx_whistle");
+                PlaySFX("sfx_whistle");
 
                 currentPage = 0;
                 selectedOption = 0;

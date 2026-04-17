@@ -63,7 +63,7 @@ bool UpdatePlayLogic(PlayState* state, double dt) {
 
                 // Nếu sau khi trừ giây mà thời gian bằng 0 -> Hết lượt, đổi người chơi
                 if (state->timeRemaining <= 0) {
-                    PlaySFX("Asset/audio/MatLuot.wav", "sfx_timeout");
+                    PlaySFX("sfx_timeout");
                     switchTurn(state);
                 }
             }
@@ -143,7 +143,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
                 state->saveName = g_SaveNameInput;
 
                 if (SaveMatchData(state, path)) {
-                    PlaySFX("Asset/audio/success.wav", "sfx_success");
+                    PlaySFX("sfx_success");
                     g_SaveStatusMsg = L"Đã lưu thành công!";
                     g_SaveFeedbackTimer = 1.5f; // Hiện thông báo trong 1.5s
                 } else {
@@ -189,7 +189,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
             if (g_PauseSelected == 2 && !config->isBgmEnabled) {
                 g_PauseSelected = (g_PauseSelected - 1 < 0) ? TOTAL_PAUSE_ITEMS - 1 : g_PauseSelected - 1;
             }
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
             hasChanged = true;
         }
         else if (wParam == 'S' || wParam == VK_DOWN) {
@@ -198,7 +198,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
             if (g_PauseSelected == 2 && !config->isBgmEnabled) {
                 g_PauseSelected = (g_PauseSelected + 1 >= TOTAL_PAUSE_ITEMS) ? 0 : g_PauseSelected + 1;
             }
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
             hasChanged = true;
         }
         else if (wParam == VK_RETURN || wParam == VK_SPACE || wParam == VK_RIGHT || wParam == VK_LEFT) {
@@ -236,7 +236,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
                 ResetPlayScreenStatics(); 
                 break;
             }
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
             hasChanged = true;
         }
         return hasChanged;
@@ -265,27 +265,27 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
 
         if ((wParam == 'W' || wParam == VK_UP) && state->cursorRow > 0) { 
             state->cursorRow--; 
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
             hasChanged = true; 
         }
         if ((wParam == 'S' || wParam == VK_DOWN) && state->cursorRow < state->boardSize - 1) { 
             state->cursorRow++; 
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
             hasChanged = true; 
         }
         if ((wParam == 'A' || wParam == VK_LEFT) && state->cursorCol > 0) { 
             state->cursorCol--; 
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
             hasChanged = true; 
         }
         if ((wParam == 'D' || wParam == VK_RIGHT) && state->cursorCol < state->boardSize - 1) { 
             state->cursorCol++; 
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
             hasChanged = true; 
         }
         if (wParam == VK_RETURN || wParam == VK_SPACE) {
             if (processMove(state, state->cursorRow, state->cursorCol)) { 
-                PlaySFX("Asset/audio/DatCo.wav", "sfx_place");
+                PlaySFX("sfx_place");
                 return true; 
             }
         }
@@ -317,12 +317,12 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
 
         if (wParam == 'W' || wParam == 'w' || wParam == VK_UP) {
             g_SummarySelected = (g_SummarySelected - 1 < 0) ? 2 : g_SummarySelected - 1;
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
             hasChanged = true;
         }
         else if (wParam == 'S' || wParam == 's' || wParam == VK_DOWN) {
             g_SummarySelected = (g_SummarySelected + 1 > 2) ? 0 : g_SummarySelected + 1;
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
             hasChanged = true;
         }
         else if (wParam == VK_RETURN || wParam == VK_SPACE) {
@@ -338,7 +338,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState* state, ScreenState& currentState
                     state->p2.totalWins = 0;
                 }
                 startNextRound(state);
-                PlaySFX("Asset/audio/Tiengcoi.wav", "sfx_whistle");
+                PlaySFX("sfx_whistle");
             }
             else if (g_SummarySelected == 1) {
                 g_PrePauseStatus = state->status;

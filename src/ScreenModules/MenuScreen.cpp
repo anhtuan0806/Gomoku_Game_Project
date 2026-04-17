@@ -31,7 +31,7 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState& currentState, int& selectedOpt
         if (selectedOption < 0) {
             selectedOption = TOTAL_MENU_ITEMS - 1;
         }
-        PlaySFX("Asset/audio/move.wav", "sfx_move");
+        PlaySFX("sfx_move");
         hasChanged = true;
     }
     else if (wParam == 'S' || wParam == 's' || wParam == VK_DOWN) {
@@ -39,11 +39,11 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState& currentState, int& selectedOpt
         if (selectedOption >= TOTAL_MENU_ITEMS) {
             selectedOption = 0;
         }
-        PlaySFX("Asset/audio/move.wav", "sfx_move");
+        PlaySFX("sfx_move");
         hasChanged = true;
     }
     else if (wParam == VK_RETURN || wParam == VK_SPACE) {
-        PlaySFX("Asset/audio/select.wav", "sfx_select");
+        PlaySFX("sfx_select");
         switch (selectedOption) {
         case 0: 
             currentState = SCREEN_PLAY; 

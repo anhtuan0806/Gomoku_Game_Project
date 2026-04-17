@@ -48,7 +48,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState& currentState, PlayState* p
             } else if (wParam == VK_RETURN) {
                 if (!g_EditNameBuffer.empty()) {
                     if (RenameSave(g_SelectedSlot + 1, g_EditNameBuffer)) {
-                        PlaySFX("Asset/audio/success.wav", "sfx_success");
+                        PlaySFX("sfx_success");
                         g_LoadStatusMsg = L"Đã đổi tên thành công!";
                         g_LoadFeedbackTimer = 1.0f;
                         g_CurrentMode = MODE_SELECT_ACTION;
@@ -64,10 +64,10 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState& currentState, PlayState* p
     if (g_CurrentMode == MODE_SELECT_SLOT) {
         if (wParam == 'W' || wParam == VK_UP) {
             g_SelectedSlot = (g_SelectedSlot - 1 + (MAX_SLOTS + 1)) % (MAX_SLOTS + 1);
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
         } else if (wParam == 'S' || wParam == VK_DOWN) {
             g_SelectedSlot = (g_SelectedSlot + 1) % (MAX_SLOTS + 1);
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
         } else if (wParam == VK_RETURN || wParam == VK_SPACE) {
             if (g_SelectedSlot == BACK_BTN_INDEX) {
                 currentState = SCREEN_MENU;
@@ -90,15 +90,15 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState& currentState, PlayState* p
     } else if (g_CurrentMode == MODE_SELECT_ACTION) {
         if (wParam == 'W' || wParam == VK_UP) {
             g_SelectedAction = (g_SelectedAction - 1 + MAX_ACTIONS) % MAX_ACTIONS;
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
         } else if (wParam == 'S' || wParam == VK_DOWN) {
             g_SelectedAction = (g_SelectedAction + 1) % MAX_ACTIONS;
-            PlaySFX("Asset/audio/move.wav", "sfx_move");
+            PlaySFX("sfx_move");
         } else if (wParam == VK_RETURN || wParam == VK_SPACE) {
             if (g_SelectedAction == 0) { // Tải
                 if (LoadMatchData(playState, GetSavePath(g_SelectedSlot + 1))) {
                     StopBGM();
-                    PlaySFX("Asset/audio/Tiengcoi.wav", "sfx_whistle"); // Còi báo hiệu trận đấu tiếp tục
+                    PlaySFX("sfx_whistle"); // Còi báo hiệu trận đấu tiếp tục
                     playState->status = MATCH_PLAYING;
                     currentState = SCREEN_PLAY;
                     g_CurrentMode = MODE_SELECT_SLOT;
@@ -108,7 +108,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState& currentState, PlayState* p
                 g_CurrentMode = MODE_EDIT_NAME;
             } else if (g_SelectedAction == 2) { // Xóa
                 if (DeleteSave(g_SelectedSlot + 1)) {
-                    PlaySFX("Asset/audio/success.wav", "sfx_success");
+                    PlaySFX("sfx_success");
                     g_LoadStatusMsg = L"Đã xóa bản lưu!";
                     g_LoadFeedbackTimer = 1.0f;
                     g_CurrentMode = MODE_SELECT_SLOT;

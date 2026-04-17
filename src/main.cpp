@@ -41,7 +41,7 @@ int g_GuildPage = 0;
 // Tài nguyên đồ họa
 ULONG_PTR g_GdiplusToken;
 
-// --- Khai báo hàm Win32 ---
+// --- Khai báo hàm Win32 ---   
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
@@ -64,12 +64,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     LoadConfig(&g_Config, "Asset/config.ini");
     LoadLanguageFile(g_Config.currentLang); // Khởi tạo ngôn ngữ trước
 
-    if (g_Config.isBgmEnabled) {
-        PlayBGM("Asset/audio/UEFA_Champions_League.mp3");
-    }
+    InitAudioSystem();
 
     if (g_Config.isBgmEnabled) {
-        // Tên file mp3 tôi khuyên bạn đổi lại cho an toàn
         PlayBGM("Asset/audio/c1.mp3");
     }
 
@@ -152,6 +149,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     RemoveFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Black.ttf", FR_PRIVATE, 0);
     RemoveFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Italic.ttf", FR_PRIVATE, 0);
     
+    ShutdownAudioSystem();
+
     ShutdownGraphics(g_GdiplusToken);
 
     return (int)msg.wParam;
