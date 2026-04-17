@@ -12,6 +12,7 @@
 # Visual Studio
 .vs/
 *.suo
+*.vcxproj.user
 
 # Build folders
 Debug/

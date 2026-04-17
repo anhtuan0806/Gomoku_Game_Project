@@ -227,6 +227,32 @@
     <None Include="..\README.md" />
   </ItemGroup>
   <ItemGroup>
+    <Media Include="Asset\audio\c1.mp3">
+      <Filter>Asset\audio</Filter>
+    </Media>
+    <Media Include="Asset\audio\DatCo.wav">
+      <Filter>Asset\audio</Filter>
+    </Media>
+    <Media Include="Asset\audio\MatLuot.wav">
+      <Filter>Asset\audio</Filter>
+    </Media>
+    <Media Include="Asset\audio\move.wav">
+      <Filter>Asset\audio</Filter>
+    </Media>
+    <Media Include="Asset\audio\select.wav">
+      <Filter>Asset\audio</Filter>
+    </Media>
+    <Media Include="Asset\audio\siuuu.wav">
+      <Filter>Asset\audio</Filter>
+    </Media>
+    <Media Include="Asset\audio\Tiengcoi.wav">
+      <Filter>Asset\audio</Filter>
+    </Media>
+    <Media Include="Asset\audio\TiengKhanGia_Het_Tran.wav">
+      <Filter>Asset\audio</Filter>
+    </Media>
+  </ItemGroup>
+  <ItemGroup>
     <Text Include="Asset\lang\en.txt">
       <Filter>Asset\lang</Filter>
     </Text>

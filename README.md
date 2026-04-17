@@ -40,11 +40,16 @@
 
 ### 3. Localization & Font chuyên dụng
 - Hỗ trợ đầy đủ tiếng Việt có dấu với bộ font **Be Vietnam Pro** kết hợp cùng font pixel art **VT323**.
-- Hệ thống ngôn ngữ linh hoạt (Vietnamese/English) được tích hợp sâu vào cấu trúc `GameConfig`. (chưa hoàn thiện)
+- Hệ thống ngôn ngữ linh hoạt (Vietnamese/English).
 
 ### 4. Undo/Redo & Autosave
 - Khả năng rút lại nước đi và hoàn tác linh hoạt.
 - Cơ chế **Autosave** tự động lưu lại trạng thái sau mỗi nước đi quan trọng, đảm bảo không mất dữ liệu giữa chừng.
+
+### 5. Hệ thống Âm thanh & Hiệu năng (V5.1)
+- **Asynchronous Audio:** Hệ thống âm thanh được refactor sang cơ chế đa luồng (background thread), xử lý qua hàng đợi lệnh (command queue) để loại bỏ hiện tượng giật lag khi phát nhiều âm thanh cùng lúc.
+- **Input Throttling:** Tối ưu hóa việc lọc đầu vào (input filtering) và khống chế tần suất phím nhấn, đảm bảo game phản hồi mượt mà ngay cả khi thao tác nhanh.
+- **Main Loop Optimization:** Chuyển đổi sang mô hình "Drain Message Queue" để duy trì tốc độ khung hình ổn định khi nhận lượng lớn tin nhắn từ Windows.
 
 ---
 
