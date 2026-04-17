@@ -40,9 +40,6 @@
     <Filter Include="Asset\models\avt_02">
       <UniqueIdentifier>{9f7e28a3-6055-48bd-a0d4-e8cc39b1112f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Asset\models\avt_03">
-      <UniqueIdentifier>{0f7e28a3-6055-48bd-a0d4-e8cc39b11130}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Asset\models\avt_00\idle">
       <UniqueIdentifier>{6a8afd34-f183-43b3-90e7-81a38855b992}</UniqueIdentifier>
     </Filter>
@@ -78,18 +75,6 @@
     </Filter>
     <Filter Include="Asset\models\avt_02\win">
       <UniqueIdentifier>{e6ba922a-069f-4c0f-82aa-76ab013c9e74}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Asset\models\avt_03\idle">
-      <UniqueIdentifier>{c2b2a4b8-d34c-40f0-b3b7-7ef69064cfff}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Asset\models\avt_03\run">
-      <UniqueIdentifier>{e15991ad-17bd-409f-b430-cd4ff4517cec}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Asset\models\avt_03\sad">
-      <UniqueIdentifier>{030b1a88-988f-44db-a280-9e1279eb34ef}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Asset\models\avt_03\win">
-      <UniqueIdentifier>{1283dc5f-5390-4375-9889-896065883be0}</UniqueIdentifier>
     </Filter>
     <Filter Include="Asset\models\bg">
       <UniqueIdentifier>{1f7e28a3-6055-48bd-a0d4-e8cc39b11131}</UniqueIdentifier>
@@ -434,74 +419,11 @@
     <Text Include="Asset\models\avt_02\win\f_3.txt">
       <Filter>Asset\models\avt_02\win</Filter>
     </Text>
-    <Text Include="Asset\models\avt_03\avt.txt">
-      <Filter>Asset\models\avt_03</Filter>
-    </Text>
-    <Text Include="Asset\font\Be_Vietnam_Pro\OFL.txt">
-      <Filter>Asset\font</Filter>
-    </Text>
     <Text Include="Asset\font\VT323\OFL.txt">
       <Filter>Asset\font</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Black.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-BlackItalic.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Bold.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-BoldItalic.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ExtraBold.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ExtraBoldItalic.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ExtraLight.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ExtraLightItalic.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Italic.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Light.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-LightItalic.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Medium.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-MediumItalic.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Regular.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-SemiBold.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-SemiBoldItalic.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Thin.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ThinItalic.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
-    <Font Include="Asset\font\pixellari\Pixellari.ttf">
-      <Filter>Asset\font</Filter>
-    </Font>
     <Font Include="Asset\font\VT323\VT323-Regular.ttf">
       <Filter>Asset\font</Filter>
     </Font>

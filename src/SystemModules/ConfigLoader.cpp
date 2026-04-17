@@ -1,4 +1,4 @@
-﻿#include "ConfigLoader.h"
+#include "ConfigLoader.h"
 #include <fstream>
 
 static void SetDefaultConfig(GameConfig* config) {
@@ -7,7 +7,6 @@ static void SetDefaultConfig(GameConfig* config) {
     config->isSfxEnabled = true;
     config->sfxVolume = 50;
     config->currentLang = APP_LANG_VI;
-    config->currentTheme = THEME_CLASSIC;
 }
 
 void LoadConfig(GameConfig* config, const std::string& filepath) {

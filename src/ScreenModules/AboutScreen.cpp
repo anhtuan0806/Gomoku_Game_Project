@@ -5,13 +5,16 @@
 #include "../SystemModules/Localization.h"
 #include <string>
 
-void UpdateAboutScreen(ScreenState& currentState, WPARAM wParam) {
-    if (wParam == VK_ESCAPE) {
+void UpdateAboutScreen(ScreenState &currentState, WPARAM wParam)
+{
+    if (wParam == VK_ESCAPE)
+    {
         currentState = SCREEN_MENU;
     }
 }
 
-void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight) {
+void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight)
+{
     Gdiplus::Graphics g(hdc);
 
     // 1. Nền sân vận động
@@ -45,7 +48,7 @@ void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight) {
 
     // 3. Tiêu đề Pixel Banner (Chỉ giữ lại viền và icon làm vật trang trí)
     DrawPixelBanner(g, hdc, L"", screenWidth / 2, panelY + UIScaler::SY(40),
-        panelW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(255, 120, 0), "Asset/models/bg/history_pitch.txt");
+                    panelW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(255, 120, 0), "Asset/models/bg/history_pitch.txt");
 
     // 4. Nội dung About (ĐÃ GẮN NGÔN NGỮ)
     SetBkMode(hdc, TRANSPARENT);
@@ -64,7 +67,8 @@ void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight) {
 
     // Vẽ Grid Lines (Màu tối cho nền sáng)
     Gdiplus::Pen gridPen(Gdiplus::Color(100, 100, 100, 100), 1.0f);
-    for (int i = 0; i <= 5; i++) {
+    for (int i = 0; i <= 5; i++)
+    {
         g.DrawLine(&gridPen, (INT)tableX, (INT)(tableY + i * rowH), (INT)(tableX + tableW), (INT)(tableY + i * rowH));
     }
     g.DrawLine(&gridPen, (INT)tableX, (INT)tableY, (INT)tableX, (INT)(tableY + tableH));
@@ -74,25 +78,29 @@ void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight) {
     // Header Text (ĐÃ GẮN NGÔN NGỮ)
     HFONT oldF = (HFONT)SelectObject(hdc, GlobalFont::Bold);
     SetTextColor(hdc, ToCOLORREF(Palette::White));
-    RECT rHeader1 = { tableX, tableY, tableX + col1W, tableY + rowH };
-    RECT rHeader2 = { tableX + col1W, tableY, tableX + tableW, tableY + rowH };
+    RECT rHeader1 = {tableX, tableY, tableX + col1W, tableY + rowH};
+    RECT rHeader2 = {tableX + col1W, tableY, tableX + tableW, tableY + rowH};
     DrawTextW(hdc, GetText("about_member").c_str(), -1, &rHeader1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     DrawTextW(hdc, GetText("about_id").c_str(), -1, &rHeader2, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
     // Body Text
     SelectObject(hdc, GlobalFont::Default);
     SetTextColor(hdc, ToCOLORREF(Palette::GrayDarkest));
-    struct Member { std::wstring name; std::wstring ms; };
-    Member list[] = {
-        { L"Trương Tuấn Anh", L"24120260" },
-        { L"Lê Văn Quốc", L"24120421" },
-        { L"Đặng Quang Sang", L"24120428" },
-        { L"Trương Đoàn Công Thành", L"24120451" }
+    struct Member
+    {
+        std::wstring name;
+        std::wstring ms;
     };
+    Member list[] = {
+        {L"Trương Tuấn Anh", L"24120260"},
+        {L"Lê Văn Quốc", L"24120421"},
+        {L"Đặng Quang Sang", L"24120428"},
+        {L"Trương Đoàn Công Thành", L"24120451"}};
 
-    for (int i = 0; i < 4; i++) {
-        RECT rName = { tableX + UIScaler::SX(20), tableY + (i + 1) * rowH, tableX + col1W - UIScaler::SX(5), tableY + (i + 2) * rowH };
-        RECT rMs = { tableX + col1W, tableY + (i + 1) * rowH, tableX + tableW, tableY + (i + 2) * rowH };
+    for (int i = 0; i < 4; i++)
+    {
+        RECT rName = {tableX + UIScaler::SX(20), tableY + (i + 1) * rowH, tableX + col1W - UIScaler::SX(5), tableY + (i + 2) * rowH};
+        RECT rMs = {tableX + col1W, tableY + (i + 1) * rowH, tableX + tableW, tableY + (i + 2) * rowH};
         DrawTextW(hdc, list[i].name.c_str(), -1, &rName, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
         DrawTextW(hdc, list[i].ms.c_str(), -1, &rMs, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     }

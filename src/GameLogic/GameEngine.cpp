@@ -1,6 +1,7 @@
 #include "GameEngine.h"
 #include "GameRules.h"
 #include "BotAI.h"                          // Để gọi clearTranspositionTable()
+#include "PlayerEngineer.h"
 #include "../SystemModules/TimeSystem.h"
 #include "../SystemModules/AudioSystem.h"
 
@@ -22,17 +23,9 @@ void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize
     state->p1TotalTimeLeft = totalTime * 60; // phút → giây
     state->p2TotalTimeLeft = totalTime * 60;
 
-    // Reset điểm về 0
-    state->p1.totalWins = 0;
-    state->p2.totalWins = 0;
-    state->p1.matchWins = 0;
-    state->p2.matchWins = 0;
-    state->p1.totalTimePossessed = 0.0f;
-    state->p2.totalTimePossessed = 0.0f;
-
-    // Giới hạn thời gian lượt
-    state->p1.maxTurnTime = static_cast<float>(countdownTime);
-    state->p2.maxTurnTime = static_cast<float>(countdownTime);
+    // Khởi tạo cầu thủ qua PlayerEngineer (Nguồn sự thật duy nhất)
+    initPlayer(state->p1, state->p1.name, state->p1.avatarPath, 'X', (float)countdownTime);
+    initPlayer(state->p2, state->p2.name, state->p2.avatarPath, 'O', (float)countdownTime);
 
     // Xóa transposition table khi bắt đầu match mới
     clearTranspositionTable();
@@ -49,8 +42,9 @@ void startNextRound(PlayState* state) {
     state->status = MATCH_PLAYING;
     state->winner = -1;
 
-    state->p1.movesCount = 0;
-    state->p2.movesCount = 0;
+    // Reset chỉ số lượt đánh cho round mới
+    resetPlayerForRound(state->p1);
+    resetPlayerForRound(state->p2);
 
     state->lastMoveRow = -1;
     state->lastMoveCol = -1;
@@ -127,6 +121,7 @@ void undoMove(PlayState* state) {
         state->winner = -1;
     }
     state->winningCells.clear();
+    ResetTimer(state);
 }
 
 // ============================================================
@@ -166,6 +161,7 @@ void redoMove(PlayState* state) {
             state->isP1Turn = !state->isP1Turn;
         }
     }
+    ResetTimer(state);
 }
 
 // ============================================================

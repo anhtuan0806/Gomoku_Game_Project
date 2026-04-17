@@ -3,7 +3,6 @@
 #include "GameConstants.h"
 #include "GameState.h"
 #include <string>
-
 #include <vector>
 #include <utility>
 
@@ -22,12 +21,12 @@ struct PlayerInfo2
 {
     wstring name;
     string avatarPath;
-    char piece;
-    int totalWins = 0;       // Thêm = 0
-    int matchWins = 0;       // Thêm = 0
-    int movesCount = 0;      // Thêm = 0
-    float maxTurnTime = 0.0f;
-    float totalTimePossessed = 0.0f;
+    char piece;              // 'X' hoặc 'O'
+    int totalWins = 0;       // Số Bàn Thắng (trong series BO hiện tại)
+    int matchWins = 0;       // Số Trận Thắng BO (đã thắng trọn 1 serie BO)
+    int movesCount = 0;
+    float maxTurnTime = 0.0f;        // Thời gian tối đa cho 1 lượt
+    float totalTimePossessed = 0.0f; // Tổng thời gian giữ bóng (giây), cộng dồn theo phiên
 };
 
 // Trạng thái ván đấu
@@ -51,12 +50,12 @@ struct PlayState
     // Tọa độ con trỏ hiện tại trên bàn cờ
     int cursorRow;
     int cursorCol;
-    
+
     // Lưu tọa độ vừa đánh và chuỗi các ô tạo nên đường thắng
     int lastMoveRow;
     int lastMoveCol;
     std::vector<std::pair<int, int>> winningCells;
-    
+
     // Lịch sử bước đi
     std::vector<std::pair<int, int>> matchHistory;
     std::vector<std::pair<int, int>> redoStack;
@@ -64,14 +63,14 @@ struct PlayState
     MatchStatus status;
     int winner; // 0: Hòa, 1: P1, 2: P2, -1: Đang chơi
 
-    int difficulty;       // 1: Dễ, 2: Trung bình, 3: Khó
-    int targetScore;      // 1 (Bo1), 2 (Bo3 - thắng 2 ván), 3 (Bo5 - thắng 3 ván)
+    int difficulty;  // 1: Dễ, 2: Trung bình, 3: Khó
+    int targetScore; // 1 (Bo1), 2 (Bo3 - thắng 2 ván), 3 (Bo5 - thắng 3 ván)
 
     // Quản lý thời gian
-    float matchDuration;  // Tổng thời gian PVE (giây)
+    float matchDuration; // Tổng thời gian PVE (giây)
     int p1TotalTimeLeft;
     int p2TotalTimeLeft;
-    bool isMatchTimed;    // Có bật giới hạn thời gian cả trận không
+    bool isMatchTimed; // Có bật giới hạn thời gian cả trận không
 
     std::wstring saveName;      // Tên hiển thị của bản lưu
     std::wstring saveTimestamp; // Thời gian lưu (Ngày/Giờ)

@@ -1,4 +1,4 @@
-﻿#include "PlayerEngineer.h"
+#include "PlayerEngineer.h"
 
 // ============================================================
 //  initPlayer
@@ -13,19 +13,17 @@ void initPlayer(PlayerInfo2& player, const wstring& name,
     player.avatarPath = avatar;
     player.piece = piece;
     player.totalWins = 0;
+    player.matchWins = 0;
     player.maxTurnTime = maxTime;
     player.movesCount = 0;
+    player.totalTimePossessed = 0.0f;
 }
 
 // ============================================================
 //  resetPlayerForRound
-//  Chỉ reset movesCount cho round mới trong Bo3/Bo5.
-//  Không đụng totalWins — do GameEngine kiểm soát.
-//
-//  NOTE: recordWin() và updateMoveStats() đã bị xóa vì trùng
-//  với logic trong GameEngine::processMove() và undoMove().
-//  Nguồn sự thật duy nhất là GameEngine.
+//  Chỉ reset các chỉ số mang tính "thời điểm" cho round mới.
 // ============================================================
 void resetPlayerForRound(PlayerInfo2& player) {
     player.movesCount = 0;
+    // Lưu ý: totalWins và matchWins được giữ nguyên để tính tiến trình series BO
 }

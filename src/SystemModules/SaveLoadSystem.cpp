@@ -400,4 +400,4 @@ SaveMetadata GetSaveMetadata(int slot) {
 
     file.close();
     return meta;
-}
+}

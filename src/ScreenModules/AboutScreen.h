@@ -7,7 +7,7 @@
 /**
  * @brief Cập nhật logic màn hình Giới thiệu (xử lý ESC).
  */
-void UpdateAboutScreen(ScreenState& currentState, WPARAM wParam);
+void UpdateAboutScreen(ScreenState &currentState, WPARAM wParam);
 
 /**
  * @brief Vẽ giao diện màn hình Giới thiệu.

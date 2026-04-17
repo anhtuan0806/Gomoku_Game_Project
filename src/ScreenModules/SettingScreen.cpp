@@ -4,7 +4,7 @@
 #include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
 #include "../SystemModules/AudioSystem.h"
-#include "../SystemModules/ConfigLoader.h" 
+#include "../SystemModules/ConfigLoader.h"
 #include "../ApplicationTypes/PlayState.h"
 #include <string>
 
@@ -45,7 +45,7 @@ void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int sele
         }
         break;
     case 4:
-        if (direction != 0) {
+        if (direction != 0 || isEnterPressed) {
             config->currentLang = (config->currentLang == APP_LANG_VI) ? APP_LANG_EN : APP_LANG_VI;
             LoadLanguageFile(config->currentLang);
             PlaySFX("sfx_move");
@@ -79,24 +79,42 @@ void UpdateSettingScreen(ScreenState& currentState, GameConfig* config, int& sel
         return;
     }
 
+    // Input Throttling mechanism from stash
+    bool isRepeat = (keyCode & 0x40000000) != 0; // standard repeat bit
+    static DWORD lastMoveTime = 0;
+    DWORD now = GetTickCount();
+    bool canMove = !isRepeat || (now - lastMoveTime > 150);
+
     if (keyCode == 'W' || keyCode == VK_UP) {
+        if (!canMove) return;
         do {
             selectedOption = (selectedOption - 1 < 0) ? TOTAL_SETTING_ITEMS - 1 : selectedOption - 1;
         } while ((selectedOption == 1 && !config->isBgmEnabled) || (selectedOption == 3 && !config->isSfxEnabled));
         PlaySFX("sfx_move");
+        lastMoveTime = now;
         return;
     }
     else if (keyCode == 'S' || keyCode == VK_DOWN) {
+        if (!canMove) return;
         do {
             selectedOption = (selectedOption + 1 >= TOTAL_SETTING_ITEMS) ? 0 : selectedOption + 1;
         } while ((selectedOption == 1 && !config->isBgmEnabled) || (selectedOption == 3 && !config->isSfxEnabled));
         PlaySFX("sfx_move");
+        lastMoveTime = now;
         return;
     }
 
     int direction = 0;
-    if (keyCode == 'D' || keyCode == VK_RIGHT) direction = 1;
-    if (keyCode == 'A' || keyCode == VK_LEFT) direction = -1;
+    if (keyCode == 'D' || keyCode == VK_RIGHT) {
+        if (!canMove) return;
+        direction = 1;
+        lastMoveTime = now;
+    }
+    if (keyCode == 'A' || keyCode == VK_LEFT) {
+        if (!canMove) return;
+        direction = -1;
+        lastMoveTime = now;
+    }
 
     bool isEnterPressed = (keyCode == VK_RETURN);
     ProcessSettingInput(currentState, config, selectedOption, direction, isEnterPressed);

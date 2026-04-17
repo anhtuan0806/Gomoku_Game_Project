@@ -26,8 +26,10 @@ void UpdateGuildScreen(ScreenState& currentState, int& currentPage, WPARAM wPara
     }
 }
 
-void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPage) {
+void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPage)
+{
     Gdiplus::Graphics g(hdc);
+
     DrawProceduralStadium(g, screenWidth, screenHeight);
     Gdiplus::SolidBrush whiteGlassBrush(Gdiplus::Color(60, 255, 255, 255));
     g.FillRectangle(&whiteGlassBrush, 0, 0, screenWidth, screenHeight);
@@ -40,6 +42,7 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
     int panelH = UIScaler::SY(480);
     int panelX = (screenWidth - panelW) / 2;
     int panelY = UIScaler::SY(135);
+
     int colW = panelW / 2;
     int colPadding = UIScaler::SX(35);
 
@@ -49,7 +52,7 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
     g.DrawRectangle(&panelPen, panelX, panelY, panelW, panelH);
 
     DrawPixelBanner(g, hdc, L"", screenWidth / 2, panelY + UIScaler::SY(40),
-        panelW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(255, 215, 0), "Asset/models/bg/badge.txt");
+                    panelW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(255, 215, 0), "Asset/models/bg/badge.txt");
     Gdiplus::Pen dividerPen(Gdiplus::Color(50, 0, 0, 0), 1);
 
     if (currentPage == 0) {
@@ -59,7 +62,7 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
         int curY = panelY + UIScaler::SY(135);
         DrawTextCentered(hdc, GetText("guild_1_caro"), curY, screenWidth - colW, ToCOLORREF(Palette::OrangeNormal), GlobalFont::Bold);
         curY += UIScaler::SY(50);
-        RECT rLeft = { panelX + colPadding, curY, panelX + colW - colPadding, panelY + panelH - UIScaler::SY(20) };
+        RECT rLeft = {panelX + colPadding, curY, panelX + colW - colPadding, panelY + panelH - UIScaler::SY(20)};
         SetTextColor(hdc, ToCOLORREF(Palette::GrayDarkest));
         SelectObject(hdc, GlobalFont::Default);
         std::wstring caroTxt = GetText("guild_1_caro_desc");
@@ -109,7 +112,7 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
             curY += UIScaler::SY(28);
             DrawTextCentered(hdc, desc, curY, screenWidth, ToCOLORREF(Palette::GrayDarkest), GlobalFont::Default);
             curY += UIScaler::SY(52);
-            };
+        };
         DrawSystemRow(GetText("guild_3_ai"), GetText("guild_3_ai_desc"), ToCOLORREF(Palette::CyanNormal));
         DrawSystemRow(GetText("guild_3_time"), GetText("guild_3_time_desc"), ToCOLORREF(Palette::OrangeNormal));
         DrawSystemRow(GetText("guild_3_target"), GetText("guild_3_target_desc"), ToCOLORREF(Palette::GreenNormal));
@@ -119,28 +122,32 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
     int dotY = panelY + panelH + UIScaler::SY(30);
     int dotSpacing = UIScaler::SX(35);
     int startDotX = screenWidth / 2 - dotSpacing;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++)
+    {
         Gdiplus::SolidBrush dotBrush(i == currentPage ? ToGdiColor(Theme::TitleBorder) : ToGdiColor(Theme::ShadowMed));
         int dotR = UIScaler::S(6);
         g.FillEllipse(&dotBrush, startDotX + i * dotSpacing - dotR, dotY - dotR, dotR * 2, dotR * 2);
-        if (i == currentPage) {
+        if (i == currentPage)
+        {
             Gdiplus::Pen auraPen(Gdiplus::Color(100, 0, 100, 255), 2);
             int auraR = UIScaler::S(9);
             g.DrawEllipse(&auraPen, startDotX + i * dotSpacing - auraR, dotY - auraR, auraR * 2, auraR * 2);
         }
     }
 
-    float arrowPulse = sin(g_GlobalAnimTime * 4.0f) * UIScaler::SX(8);
+    float arrowPulse = (float)(sin(g_GlobalAnimTime * 4.0f) * UIScaler::SX(8));
     int arrowY = panelY + panelH / 2 - UIScaler::SY(25);
     SelectObject(hdc, GlobalFont::Bold);
     SetTextColor(hdc, ToCOLORREF(Palette::BlueDarkest));
 
-    if (currentPage > 0) {
-        RECT rLeft = { (int)(UIScaler::SX(25) + arrowPulse), arrowY, (int)(UIScaler::SX(105) + arrowPulse), arrowY + UIScaler::SY(50) };
+    if (currentPage > 0)
+    {
+        RECT rLeft = {(int)(UIScaler::SX(25) + arrowPulse), arrowY, (int)(UIScaler::SX(105) + arrowPulse), arrowY + UIScaler::SY(50)};
         DrawTextW(hdc, L"<--", -1, &rLeft, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     }
-    if (currentPage < 2) {
-        RECT rRight = { (int)(screenWidth - UIScaler::SX(105) - arrowPulse), arrowY, (int)(screenWidth - UIScaler::SX(25) - arrowPulse), arrowY + UIScaler::SY(50) };
+    if (currentPage < 2)
+    {
+        RECT rRight = {(int)(screenWidth - UIScaler::SX(105) - arrowPulse), arrowY, (int)(screenWidth - UIScaler::SX(25) - arrowPulse), arrowY + UIScaler::SY(50)};
         DrawTextW(hdc, L"-->", -1, &rRight, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     }
 

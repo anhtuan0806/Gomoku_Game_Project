@@ -256,29 +256,9 @@
     <Text Include="Asset\models\avt_02\win\f_1.txt" />
     <Text Include="Asset\models\avt_02\win\f_2.txt" />
     <Text Include="Asset\models\avt_02\win\f_3.txt" />
-    <Text Include="Asset\font\Be_Vietnam_Pro\OFL.txt" />
     <Text Include="Asset\font\VT323\OFL.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Black.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-BlackItalic.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Bold.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-BoldItalic.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ExtraBold.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ExtraBoldItalic.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ExtraLight.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ExtraLightItalic.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Italic.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Light.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-LightItalic.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Medium.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-MediumItalic.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Regular.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-SemiBold.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-SemiBoldItalic.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-Thin.ttf" />
-    <Font Include="Asset\font\Be_Vietnam_Pro\BeVietnamPro-ThinItalic.ttf" />
-    <Font Include="Asset\font\pixellari\Pixellari.ttf" />
     <Font Include="Asset\font\VT323\VT323-Regular.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
