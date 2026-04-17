@@ -12,9 +12,9 @@ void UpdateAboutScreen(ScreenState &currentState, WPARAM wParam)
     WPARAM key = wParam & 0xFFFF;
 
     // Throttling: Giới hạn 80ms cho phím nhấn tay
-    static DWORD lastMoveTime = 0;
-    DWORD now = GetTickCount();
-    bool canMove = (now - lastMoveTime > 80u);
+    static ULONGLONG lastMoveTime = 0;
+    ULONGLONG now = GetTickCount64();
+    bool canMove = (now - lastMoveTime > 80ULL);
 
     if (key == VK_ESCAPE)
     {

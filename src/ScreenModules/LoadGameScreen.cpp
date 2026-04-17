@@ -83,9 +83,9 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
     WPARAM rawKey = wParam & 0xFFFF;
 
     // Throttling: Giới hạn 80ms cho phím nhấn tay, 150ms cho phím giữ (Repeat)
-    static DWORD lastMoveTime = 0;
-    DWORD now = GetTickCount();
-    bool canMove = (now - lastMoveTime > (DWORD)(isRepeat ? 150 : 80));
+    static ULONGLONG lastMoveTime = 0;
+    ULONGLONG now = GetTickCount64();
+    bool canMove = (now - lastMoveTime > (ULONGLONG)(isRepeat ? 150 : 80));
 
     if (g_CurrentMode == MODE_SELECT_SLOT)
     {
@@ -324,9 +324,9 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring &statu
             DrawMetaLine(GetText("save_name"), meta.name, ToCOLORREF(Palette::OrangeNormal));
             DrawMetaLine(GetText("save_time"), meta.timestamp, ToCOLORREF(Palette::BlueDarkest));
 
-            std::wstring modeStr = (meta.mode == 0) ? L"Caro 15x15" : L"TicTacToe 3x3";
+            std::wstring modeStr = (meta.mode == 0) ? GetText("config_val_caro") : GetText("config_val_ttt");
             DrawMetaLine(GetText("save_mode"), modeStr, ToCOLORREF(Palette::GreenNormal));
-            std::wstring typeStr = (meta.type == 0) ? L"PvP" : L"PvE";
+            std::wstring typeStr = (meta.type == 0) ? GetText("val_pvp") : GetText("val_pve");
             DrawMetaLine(GetText("save_opp"), typeStr, ToCOLORREF(Palette::CyanNormal));
             std::wstring scoreStr = std::to_wstring(meta.p1Wins) + L" - " + std::to_wstring(meta.p2Wins);
             DrawMetaLine(GetText("save_score"), scoreStr, ToCOLORREF(Palette::RedNormal));

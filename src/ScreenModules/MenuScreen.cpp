@@ -23,9 +23,9 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState &currentState, int &selectedOpt
     WPARAM rawKey = wParam & 0xFFFF;
 
     // Throttling: Giới hạn 80ms cho phím nhấn tay, 150ms cho phím giữ (Repeat)
-    static DWORD lastMoveTime = 0;
-    DWORD now = GetTickCount();
-    bool canMove = (now - lastMoveTime > (DWORD)(isRepeat ? 150 : 80));
+    static ULONGLONG lastMoveTime = 0;
+    ULONGLONG now = GetTickCount64();
+    bool canMove = (now - lastMoveTime > (ULONGLONG)(isRepeat ? 150 : 80));
 
     if (rawKey == 'W' || rawKey == 'w' || rawKey == VK_UP)
     {

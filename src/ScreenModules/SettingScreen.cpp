@@ -72,9 +72,9 @@ void UpdateSettingScreen(ScreenState& currentState, GameConfig* config, int& sel
     bool isRepeat = (keyCode & 0x20000) != 0;
 
     // Throttling: Giới hạn 80ms cho phím nhấn tay, 150ms cho phím giữ (Repeat)
-    static DWORD lastMoveTime = 0;
-    DWORD now = GetTickCount();
-    bool canMove = (now - lastMoveTime > (DWORD)(isRepeat ? 150 : 80));
+    static ULONGLONG lastMoveTime = 0;
+    ULONGLONG now = GetTickCount64();
+    bool canMove = (now - lastMoveTime > (ULONGLONG)(isRepeat ? 150 : 80));
 
     if (keyCode == 'W' || keyCode == VK_UP) {
         if (!canMove) return;
@@ -170,7 +170,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
         case 1: label = GetText("setting_bgm_vol") + L":"; value = L""; break;
         case 2: label = GetText("setting_sfx") + L":"; value = config->isSfxEnabled ? L" [ " + GetText("btn_on") + L" ]" : L" [ " + GetText("btn_off") + L" ]"; break;
         case 3: label = GetText("setting_sfx_vol") + L":"; value = L""; break;
-        case 4: label = GetText("setting_lang") + L":"; value = (config->currentLang == APP_LANG_VI) ? L"< Tiếng Việt >" : L"< English >"; break;
+        case 4: label = GetText("setting_lang") + L":"; value = (config->currentLang == APP_LANG_VI) ? L"< " + GetText("lang_vi") + L" >" : L"< " + GetText("lang_en") + L" >"; break;
         case 5: label = L""; value = L""; break;
         }
 

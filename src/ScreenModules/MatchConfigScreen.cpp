@@ -19,11 +19,7 @@ static std::wstring editName2 = L"Player 2";
 static int p1AvatarIdx = 0;
 static int p2AvatarIdx = 1;
 
-const std::wstring AVATAR_NAMES[] = {
-    L"Tiền Đạo Số 7",      // Type 0
-    L"Nhạc Trưởng Số 10",  // Type 1
-    L"Ảo Thuật Gia Samba", // Type 2
-};
+// Avatar names are now localized via GetText("config_avatar_1/2/3")
 // Mapping: slot 0-2 -> avatarType (0,1,2)
 static const int AVATAR_SLOT_TO_TYPE[3] = {0, 1, 2};
 const int TOTAL_HUMAN_AVATARS = 3;
@@ -45,7 +41,7 @@ bool ValidateNames(PlayState *playState)
     // Unify character limit to 1-15 (consistent with Save name)
     if (editName1.length() > 15)
     {
-        validationMsg = L"LỖI: Tên P1 tối đa 15 kí tự!";
+        validationMsg = GetText("config_err_p1_len");
         return false;
     }
 
@@ -57,12 +53,12 @@ bool ValidateNames(PlayState *playState)
         }
         if (editName2.length() > 15)
         {
-            validationMsg = L"LỖI: Tên P2 tối đa 15 kí tự!";
+            validationMsg = GetText("config_err_p2_len");
             return false;
         }
         if (editName1 == editName2 && editName1 != L"Player 1")
         {
-            validationMsg = L"LỖI: Tên hai cầu thủ không được trùng nhau!";
+            validationMsg = GetText("config_err_duplicate");
             return false;
         }
     }
@@ -125,9 +121,9 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
     WPARAM rawKey = wParam & 0xFFFF;
 
     // Throttling: Giới hạn 80ms cho phím nhấn tay, 150ms cho phím giữ (Repeat)
-    static DWORD lastMoveTime = 0;
-    DWORD now = GetTickCount();
-    bool canMove = (now - lastMoveTime > (DWORD)(isRepeat ? 150 : 80));
+    static ULONGLONG lastMoveTime = 0;
+    ULONGLONG now = GetTickCount64();
+    bool canMove = (now - lastMoveTime > (ULONGLONG)(isRepeat ? 150 : 80));
 
     int totalItems = (currentPage == 0) ? PAGE_0_ITEMS : PAGE_1_ITEMS;
 
@@ -278,7 +274,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
 
                 if (isPvE)
                 {
-                    std::wstring botName = (playState->difficulty == 1) ? L"Ảo Thuật Gia Samba" : (playState->difficulty == 2 ? L"Bot Thiết Giáp" : L"Bóng Đêm Thách Đấu");
+                    std::wstring botName = (playState->difficulty == 1) ? GetText("config_bot_easy") : (playState->difficulty == 2 ? GetText("config_bot_med") : GetText("config_bot_hard"));
                     initPlayer(playState->p2, botName, "avatar_0", 'O', (float)playState->countdownTime);
                 }
                 else
@@ -349,7 +345,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
         };
 
         std::wstring values[] = {
-            std::wstring(config->gameMode == MODE_CARO ? L"< Caro 15x15 >" : L"< Tic-Tac-Toe 3x3 >"),
+            std::wstring(config->gameMode == MODE_CARO ? L"< " + GetText("config_val_caro") + L" >" : L"< " + GetText("config_val_ttt") + L" >"),
             std::wstring(config->matchType == MATCH_PVP ? L"< " + GetText("val_pvp") + L" >" : L"< " + GetText("val_pve") + L" >"),
             std::wstring(config->difficulty == 1 ? L"< " + GetText("val_bronze") + L" >" : (config->difficulty == 2 ? L"< " + GetText("val_gold") + L" >" : L"< " + GetText("val_challenger") + L" >")),
             L"< " + std::to_wstring(config->countdownTime) + L" " + GetText("val_sec") + L" >",
@@ -419,7 +415,8 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
             COLORREF avaCol = isSelected_Ava ? (isP1 ? RGB(255, 100, 0) : RGB(0, 150, 255)) : ToCOLORREF(Palette::GrayDarkest);
             int textY = cardY + UIScaler::SY(195);
 
-            std::wstring avaName = isPvE_Bot ? L"[ " + GetText("val_locked") + L" ]" : AVATAR_NAMES[avatarIdx];
+            std::string avatarKey = "config_avatar_" + std::to_string(avatarIdx + 1);
+            std::wstring avaName = isPvE_Bot ? L"[ " + GetText("val_locked") + L" ]" : GetText(avatarKey);
             DrawColText(hdc, avaName, x, textY, cardW, avaCol, isSelected_Ava ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
             if (!isPvE_Bot)
             {
@@ -439,9 +436,9 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
         std::wstring botName = L"";
         if (isPvE)
         {
-            if (config->difficulty == 1) botName = L"Cầu Thủ Dự Bị";
-            else if (config->difficulty == 2) botName = L"Siêu Sao Vàng";
-            else botName = L"Huyền Thoại Sân Cỏ";
+            if (config->difficulty == 1) botName = GetText("config_bot_easy");
+            else if (config->difficulty == 2) botName = GetText("config_bot_med");
+            else botName = GetText("config_bot_hard");
         }
 
         drawPlayerCard(panelX + UIScaler::SX(25), p1AvatarIdx, editName1, true, selectedOption == 0, selectedOption == 1, isEditingName1);
@@ -467,5 +464,6 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
         DrawTextCentered(hdc, validationMsg, panelY + panelH - UIScaler::SY(45), screenWidth, RGB(255, 50, 50), GlobalFont::Bold);
     }
 
-    DrawTextCentered(hdc, (isEditingName1 || isEditingName2) ? L"Gõ tên và ấn Enter để chốt" : L"A/D: Thay đổi  |  Enter: Nhập Tên Trực Tiếp  |  ESC: Về Menu", screenHeight - UIScaler::SY(60), screenWidth, ToCOLORREF(Palette::White), GlobalFont::Note);
+    std::wstring hintKey = (currentPage == 0) ? GetText("config_page1_hint") : GetText("config_page2_hint");
+    DrawTextCentered(hdc, (isEditingName1 || isEditingName2) ? GetText("config_edit_hint") : hintKey, screenHeight - UIScaler::SY(60), screenWidth, ToCOLORREF(Palette::White), GlobalFont::Note);
 }

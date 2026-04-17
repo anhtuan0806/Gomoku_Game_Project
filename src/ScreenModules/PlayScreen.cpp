@@ -129,12 +129,12 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
     WPARAM rawKey = wParam & 0xFFFF; // Lấy mã phím thực tế
 
     // Cơ chế Throttling: Giới hạn tốc độ di chuyển khi nhấn giữ
-    static DWORD lastMoveTime = 0;
-    DWORD now = GetTickCount();
+    static ULONGLONG lastMoveTime = 0;
+    ULONGLONG now = GetTickCount64();
 
     // Nếu là nhấn giữ, chỉ cho phép thực hiện 10 lần mỗi giây (100ms/vước di chuyển)
     // Nếu là nhấn lần đầu (isRepeat=false), cho phép chạy ngay lập tức
-    bool canMove = (now - lastMoveTime > (DWORD)(isRepeat ? 100 : 80));
+    bool canMove = (now - lastMoveTime > (ULONGLONG)(isRepeat ? 100 : 80));
 
     if (state->status == MATCH_PAUSED)
     {
@@ -814,11 +814,40 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
     DrawGameBoard(g, hdc, state, dynamicCellSize, startX, startY);
 
-    static std::wstring s_fmt = L"", s_trn = L"";
-    if (s_fmt.empty()) { s_fmt = GetText("play_format"); s_trn = GetText("play_turn"); }
-    std::wstring boText = s_fmt + L" BO" + std::to_wstring(state->targetScore) + L" | " + s_trn + L": " + (state->isP1Turn ? p1NameW : p2NameW);
-    COLORREF turnColor = state->isP1Turn ? ToCOLORREF(Palette::RedNormal) : ToCOLORREF(Palette::BlueNormal);
-    DrawTextCentered(hdc, boText, UIScaler::SY(10), screenWidth, turnColor, GlobalFont::Bold);
+    // --- Redesigned Match Format & Turn Indicator (Scoreboard Style) ---
+    std::wstring s_fmt = GetText("play_format");
+    std::wstring s_trn = GetText("play_turn");
+    
+    std::wstring formatText = s_fmt + L" BO" + std::to_wstring(state->targetScore);
+    std::wstring turnText = s_trn + L": " + (state->isP1Turn ? p1NameW : p2NameW);
+    std::wstring fullScoreText = formatText + L"  |  " + turnText;
+    
+    int scoreW = UIScaler::SX(600);
+    int scoreH = UIScaler::SY(45);
+    int scoreX = (screenWidth - scoreW) / 2;
+    int scoreY = UIScaler::SY(10);
+    
+    // Background Scoreboard Panel (Glassmorphism + Gradient)
+    Gdiplus::LinearGradientBrush scoreBg(
+        Gdiplus::Point(scoreX, scoreY),
+        Gdiplus::Point(scoreX, scoreY + scoreH),
+        Gdiplus::Color(210, 10, 15, 25),
+        Gdiplus::Color(210, 30, 45, 65));
+    g.FillRectangle(&scoreBg, scoreX, scoreY, scoreW, scoreH);
+    
+    // Glowing border pulses with turn color
+    COLORREF turnColor = state->isP1Turn ? ToCOLORREF(Palette::OrangeNormal) : ToCOLORREF(Palette::CyanNormal);
+    float pulseScore = 0.6f + sin(g_GlobalAnimTime * 6.0f) * 0.4f;
+    BYTE scoreAlpha = (BYTE)(130 + pulseScore * 125);
+    Gdiplus::Pen scoreBorder(Gdiplus::Color(scoreAlpha, GetRValue(turnColor), GetGValue(turnColor), GetBValue(turnColor)), 2.5f);
+    g.DrawRectangle(&scoreBorder, scoreX, scoreY, scoreW, scoreH);
+    
+    // Main Scoreboard Text
+    SetTextColor(hdc, ToCOLORREF(Palette::White));
+    HFONT oldF = (HFONT)SelectObject(hdc, GlobalFont::Bold);
+    RECT rScore = {scoreX, scoreY, scoreX + scoreW, scoreY + scoreH};
+    DrawTextW(hdc, fullScoreText.c_str(), -1, &rScore, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+    SelectObject(hdc, oldF);
 
     int timerY = UIScaler::SY(55);
     int shakeX = 0, shakeY = 0;
@@ -836,8 +865,8 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
     int clockSize = UIScaler::S(34);
     std::wstring timeText;
-    static std::wstring s_time = L"", s_time_rem = L"";
-    if (s_time.empty()) { s_time = GetText("play_time"); s_time_rem = GetText("play_time_rem"); }
+    std::wstring s_time = GetText("play_time");
+    std::wstring s_time_rem = GetText("play_time_rem");
 
     if (state->matchType == MATCH_PVE)
     {
@@ -852,25 +881,37 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         timeText = s_time_rem + std::to_wstring(state->timeRemaining) + L"s";
     }
 
-    int textEstimatedW = UIScaler::SX((int)timeText.length() * 12 + 20);
-    int groupTotalW = clockSize + UIScaler::SX(15) + textEstimatedW;
-    int groupStartX = (screenWidth - groupTotalW) / 2;
+    // --- Redesigned Timer (Digital LED Style) ---
+    int clockW = UIScaler::SX(320); // Further increased width for better spacing
+    int clockH = UIScaler::SY(45);
+    int clockX = (screenWidth - clockW) / 2 + shakeX;
+    int clockY = UIScaler::SY(62) + shakeY;
+    
+    // Timer Box Background (Deep Glass)
+    Gdiplus::SolidBrush timerBg(Gdiplus::Color(200, 5, 10, 20));
+    g.FillRectangle(&timerBg, clockX, clockY, clockW, clockH);
+    
+    // Warning Pulse for border & Glow
+    float pulseTime = isWarning ? (0.5f + sin(g_GlobalAnimTime * 20.0f) * 0.5f) : (0.7f + sin(g_GlobalAnimTime * 5.0f) * 0.3f);
+    BYTE timerAlpha = (BYTE)(130 + pulseTime * 125);
+    Gdiplus::Pen timerBorder(Gdiplus::Color(timerAlpha, GetRValue(timerColor), GetGValue(timerColor), GetBValue(timerColor)), 2.5f);
+    g.DrawRectangle(&timerBorder, clockX, clockY, clockW, clockH);
+    
+    // Internal Digital Plate
+    Gdiplus::SolidBrush plateBrush(Gdiplus::Color(40, GetRValue(timerColor), GetGValue(timerColor), GetBValue(timerColor)));
+    g.FillRectangle(&plateBrush, clockX + 4, clockY + 4, clockW - 8, clockH - 8);
 
-    float pulse = 0.7f + sin(g_GlobalAnimTime * 8.0f) * 0.3f;
-    BYTE neonA = (BYTE)(150 + pulse * 105);
-    Gdiplus::Color neonColor = isWarning ? Gdiplus::Color(neonA, 255, 0, 0) : Gdiplus::Color(neonA, 0, 200, 255);
-    DrawPixelClock(g, groupStartX + shakeX + clockSize / 2, timerY + shakeY + UIScaler::SY(28), clockSize, neonColor);
-
+    // Draw time text centered in the digital box
     HFONT oldT = (HFONT)SelectObject(hdc, GlobalFont::Bold);
     SetTextColor(hdc, timerColor);
-    RECT rTimer = {groupStartX + shakeX + clockSize + UIScaler::SX(10), timerY + shakeY + UIScaler::SY(8), screenWidth, timerY + shakeY + UIScaler::SY(50)};
-    DrawTextW(hdc, timeText.c_str(), -1, &rTimer, DT_LEFT | DT_SINGLELINE | DT_NOPREFIX);
+    RECT rTimer = {clockX, clockY, clockX + clockW, clockY + clockH};
+    DrawTextW(hdc, timeText.c_str(), -1, &rTimer, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
     SelectObject(hdc, oldT);
 
     // Ghi chú tính năng Đi Lại
     if (state->matchType == MATCH_PVE)
     {
-        static std::wstring s_undo = GetText("play_undo_hint");
+        std::wstring s_undo = GetText("play_undo_hint");
         DrawTextCentered(hdc, s_undo, screenHeight - UIScaler::SY(40), screenWidth, ToCOLORREF(Palette::GrayNormal), GlobalFont::Default);
     }
 
@@ -911,21 +952,19 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
         if (g_CurrentSubMenu == SUB_MAIN)
         {
-            static std::wstring s_pause_title = GetText("pause_title");
+            std::wstring s_pause_title = GetText("pause_title");
             // Header: Thanh Banner Tạm dừng
             DrawPixelBanner(g, hdc, s_pause_title.c_str(), menuX + menuW / 2, menuY + UIScaler::SY(40),
                             menuW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(255, 180, 0), "Asset/models/bg/whistle.txt");
 
-            static std::wstring s_labels[TOTAL_PAUSE_ITEMS];
-            static std::wstring s_on, s_off, s_locked;
-            if (s_labels[0].empty()) {
-                s_labels[0] = GetText("pause_resume");
-                s_labels[1] = GetText("pause_bgm") + L":";
-                s_labels[2] = GetText("pause_vol");
-                s_labels[3] = GetText("pause_save");
-                s_labels[4] = GetText("pause_exit");
-                s_on = GetText("btn_on"); s_off = GetText("btn_off"); s_locked = GetText("btn_locked");
-            }
+            std::wstring s_labels[TOTAL_PAUSE_ITEMS];
+            std::wstring s_on, s_off, s_locked;
+            s_labels[0] = GetText("pause_resume");
+            s_labels[1] = GetText("pause_bgm") + L":";
+            s_labels[2] = GetText("pause_vol");
+            s_labels[3] = GetText("pause_save");
+            s_labels[4] = GetText("pause_exit");
+            s_on = GetText("btn_on"); s_off = GetText("btn_off"); s_locked = GetText("btn_locked");
             
             for (int i = 0; i < TOTAL_PAUSE_ITEMS; i++)
             {

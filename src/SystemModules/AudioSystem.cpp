@@ -27,7 +27,7 @@ static std::condition_variable g_SFXCond;
 static std::thread g_SFXThread;
 static std::atomic<bool> g_SFXRunning{ false };
 static std::map<std::string, int> g_LastSFXVol;
-static std::map<std::string, DWORD> g_LastSFXTime;
+static std::map<std::string, ULONGLONG> g_LastSFXTime;
 
 // Worker thread xử lý lệnh mci từ luồng nền
 void SFXWorker() {
@@ -78,8 +78,8 @@ void PlaySFX(const std::string& alias) {
     if (!g_Config.isSfxEnabled || g_Config.sfxVolume <= 0) return;
 
     // Cooldown 50ms ngăn việc spam hàng đợi quá mức
-    DWORD now = GetTickCount();
-    if (now - g_LastSFXTime[alias] < 50) return;
+    ULONGLONG now = GetTickCount64();
+    if (now - g_LastSFXTime[alias] < 50ULL) return;
     g_LastSFXTime[alias] = now;
 
     int targetVol = g_Config.sfxVolume * 10;

@@ -44,7 +44,7 @@ config_page1=--- 1. TACTICAL PROFILE ---
 config_size=Pitch Size:
 config_type=Matchup:
 config_diff=AI Difficulty:
-config_time=Ball Control (Turn):
+config_time=Ball Control:
 config_bo=Match Format:
 config_next===> [ NEXT ] ===>
 config_page2=--- 2. PLAYER PROFILE ---
@@ -74,10 +74,10 @@ val_first_to= First to
 val_goals= Goals 
 
 pause_title=PAUSE
-pause_resume=>> RETURN TO PITCH <<
+pause_resume=RETURN TO PITCH
 pause_bgm=BGM
 pause_vol=MUSIC VOLUME
-pause_save=RECORD MATCH (SAVE)
+pause_save=RECORD MATCH
 pause_exit=END MATCH
 
 summary_title=MATCH SUMMARY
@@ -146,3 +146,20 @@ guide_redo=REDO MOVE
 guide_redo_key=Press [E]
 guide_pause=PAUSE MENU
 guide_pause_key=Press [ESC]
+
+config_page1_hint=A / D: Change  |  Enter: Next / Select  |  ESC: To Menu
+config_page2_hint=A / D: Change Avatar  |  Enter: Edit Name  |  ESC: Back to Pitch
+config_edit_hint=Type name and press Enter to seal
+config_val_caro=Caro 15x15
+config_val_ttt=Tic-Tac-Toe 3x3
+config_err_p1_len=ERROR: P1 name max 15 chars!
+config_err_p2_len=ERROR: P2 name max 15 chars!
+config_err_duplicate=ERROR: Player names cannot be duplicate!
+config_bot_easy=Reserve Player
+config_bot_med=Golden Superstar
+config_bot_hard=Pitch Legend
+config_avatar_1=Striker #7
+config_avatar_2=Maestro #10
+config_avatar_3=Samba Magician
+lang_vi=Tiếng Việt
+lang_en=English
