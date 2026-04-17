@@ -32,7 +32,7 @@ struct PixelModel
 // Hàm Load dữ liệu Pixel từ file txt bên ngoài (hỗ trợ đọc config)
 PixelModel LoadPixelModel(const std::string &filePath);
 // Vẽ mô hình Pixel với Palette động
-void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int cx, int cy, int totalSize, const std::map<int, Gdiplus::Color> &palette);
+void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int cx, int cy, int totalSize, const std::map<int, Gdiplus::Color> &palette, size_t manualPaletteHash = 0);
 
 // Vẽ văn bản căn giữa trong khoảng [leftX, rightX]
 void DrawTextCentered(HDC hdc, const std::wstring &text, int y, int rightX, COLORREF color, HFONT hFont = nullptr, int leftX = 0);
@@ -59,10 +59,13 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text, in
 void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text, int cx, int cy, int panelW, COLORREF textColor, COLORREF glowColor, const std::string &iconModelPath);
 
 // Hàm này sẽ vẽ lưới, các quân cờ hiện có, và ô viền highlight đang chọn
-void DrawGameBoard(HDC hdc, const PlayState *state, int cellSize, int offsetX, int offsetY);
+void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int cellSize, int offsetX, int offsetY);
 
 // Cài đặt màu sắc cho văn bản và chế độ nền trong suốt
 void SetTextColour(HDC hdc, COLORREF colour);
+
+// Quản lý tài nguyên Brush tập trung để tối ưu hiệu suất
+Gdiplus::SolidBrush *GetCachedBrush(const Gdiplus::Color &color);
 
 // Giải phóng toàn bộ bộ nhớ đệm (Cache) để tránh rò rỉ RAM
 void ClearUICaches();

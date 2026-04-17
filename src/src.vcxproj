@@ -261,6 +261,16 @@
   <ItemGroup>
     <Font Include="Asset\font\VT323\VT323-Regular.ttf" />
   </ItemGroup>
+  <ItemGroup>
+    <Media Include="Asset\audio\c1.mp3" />
+    <Media Include="Asset\audio\DatCo.wav" />
+    <Media Include="Asset\audio\MatLuot.wav" />
+    <Media Include="Asset\audio\move.wav" />
+    <Media Include="Asset\audio\select.wav" />
+    <Media Include="Asset\audio\siuuu.wav" />
+    <Media Include="Asset\audio\Tiengcoi.wav" />
+    <Media Include="Asset\audio\TiengKhanGia_Het_Tran.wav" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

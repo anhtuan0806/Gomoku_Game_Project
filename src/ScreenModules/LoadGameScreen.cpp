@@ -79,12 +79,13 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
     if (isChar)
         return false;
 
-    // Cơ chế Throttling: Giới hạn tốc độ di chuyển khi nhấn giữ
     bool isRepeat = (wParam & 0x20000) != 0;
     WPARAM rawKey = wParam & 0xFFFF;
+
+    // Throttling: Giới hạn 80ms cho phím nhấn tay, 150ms cho phím giữ (Repeat)
     static DWORD lastMoveTime = 0;
     DWORD now = GetTickCount();
-    bool canMove = !isRepeat || (now - lastMoveTime > 150);
+    bool canMove = (now - lastMoveTime > (DWORD)(isRepeat ? 150 : 80));
 
     if (g_CurrentMode == MODE_SELECT_SLOT)
     {
@@ -93,7 +94,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             if (!canMove)
                 return false;
             g_SelectedSlot = (g_SelectedSlot - 1 + (MAX_SLOTS + 1)) % (MAX_SLOTS + 1);
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
             lastMoveTime = now;
         }
         else if (rawKey == 'S' || rawKey == VK_DOWN)
@@ -101,7 +102,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             if (!canMove)
                 return false;
             g_SelectedSlot = (g_SelectedSlot + 1) % (MAX_SLOTS + 1);
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
             lastMoveTime = now;
         }
         else if (rawKey == VK_RETURN || rawKey == VK_SPACE)
@@ -142,7 +143,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             if (!canMove)
                 return false;
             g_SelectedAction = (g_SelectedAction - 1 + MAX_ACTIONS) % MAX_ACTIONS;
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
             lastMoveTime = now;
         }
         else if (rawKey == 'S' || rawKey == VK_DOWN)
@@ -150,7 +151,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             if (!canMove)
                 return false;
             g_SelectedAction = (g_SelectedAction + 1) % MAX_ACTIONS;
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
             lastMoveTime = now;
         }
         else if (rawKey == VK_RETURN || rawKey == VK_SPACE)
@@ -187,7 +188,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             }
             else if (g_SelectedAction == 3)
             { // Quay lại
-                PlaySFX("sfx_move");
+                if (!isRepeat) PlaySFX("sfx_move");
                 g_CurrentMode = MODE_SELECT_SLOT;
             }
         }

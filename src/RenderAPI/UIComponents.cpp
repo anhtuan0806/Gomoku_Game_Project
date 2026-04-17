@@ -17,7 +17,7 @@ static std::unordered_map<size_t, Gdiplus::Bitmap *> g_ClockCache;
 static std::unordered_map<size_t, Gdiplus::Bitmap *> g_ActionCache;
 static std::unordered_map<size_t, Gdiplus::Bitmap *> g_AvatarCache;
 static std::unordered_map<size_t, Gdiplus::Bitmap *> g_ModelCache;
-static std::map<std::string, PixelModel> g_BannerModelCache;
+static std::unordered_map<std::string, PixelModel> g_RawModelCache;
 static std::unordered_map<ULONG, Gdiplus::SolidBrush *> g_BrushCache;
 
 // Helper: Kết hợp Hash để tạo Key nhanh
@@ -28,7 +28,7 @@ inline void hash_combine(size_t &seed, const T &v)
     seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-static Gdiplus::SolidBrush *GetCachedBrush(const Gdiplus::Color &color)
+Gdiplus::SolidBrush *GetCachedBrush(const Gdiplus::Color &color)
 {
     ULONG key = color.GetValue();
     auto it = g_BrushCache.find(key);
@@ -46,6 +46,10 @@ static Gdiplus::SolidBrush *GetCachedBrush(const Gdiplus::Color &color)
 // -------------------------------------------------------------
 PixelModel LoadPixelModel(const std::string &filePath)
 {
+    // Tối ưu: Kiểm tra cache trước khi đọc file từ đĩa
+    auto it = g_RawModelCache.find(filePath);
+    if (it != g_RawModelCache.end()) return it->second;
+
     PixelModel model;
     std::ifstream file(filePath);
     if (!file.is_open())
@@ -54,7 +58,6 @@ PixelModel LoadPixelModel(const std::string &filePath)
     }
 
     std::string line;
-    // Đọc kích thước W H ở dòng đầu
     if (std::getline(file, line))
     {
         std::stringstream ss(line);
@@ -64,45 +67,45 @@ PixelModel LoadPixelModel(const std::string &filePath)
     model.data.resize(model.height, std::vector<int>(model.width, 0));
     for (int r = 0; r < model.height; ++r)
     {
-        if (!std::getline(file, line))
-        {
-            break;
-        }
+        if (!std::getline(file, line)) break;
         std::stringstream ss(line);
         for (int c = 0; c < model.width; ++c)
         {
             int val = 0;
-            if (ss >> val)
-            {
-                model.data[r][c] = val;
-            }
+            if (ss >> val) model.data[r][c] = val;
         }
     }
     model.isLoaded = true;
+    g_RawModelCache[filePath] = model; // Lưu vào cache
     return model;
 }
 
-void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int cx, int cy, int totalSize, const std::map<int, Gdiplus::Color> &palette)
+void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int cx, int cy, int totalSize, const std::map<int, Gdiplus::Color> &palette, size_t manualPaletteHash)
 {
-    if (!model.isLoaded || model.width == 0 || model.height == 0)
+    if (!model.isLoaded || model.width == 0 || model.height == 0 || totalSize <= 0)
     {
         return;
     }
 
     // Tự động tính toán kích thước mỗi điểm ảnh dựa trên diện tích mục tiêu
     int pSize = totalSize / max(model.width, model.height);
-    if (pSize < 1)
-    {
-        pSize = 1;
-    }
+    if (pSize < 1) pSize = 1;
 
     // --- Hashing Key Optimization (No string concatenation in hot loop) ---
     size_t key = (size_t)&model;
     hash_combine(key, totalSize);
-    for (auto const &[id, col] : palette)
+    
+    if (manualPaletteHash != 0)
     {
-        hash_combine(key, id);
-        hash_combine(key, col.GetValue());
+        hash_combine(key, manualPaletteHash);
+    }
+    else
+    {
+        for (auto const &[id, col] : palette)
+        {
+            hash_combine(key, id);
+            hash_combine(key, col.GetValue());
+        }
     }
 
     if (g_ModelCache.find(key) == g_ModelCache.end())
@@ -564,10 +567,8 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
     }
     else
     {
-        if (g_BannerModelCache.find(iconModelPath) == g_BannerModelCache.end())
-        {
-            g_BannerModelCache[iconModelPath] = LoadPixelModel(iconModelPath);
-        }
+        // Sử dụng cache raw model đã có trong LoadPixelModel
+        PixelModel model = LoadPixelModel(iconModelPath);
 
         // Khởi tạo Palette động dựa trên màu nhấn của màn hình để vẽ icon chuẩn xác
         std::map<int, Gdiplus::Color> palette;
@@ -576,8 +577,8 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
         palette[3] = Gdiplus::Color(255, 255, 255, 255); // Màu trắng (Shine)
         palette[4] = Gdiplus::Color(160, gr, gg, gb);    // Màu phụ (Sub-accent)
 
-        DrawPixelModel(g, g_BannerModelCache[iconModelPath], bannerX + 25, iconY, iconSize, palette);
-        DrawPixelModel(g, g_BannerModelCache[iconModelPath], bannerX + bannerW - 25, iconY, iconSize, palette);
+        DrawPixelModel(g, model, bannerX + 25, iconY, iconSize, palette);
+        DrawPixelModel(g, model, bannerX + bannerW - 25, iconY, iconSize, palette);
     }
 
     // 4. Chữ tiêu đề (Căn giữa và giới hạn vùng bao quanh)
@@ -706,7 +707,7 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
                 int cSize = (int)(screenWidth * clouds[i][2]);
                 int cx = (int)fmod(clouds[i][0] * g_GlobalAnimTime + i * (screenWidth / 3.0f), (float)(screenWidth + UIScaler::SX(200)));
                 int cy = (int)(clouds[i][1] * screenHeight) + (int)(sin(g_GlobalAnimTime * 0.8f + i) * UIScaler::SY(4));
-                DrawPixelModel(g, cloudModel, cx, cy, cSize, cloudPalette);
+                DrawPixelModel(g, cloudModel, cx, cy, cSize, cloudPalette, 9991); // 9991 is clouds fixed palette hash
             }
         }
     }
@@ -737,8 +738,9 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
                 int by = screenHeight - (int)fmod(bs[i].s * g_GlobalAnimTime + i * (screenHeight / 4.0f), (float)(screenHeight + UIScaler::SY(120)));
 
                 std::map<int, Gdiplus::Color> bPalette = {{1, Gdiplus::Color(200, 30, 30, 30)}, {2, bs[i].c}, {3, bs[i].sh}};
-                g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
-                DrawPixelModel(g, balloonModel, bx, by, UIScaler::S(48), bPalette);
+                // Balloons palette is unique per balloon but constant over time.
+                // Use a key based on balloon index i
+                DrawPixelModel(g, balloonModel, bx, by, UIScaler::S(48), bPalette, 8880 + i);
             }
         }
     }
@@ -757,12 +759,12 @@ void DrawTextCentered(HDC hdc, const std::wstring &text, int y, int rightX, COLO
     SelectObject(hdc, hOldFont);
 }
 
-void DrawGameBoard(HDC hdc, const PlayState *state, int cellSize, int offsetX, int offsetY)
+void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int cellSize, int offsetX, int offsetY)
 {
     int size = state->boardSize;
     int boardLength = size * cellSize;
 
-    // 1. Vẽ lưới (Grid) - Kẻ vạch vôi sân bóng màu Trắng
+    // 1. Vẽ lưới (Grid) - GDI thuần (Nhanh nhất cho các đường thẳng đơn giản)
     HPEN hPen = CreatePen(PS_SOLID, max(1, UIScaler::S(2)), ToCOLORREF(Palette::White));
     HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
 
@@ -770,20 +772,83 @@ void DrawGameBoard(HDC hdc, const PlayState *state, int cellSize, int offsetX, i
     {
         int currX = offsetX + i * cellSize;
         int currY = offsetY + i * cellSize;
-        // Đường ngang
         MoveToEx(hdc, offsetX, currY, NULL);
         LineTo(hdc, offsetX + boardLength, currY);
-        // Đường dọc
         MoveToEx(hdc, currX, offsetY, NULL);
         LineTo(hdc, currX, offsetY + boardLength);
     }
     SelectObject(hdc, hOldPen);
     DeleteObject(hPen);
 
-    // 2. Khởi tạo đối tượng đồ họa 1 LẦN DUY NHẤT để vẽ tất cả quân cờ
-    Gdiplus::Graphics g(hdc);
+    // 2. GIAI ĐOẠN 1 (GDI+): Vẽ các hiệu ứng Highlight & Animation
+    // Không tạo Graphics mới ở đây, dùng đối tượng g truyền từ ngoài vào để tránh overhead
+    
+    // Highlight ô thắng (Draw Win Brushes first)
+    if (!state->winningCells.empty())
+    {
+        float wPulse = 0.5f + sin(g_GlobalAnimTime * 10.0f) * 0.5f;
+        int wAlpha = (int)(100 + wPulse * 155);
+        Gdiplus::SolidBrush *winBrush = GetCachedBrush(ToGdiColor(WithAlpha(Theme::WinCellFill, (BYTE)wAlpha)));
+        float pWidth = 1.5f + wPulse * 2.0f;
+        Gdiplus::Pen winPen(ToGdiColor(Theme::WinCellBorder), pWidth);
 
-    // Tạo Font cho quân cờ động theo cellSize
+        for (const auto &wCell : state->winningCells)
+        {
+            int drawX = offsetX + wCell.second * cellSize;
+            int drawY = offsetX + wCell.first * cellSize; // Lỗi logic cũ? r=first=Y, c=second=X
+            // Kiểm tra lại logic tọa độ: state->board[r][c] -> r là Row (Y), c là Col (X)
+            drawX = offsetX + wCell.second * cellSize;
+            drawY = offsetY + wCell.first * cellSize;
+            g.FillRectangle(winBrush, drawX + 1, drawY + 1, cellSize - 2, cellSize - 2);
+            g.DrawRectangle(&winPen, drawX + 2, drawY + 2, cellSize - 4, cellSize - 4);
+        }
+    }
+
+    // Highlight nước đi cuối & Con trỏ
+    for (int r = 0; r < size; r++)
+    {
+        for (int c = 0; c < size; c++)
+        {
+            int drawX = offsetX + c * cellSize;
+            int drawY = offsetY + r * cellSize;
+
+            if (r == state->lastMoveRow && c == state->lastMoveCol)
+            {
+                int alpha = (int)(150 + sin(g_GlobalAnimTime * 8.0f) * 100);
+                Gdiplus::SolidBrush *lastMoveBrush = GetCachedBrush(ToGdiColor(WithAlpha(Theme::LastMoveHighlight, (BYTE)max(0, min(255, alpha)))));
+                g.FillRectangle(lastMoveBrush, drawX + 1, drawY + 1, cellSize - 1, cellSize - 1);
+            }
+        }
+    }
+
+    // Vẽ Con trỏ (Cursor Neon) nếu đang chơi
+    if (state->status == MATCH_PLAYING)
+    {
+        int cursorX = offsetX + state->cursorCol * cellSize;
+        int cursorY = offsetY + state->cursorRow * cellSize;
+        float pulse = 0.5f + sin(g_GlobalAnimTime * 8.0f) * 0.5f;
+        Gdiplus::Color cursorColor = state->isP1Turn ? ToGdiColor(Palette::OrangeNormal) : ToGdiColor(Palette::CyanNormal);
+
+        int glowAlpha = (int)(40 + pulse * 60);
+        Gdiplus::SolidBrush *glowBrush = GetCachedBrush(Gdiplus::Color((BYTE)glowAlpha, cursorColor.GetR(), cursorColor.GetG(), cursorColor.GetB()));
+        g.FillRectangle(glowBrush, cursorX + 1, cursorY + 1, cellSize - 1, cellSize - 1);
+
+        Gdiplus::Pen cornerPen(cursorColor, (Gdiplus::REAL)UIScaler::S(3));
+        int cornerLen = cellSize / 3;
+        int offset = (int)(pulse * UIScaler::S(4));
+        g.DrawLine(&cornerPen, cursorX - offset, cursorY - offset, cursorX - offset + cornerLen, cursorY - offset);
+        g.DrawLine(&cornerPen, cursorX - offset, cursorY - offset, cursorX - offset, cursorY - offset + cornerLen);
+        g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY - offset, cursorX + cellSize + offset - cornerLen, cursorY - offset);
+        g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY - offset, cursorX + cellSize + offset, cursorY - offset + cornerLen);
+        g.DrawLine(&cornerPen, cursorX - offset, cursorY + cellSize + offset, cursorX - offset + cornerLen, cursorY + cellSize + offset);
+        g.DrawLine(&cornerPen, cursorX - offset, cursorY + cellSize + offset, cursorX - offset, cursorY + cellSize + offset - cornerLen);
+        g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY + cellSize + offset, cursorX + cellSize + offset - cornerLen, cursorY + cellSize + offset);
+        g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY + cellSize + offset, cursorX + cellSize + offset, cursorY + cellSize + offset - cornerLen);
+        Gdiplus::Pen thinPen(cursorColor, 1.0f);
+        g.DrawRectangle(&thinPen, cursorX, cursorY, cellSize, cellSize);
+    }
+
+    // 3. GIAI ĐOẠN 2 (GDI): Vẽ quân cờ (X/O) - Sau khi đã xong tất cả GDI+ để tránh Interleaving
     HFONT pieceFont = CreateFont(
         cellSize - 4, 0, 0, 0, FW_HEAVY, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
         OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, L"Arial");
@@ -794,39 +859,11 @@ void DrawGameBoard(HDC hdc, const PlayState *state, int cellSize, int offsetX, i
     {
         for (int c = 0; c < size; c++)
         {
+            if (state->board[r][c] == CELL_EMPTY) continue;
+
             int drawX = offsetX + c * cellSize;
             int drawY = offsetY + r * cellSize;
             RECT cellRect = {drawX, drawY, drawX + cellSize, drawY + cellSize};
-
-            // Highlight Last Move (Nháy chớp Alpha)
-            if (r == state->lastMoveRow && c == state->lastMoveCol)
-            {
-                int alpha = (int)(150 + sin(g_GlobalAnimTime * 8.0f) * 100);
-                Gdiplus::SolidBrush lastMoveBrush(ToGdiColor(WithAlpha(Theme::LastMoveHighlight, (BYTE)max(0, min(255, alpha)))));
-                g.FillRectangle(&lastMoveBrush, drawX + 1, drawY + 1, cellSize - 1, cellSize - 1);
-            }
-
-            // Highlight Winning Line với hiệu ứng pulse + viền sao chép
-            bool isWinCell = false;
-            for (const auto &wCell : state->winningCells)
-            {
-                if (wCell.first == r && wCell.second == c)
-                {
-                    isWinCell = true;
-                    break;
-                }
-            }
-            if (isWinCell)
-            {
-                float wPulse = 0.5f + sin(g_GlobalAnimTime * 10.0f) * 0.5f;
-                int wAlpha = (int)(100 + wPulse * 155);
-                Gdiplus::SolidBrush winBrush(ToGdiColor(WithAlpha(Theme::WinCellFill, (BYTE)wAlpha)));
-                g.FillRectangle(&winBrush, drawX + 1, drawY + 1, cellSize - 2, cellSize - 2);
-                // Vien phat sang xanh la
-                float pWidth = 1.5f + wPulse * 2.0f;
-                Gdiplus::Pen winPen(ToGdiColor(Theme::WinCellBorder), pWidth);
-                g.DrawRectangle(&winPen, drawX + 2, drawY + 2, cellSize - 4, cellSize - 4);
-            }
 
             if (state->board[r][c] == CELL_PLAYER1)
             {
@@ -840,52 +877,8 @@ void DrawGameBoard(HDC hdc, const PlayState *state, int cellSize, int offsetX, i
             }
         }
     }
-
     SelectObject(hdc, oldFont);
     DeleteObject(pieceFont);
-
-    // 3. Vẽ Highlight Con trỏ (Cursor Neon)
-    if (state->status == MATCH_PLAYING)
-    {
-        int cursorX = offsetX + state->cursorCol * cellSize;
-        int cursorY = offsetY + state->cursorRow * cellSize;
-
-        // Hiệu ứng Pulse nhẹ nhàng để con trỏ trông "sống động"
-        float pulse = 0.5f + sin(g_GlobalAnimTime * 8.0f) * 0.5f;
-
-        // Đồng bộ màu sắc với lượt đi (P1: Cam, P2: Cyan) để người chơi dễ nhận biết
-        Gdiplus::Color cursorColor = state->isP1Turn ? ToGdiColor(Palette::OrangeNormal) : ToGdiColor(Palette::CyanNormal);
-
-        // 1. Phủ nhẹ lớp màu Glow bên trong ô cờ
-        int glowAlpha = (int)(40 + pulse * 60);
-        Gdiplus::SolidBrush glowBrush(Gdiplus::Color((BYTE)glowAlpha, cursorColor.GetR(), cursorColor.GetG(), cursorColor.GetB()));
-        g.FillRectangle(&glowBrush, cursorX + 1, cursorY + 1, cellSize - 1, cellSize - 1);
-
-        // 2. Vẽ 4 góc hình chữ L (Corner Brackets) tạo hiệu ứng Gaming/Neon
-        Gdiplus::Pen cornerPen(cursorColor, (Gdiplus::REAL)UIScaler::S(3));
-        int cornerLen = cellSize / 3;
-        int offset = (int)(pulse * UIScaler::S(4)); // Hiệu ứng "pinch" co giãn ở 4 góc
-
-        // Trên - Trái
-        g.DrawLine(&cornerPen, cursorX - offset, cursorY - offset, cursorX - offset + cornerLen, cursorY - offset);
-        g.DrawLine(&cornerPen, cursorX - offset, cursorY - offset, cursorX - offset, cursorY - offset + cornerLen);
-
-        // Trên - Phải
-        g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY - offset, cursorX + cellSize + offset - cornerLen, cursorY - offset);
-        g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY - offset, cursorX + cellSize + offset, cursorY - offset + cornerLen);
-
-        // Dưới - Trái
-        g.DrawLine(&cornerPen, cursorX - offset, cursorY + cellSize + offset, cursorX - offset + cornerLen, cursorY + cellSize + offset);
-        g.DrawLine(&cornerPen, cursorX - offset, cursorY + cellSize + offset, cursorX - offset, cursorY + cellSize + offset - cornerLen);
-
-        // Dưới - Phải
-        g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY + cellSize + offset, cursorX + cellSize + offset - cornerLen, cursorY + cellSize + offset);
-        g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY + cellSize + offset, cursorX + cellSize + offset, cursorY + cellSize + offset - cornerLen);
-
-        // 3. Viền mảnh bao quanh (để định hình ô khi có quân cờ bên trong)
-        Gdiplus::Pen thinPen(cursorColor, 1.0f);
-        g.DrawRectangle(&thinPen, cursorX, cursorY, cellSize, cellSize);
-    }
 }
 
 void SetTextColour(HDC hdc, COLORREF colour)
@@ -1077,8 +1070,8 @@ void ClearUICaches()
     }
     g_ActionCache.clear();
 
-    // Banner Models (PixelModel không chứa con trỏ bitmap nên chi cần clear)
-    g_BannerModelCache.clear();
+    // Raw Models
+    g_RawModelCache.clear();
 
     // Brush cache
     for (auto &pair : g_BrushCache)

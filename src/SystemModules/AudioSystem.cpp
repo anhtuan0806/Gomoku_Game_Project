@@ -1,19 +1,70 @@
-﻿#include "AudioSystem.h"
+#include "AudioSystem.h"
 #include "../ApplicationTypes/GameConfig.h"
 #include <windows.h>
 #include <mmsystem.h>
+#include <map>
+#include <vector>
+#include <string>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+#include <atomic>
+
 #pragma comment(lib, "winmm.lib")
 
 extern GameConfig g_Config;
 
-// Hàm hỗ trợ nạp âm thanh - giúp code sạch hơn
+// Thống nhất hệ thống SFX Async
+struct SFXRequest {
+    std::string alias;
+    int volume;
+};
+
+static std::queue<SFXRequest> g_SFXQueue;
+static std::mutex g_SFXMutex;
+static std::condition_variable g_SFXCond;
+static std::thread g_SFXThread;
+static std::atomic<bool> g_SFXRunning{ false };
+static std::map<std::string, int> g_LastSFXVol;
+static std::map<std::string, DWORD> g_LastSFXTime;
+
+// Worker thread xử lý lệnh mci từ luồng nền
+void SFXWorker() {
+    while (g_SFXRunning) {
+        SFXRequest req;
+        {
+            std::unique_lock<std::mutex> lock(g_SFXMutex);
+            g_SFXCond.wait(lock, [] { return !g_SFXQueue.empty() || !g_SFXRunning; });
+            if (!g_SFXRunning && g_SFXQueue.empty()) break;
+            req = g_SFXQueue.front();
+            g_SFXQueue.pop();
+        }
+
+        // Thực thi lệnh mci trên luồng nền
+        if (g_LastSFXVol[req.alias] != req.volume) {
+            std::string volCmd = "setaudio " + req.alias + " volume to " + std::to_string(req.volume);
+            mciSendStringA(volCmd.c_str(), NULL, 0, NULL);
+            g_LastSFXVol[req.alias] = req.volume;
+        }
+
+        std::string playCmd = "play " + req.alias + " from 0";
+        mciSendStringA(playCmd.c_str(), NULL, 0, NULL);
+    }
+}
+
 void PreLoad(const std::string& path, const std::string& alias) {
     std::string cmd = "open \"" + path + "\" type mpegvideo alias " + alias;
     mciSendStringA(cmd.c_str(), NULL, 0, NULL);
 }
 
 void InitAudioSystem() {
-    // Nạp sẵn tất cả SFX hay dùng vào RAM
+    // Khởi tạo luồng xử lý SFX
+    if (!g_SFXRunning) {
+        g_SFXRunning = true;
+        g_SFXThread = std::thread(SFXWorker);
+    }
+
     PreLoad("Asset/audio/move.wav", "sfx_move");
     PreLoad("Asset/audio/select.wav", "sfx_select");
     PreLoad("Asset/audio/DatCo.wav", "sfx_place");
@@ -26,13 +77,19 @@ void InitAudioSystem() {
 void PlaySFX(const std::string& alias) {
     if (!g_Config.isSfxEnabled || g_Config.sfxVolume <= 0) return;
 
-    // Không dùng open/close ở đây nữa -> Tốc độ phản hồi cực nhanh
-    // Chỉ cần tua về đầu và phát
-    std::string volCmd = "setaudio " + alias + " volume to " + std::to_string(g_Config.sfxVolume * 10);
-    mciSendStringA(volCmd.c_str(), NULL, 0, NULL);
+    // Cooldown 50ms ngăn việc spam hàng đợi quá mức
+    DWORD now = GetTickCount();
+    if (now - g_LastSFXTime[alias] < 50) return;
+    g_LastSFXTime[alias] = now;
 
-    std::string playCmd = "play " + alias + " from 0";
-    mciSendStringA(playCmd.c_str(), NULL, 0, NULL);
+    int targetVol = g_Config.sfxVolume * 10;
+    
+    // Đẩy yêu cầu vào hàng đợi cho luồng nền xử lý
+    {
+        std::lock_guard<std::mutex> lock(g_SFXMutex);
+        g_SFXQueue.push({ alias, targetVol });
+    }
+    g_SFXCond.notify_one();
 }
 
 void StopSFX(const std::string& alias) {
@@ -43,7 +100,6 @@ void StopSFX(const std::string& alias) {
 void PlayBGM(const std::string& filepath) {
     if (!g_Config.isBgmEnabled) return;
     StopBGM();
-    // BGM thường dài nên vẫn dùng cơ chế open khi cần để tiết kiệm RAM
     std::string cmd = "open \"" + filepath + "\" type mpegvideo alias bgm";
     mciSendStringA(cmd.c_str(), NULL, 0, NULL);
     UpdateBGMVolume();
@@ -55,12 +111,22 @@ void StopBGM() {
 }
 
 void UpdateBGMVolume() {
+    static int lastBgmVol = -1;
     int vol = g_Config.bgmVolume * 10;
+    if (lastBgmVol == vol) return;
+
     std::string volCmd = "setaudio bgm volume to " + std::to_string(vol);
     mciSendStringA(volCmd.c_str(), NULL, 0, NULL);
+    lastBgmVol = vol;
 }
 
 void ShutdownAudioSystem() {
-    // Giải phóng tất cả alias đã nạp
+    g_SFXRunning = false;
+    g_SFXCond.notify_one();
+    if (g_SFXThread.joinable()) {
+        g_SFXThread.join();
+    }
+
+    StopBGM();
     mciSendStringA("close all", NULL, 0, NULL);
 }

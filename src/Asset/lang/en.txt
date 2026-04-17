@@ -12,7 +12,6 @@ setting_bgm_vol=Music Volume
 setting_sfx=Match SFX
 setting_sfx_vol=SFX Volume
 setting_lang=Commentary Language
-setting_theme=Pitch Theme
 btn_on=ON
 btn_off=OFF
 btn_back=RETURN TO TACTICS
@@ -63,6 +62,7 @@ play_piece=Piece:
 play_goals=Goals: 
 play_dribble=Dribbles: 
 play_bowins=BO Wins: 
+play_time_rem=Time Remaining:
 
 val_pvp=Classic Rivalry (PvP)
 val_pve=Machine Challenger (PvE)
@@ -70,12 +70,12 @@ val_bronze=Bronze Tier
 val_gold=Gold Tier
 val_challenger=Challenger Tier
 val_sec=Secs
-val_first_to=< First to 
-val_goals= Goals >
+val_first_to= First to 
+val_goals= Goals 
 
 pause_title=PAUSE
 pause_resume=>> RETURN TO PITCH <<
-pause_bgm=BGM:
+pause_bgm=BGM
 pause_vol=MUSIC VOLUME
 pause_save=RECORD MATCH (SAVE)
 pause_exit=END MATCH
@@ -91,9 +91,6 @@ summary_concede=CONCEDED:
 summary_bowin=BO WINS: 
 summary_win= [WINNER]
 
-theme_classic=< Classic Pitch >
-theme_neon=< Neon Pitch >
-theme_retro=< Retro Matrix >
 setting_hint=A / D: Adjust  |  W / S: Select  |  ESC / Enter: Save & Exit
 
 msg_rename_success=Rename successful!
@@ -138,3 +135,14 @@ guild_3_target=3. VICTORY TARGET
 guild_3_target_desc=Goals needed to win the match. E.g., Target = 3 means the first to 3 goals wins the BO series.
 guild_3_save=4. SAVE & LOAD
 guild_3_save_desc=Data is saved in binary format, ensuring you can continue your championship journey anytime.
+guide_title=MATCH CONTROLS
+guide_move=MOVEMENT
+guide_move_key=[WASD] or [Arrow Keys]
+guide_place=PLACE PIECE
+guide_place_key=[ENTER] or [SPACE]
+guide_undo=UNDO MOVE
+guide_undo_key=Press [Q]
+guide_redo=REDO MOVE
+guide_redo_key=Press [E]
+guide_pause=PAUSE MENU
+guide_pause_key=Press [ESC]

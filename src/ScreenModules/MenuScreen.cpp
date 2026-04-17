@@ -22,10 +22,10 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState &currentState, int &selectedOpt
     bool isRepeat = (wParam & 0x20000) != 0;
     WPARAM rawKey = wParam & 0xFFFF;
 
-    // Cơ chế Throttling: Giới hạn tốc độ di chuyển khi nhấn giữ (150ms)
+    // Throttling: Giới hạn 80ms cho phím nhấn tay, 150ms cho phím giữ (Repeat)
     static DWORD lastMoveTime = 0;
     DWORD now = GetTickCount();
-    bool canMove = !isRepeat || (now - lastMoveTime > 150);
+    bool canMove = (now - lastMoveTime > (DWORD)(isRepeat ? 150 : 80));
 
     if (rawKey == 'W' || rawKey == 'w' || rawKey == VK_UP)
     {
@@ -36,7 +36,7 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState &currentState, int &selectedOpt
         {
             selectedOption = TOTAL_MENU_ITEMS - 1;
         }
-        PlaySFX("sfx_move");
+        if (!isRepeat) PlaySFX("sfx_move");
         lastMoveTime = now;
         hasChanged = true;
     }
@@ -49,7 +49,7 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState &currentState, int &selectedOpt
         {
             selectedOption = 0;
         }
-        PlaySFX("sfx_move");
+        if (!isRepeat) PlaySFX("sfx_move");
         lastMoveTime = now;
         hasChanged = true;
     }

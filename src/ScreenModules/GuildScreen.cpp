@@ -7,22 +7,36 @@
 #include <string>
 
 void UpdateGuildScreen(ScreenState& currentState, int& currentPage, WPARAM wParam) {
-    if (wParam == VK_ESCAPE) {
-        PlaySFX("sfx_move");
+    bool isRepeat = (wParam & 0x20000) != 0;
+    WPARAM key = wParam & 0xFFFF;
+
+    // Throttling: Giới hạn 80ms cho phím nhấn tay, 150ms cho phím giữ (Repeat)
+    static DWORD lastMoveTime = 0;
+    DWORD now = GetTickCount();
+    bool canMove = (now - lastMoveTime > (DWORD)(isRepeat ? 150 : 80));
+
+    if (key == VK_ESCAPE) {
+        if (!canMove) return;
+        if (!isRepeat) PlaySFX("sfx_move");
         currentState = SCREEN_MENU;
         currentPage = 0;
+        lastMoveTime = now;
     }
-    else if (wParam == VK_RIGHT || wParam == 'D' || wParam == 'd') {
+    else if (key == VK_RIGHT || key == 'D' || key == 'd') {
+        if (!canMove) return;
         if (currentPage < 2) {
             currentPage++;
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
         }
+        lastMoveTime = now;
     }
-    else if (wParam == VK_LEFT || wParam == 'A' || wParam == 'a') {
+    else if (key == VK_LEFT || key == 'A' || key == 'a') {
+        if (!canMove) return;
         if (currentPage > 0) {
             currentPage--;
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
         }
+        lastMoveTime = now;
     }
 }
 

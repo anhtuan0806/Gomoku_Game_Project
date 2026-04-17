@@ -134,7 +134,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
 
     // Nếu là nhấn giữ, chỉ cho phép thực hiện 10 lần mỗi giây (100ms/vước di chuyển)
     // Nếu là nhấn lần đầu (isRepeat=false), cho phép chạy ngay lập tức
-    bool canMove = !isRepeat || (now - lastMoveTime > 100);
+    bool canMove = (now - lastMoveTime > (DWORD)(isRepeat ? 100 : 80));
 
     if (state->status == MATCH_PAUSED)
     {
@@ -207,14 +207,18 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             }
             if (wParam == 'W' || wParam == VK_UP)
             {
+                if (!canMove) return false;
                 g_SaveSlotSelected = (g_SaveSlotSelected - 1 < 0) ? MAX_SAVE_SLOTS - 1 : g_SaveSlotSelected - 1;
-                PlaySFX("sfx_move");
+                if (!isRepeat) PlaySFX("sfx_move");
+                lastMoveTime = now;
                 return true;
             }
             if (wParam == 'S' || wParam == VK_DOWN)
             {
+                if (!canMove) return false;
                 g_SaveSlotSelected = (g_SaveSlotSelected + 1 >= MAX_SAVE_SLOTS) ? 0 : g_SaveSlotSelected + 1;
-                PlaySFX("sfx_move");
+                if (!isRepeat) PlaySFX("sfx_move");
+                lastMoveTime = now;
                 return true;
             }
             if (wParam == VK_RETURN || wParam == VK_SPACE)
@@ -244,7 +248,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             {
                 g_PauseSelected = (g_PauseSelected - 1 < 0) ? TOTAL_PAUSE_ITEMS - 1 : g_PauseSelected - 1;
             }
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -258,7 +262,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             {
                 g_PauseSelected = (g_PauseSelected + 1 >= TOTAL_PAUSE_ITEMS) ? 0 : g_PauseSelected + 1;
             }
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -301,7 +305,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 ResetPlayScreenStatics();
                 break;
             }
-            if (g_PauseSelected != 3) PlaySFX("sfx_move");
+            if (g_PauseSelected != 3) { if (!isRepeat) PlaySFX("sfx_move"); }
             else PlaySFX("sfx_select");
             hasChanged = true;
         }
@@ -327,13 +331,13 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
         if (wParam == 'Q' || wParam == 'q')
         {
             undoMove(state);
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
             return true;
         }
         if (wParam == 'E' || wParam == 'e')
         {
             redoMove(state);
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
             return true;
         }
 
@@ -342,7 +346,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             if (!canMove)
                 return false;
             state->cursorRow--;
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -351,7 +355,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             if (!canMove)
                 return false;
             state->cursorRow++;
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -360,7 +364,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             if (!canMove)
                 return false;
             state->cursorCol--;
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -369,7 +373,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             if (!canMove)
                 return false;
             state->cursorCol++;
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -420,14 +424,18 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
 
         if (wParam == 'W' || wParam == 'w' || wParam == VK_UP)
         {
+            if (!canMove) return false;
             g_SummarySelected = (g_SummarySelected - 1 < 0) ? 2 : g_SummarySelected - 1;
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
+            lastMoveTime = now;
             hasChanged = true;
         }
         else if (wParam == 'S' || wParam == 's' || wParam == VK_DOWN)
         {
+            if (!canMove) return false;
             g_SummarySelected = (g_SummarySelected + 1 > 2) ? 0 : g_SummarySelected + 1;
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
+            lastMoveTime = now;
             hasChanged = true;
         }
         else if (wParam == VK_RETURN || wParam == VK_SPACE)
@@ -648,8 +656,8 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     if (state->status == MATCH_PLAYING && state->isP1Turn)
     {
         int alpha = (int)(30 + sin(g_GlobalAnimTime * 8.0f) * 30.0f);
-        Gdiplus::SolidBrush p1TurnPulse(ToGdiColor(WithAlpha(Theme::P1TurnPulse, (BYTE)alpha)));
-        g.FillRectangle(&p1TurnPulse, tabMarginX, startY, leftTabW, boardPixelSize);
+        Gdiplus::SolidBrush *p1TurnPulse = GetCachedBrush(ToGdiColor(WithAlpha(Theme::P1TurnPulse, (BYTE)alpha)));
+        g.FillRectangle(p1TurnPulse, tabMarginX, startY, leftTabW, boardPixelSize);
         Gdiplus::Pen p1Pen(ToGdiColor(Theme::P1TurnBorder), 3.0f);
         g.DrawRectangle(&p1Pen, tabMarginX, startY, leftTabW, boardPixelSize);
     }
@@ -658,15 +666,20 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     int avaX_L = tabMarginX + (leftTabW - avaSize) / 2;
     std::wstring p1NameW = state->p1.name;
 
-    Gdiplus::FontFamily fontFamily(L"Arial");
-    Gdiplus::Font waterFont(&fontFamily, 64, Gdiplus::FontStyleBold, Gdiplus::UnitPixel);
-    Gdiplus::SolidBrush waterBrushL(ToGdiColor(Theme::P1Watermark));
+    static Gdiplus::FontFamily s_fontFamily(L"Arial");
+    static Gdiplus::Font s_waterFont(&s_fontFamily, 64, Gdiplus::FontStyleBold, Gdiplus::UnitPixel);
+    static Gdiplus::StringFormat s_alignCenter;
+    static bool s_formatInit = false;
+    if (!s_formatInit) {
+        s_alignCenter.SetAlignment(Gdiplus::StringAlignmentCenter);
+        s_alignCenter.SetLineAlignment(Gdiplus::StringAlignmentCenter);
+        s_formatInit = true;
+    }
+
+    Gdiplus::SolidBrush *waterBrushL = GetCachedBrush(ToGdiColor(Theme::P1Watermark));
     g.TranslateTransform((Gdiplus::REAL)(avaX_L + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(80)));
     g.RotateTransform(-30.0f);
-    Gdiplus::StringFormat alignCenter;
-    alignCenter.SetAlignment(Gdiplus::StringAlignmentCenter);
-    alignCenter.SetLineAlignment(Gdiplus::StringAlignmentCenter);
-    g.DrawString(p1NameW.c_str(), -1, &waterFont, Gdiplus::PointF(0, 0), &alignCenter, &waterBrushL);
+    g.DrawString(p1NameW.c_str(), -1, &s_waterFont, Gdiplus::PointF(0, 0), &s_alignCenter, waterBrushL);
     g.ResetTransform();
 
     DrawPixelAvatar(g, avaX_L, startY + UIScaler::SY(20), avaSize, decodeAvatar(state->p1.avatarPath));
@@ -728,8 +741,8 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     if (state->status == MATCH_PLAYING && !state->isP1Turn)
     {
         int alpha = (int)(30 + sin(g_GlobalAnimTime * 8.0f) * 30.0f);
-        Gdiplus::SolidBrush p2TurnPulse(ToGdiColor(WithAlpha(Theme::P2TurnPulse, (BYTE)alpha)));
-        g.FillRectangle(&p2TurnPulse, rightTabStartX, startY, rightTabW, boardPixelSize);
+        Gdiplus::SolidBrush *p2TurnPulse = GetCachedBrush(ToGdiColor(WithAlpha(Theme::P2TurnPulse, (BYTE)alpha)));
+        g.FillRectangle(p2TurnPulse, rightTabStartX, startY, rightTabW, boardPixelSize);
         Gdiplus::Pen p2Pen(ToGdiColor(Theme::P2TurnBorder), 3.0f);
         g.DrawRectangle(&p2Pen, rightTabStartX, startY, rightTabW, boardPixelSize);
     }
@@ -737,10 +750,10 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     int avaX_R = rightTabStartX + (rightTabW - avaSize) / 2;
     std::wstring p2NameW = state->p2.name;
 
-    Gdiplus::SolidBrush waterBrushR(ToGdiColor(Theme::P2Watermark));
+    Gdiplus::SolidBrush *waterBrushR = GetCachedBrush(ToGdiColor(Theme::P2Watermark));
     g.TranslateTransform((Gdiplus::REAL)(avaX_R + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(80)));
     g.RotateTransform(30.0f);
-    g.DrawString(p2NameW.c_str(), -1, &waterFont, Gdiplus::PointF(0, 0), &alignCenter, &waterBrushR);
+    g.DrawString(p2NameW.c_str(), -1, &s_waterFont, Gdiplus::PointF(0, 0), &s_alignCenter, waterBrushR);
     g.ResetTransform();
 
     DrawPixelAvatar(g, avaX_R, startY + UIScaler::SY(20), avaSize, decodeAvatar(state->p2.avatarPath));
@@ -794,14 +807,16 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         DrawPixelAction(g, animCX, animCY, animSize, p2State);
     }
 
-    Gdiplus::SolidBrush pitchBrush(ToGdiColor(Theme::BoardPitch));
-    g.FillRectangle(&pitchBrush, startX, startY, boardPixelSize, boardPixelSize);
+    Gdiplus::SolidBrush *pitchBrush = GetCachedBrush(ToGdiColor(Theme::BoardPitch));
+    g.FillRectangle(pitchBrush, startX, startY, boardPixelSize, boardPixelSize);
     Gdiplus::Pen pitchBorder(ToGdiColor(Theme::BoardBorder), 3);
     g.DrawRectangle(&pitchBorder, startX, startY, boardPixelSize, boardPixelSize);
 
-    DrawGameBoard(hdc, state, dynamicCellSize, startX, startY);
+    DrawGameBoard(g, hdc, state, dynamicCellSize, startX, startY);
 
-    std::wstring boText = GetText("play_format") + L" BO" + std::to_wstring(state->targetScore) + L" | " + GetText("play_turn") + L": " + (state->isP1Turn ? p1NameW : p2NameW);
+    static std::wstring s_fmt = L"", s_trn = L"";
+    if (s_fmt.empty()) { s_fmt = GetText("play_format"); s_trn = GetText("play_turn"); }
+    std::wstring boText = s_fmt + L" BO" + std::to_wstring(state->targetScore) + L" | " + s_trn + L": " + (state->isP1Turn ? p1NameW : p2NameW);
     COLORREF turnColor = state->isP1Turn ? ToCOLORREF(Palette::RedNormal) : ToCOLORREF(Palette::BlueNormal);
     DrawTextCentered(hdc, boText, UIScaler::SY(10), screenWidth, turnColor, GlobalFont::Bold);
 
@@ -821,17 +836,20 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
     int clockSize = UIScaler::S(34);
     std::wstring timeText;
+    static std::wstring s_time = L"", s_time_rem = L"";
+    if (s_time.empty()) { s_time = GetText("play_time"); s_time_rem = GetText("play_time_rem"); }
+
     if (state->matchType == MATCH_PVE)
     {
         int minutes = (int)state->matchDuration / 60;
         int seconds = (int)state->matchDuration % 60;
         wchar_t buffer[64];
         swprintf(buffer, 64, L"%02d:%02d", minutes, seconds);
-        timeText = GetText("play_time") + buffer;
+        timeText = s_time + buffer;
     }
     else
     {
-        timeText = GetText("play_time_rem") + std::to_wstring(state->timeRemaining) + L"s";
+        timeText = s_time_rem + std::to_wstring(state->timeRemaining) + L"s";
     }
 
     int textEstimatedW = UIScaler::SX((int)timeText.length() * 12 + 20);
@@ -852,7 +870,8 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     // Ghi chú tính năng Đi Lại
     if (state->matchType == MATCH_PVE)
     {
-        DrawTextCentered(hdc, GetText("play_undo_hint"), screenHeight - UIScaler::SY(40), screenWidth, ToCOLORREF(Palette::GrayNormal), GlobalFont::Default);
+        static std::wstring s_undo = GetText("play_undo_hint");
+        DrawTextCentered(hdc, s_undo, screenHeight - UIScaler::SY(40), screenWidth, ToCOLORREF(Palette::GrayNormal), GlobalFont::Default);
     }
 
     SelectObject(hdc, hOldFont);
@@ -860,7 +879,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     // 2. Lớp phủ Pause Menu (Phong cách Light Glassmorphism)
     if (state->status == MATCH_PAUSED)
     {
-        Gdiplus::Graphics g(hdc);
+        // Sử dụng tiếp đối tượng 'g' đã có ở đầu hàm để tối ưu hiệu năng
         Gdiplus::SolidBrush shadowBrush2(Gdiplus::Color(100, 255, 255, 255));
         g.FillRectangle(&shadowBrush2, 0, 0, screenWidth, screenHeight);
 
@@ -892,21 +911,32 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
         if (g_CurrentSubMenu == SUB_MAIN)
         {
+            static std::wstring s_pause_title = GetText("pause_title");
             // Header: Thanh Banner Tạm dừng
-            DrawPixelBanner(g, hdc, GetText("pause_title").c_str(), menuX + menuW / 2, menuY + UIScaler::SY(40),
+            DrawPixelBanner(g, hdc, s_pause_title.c_str(), menuX + menuW / 2, menuY + UIScaler::SY(40),
                             menuW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(255, 180, 0), "Asset/models/bg/whistle.txt");
 
-            std::wstring labels[] = { GetText("pause_resume"), GetText("pause_bgm") + L":", GetText("pause_vol"), GetText("pause_save"), GetText("pause_exit") };
+            static std::wstring s_labels[TOTAL_PAUSE_ITEMS];
+            static std::wstring s_on, s_off, s_locked;
+            if (s_labels[0].empty()) {
+                s_labels[0] = GetText("pause_resume");
+                s_labels[1] = GetText("pause_bgm") + L":";
+                s_labels[2] = GetText("pause_vol");
+                s_labels[3] = GetText("pause_save");
+                s_labels[4] = GetText("pause_exit");
+                s_on = GetText("btn_on"); s_off = GetText("btn_off"); s_locked = GetText("btn_locked");
+            }
+            
             for (int i = 0; i < TOTAL_PAUSE_ITEMS; i++)
             {
-                std::wstring itemText = labels[i];
+                std::wstring itemText = s_labels[i];
                 COLORREF color = ToCOLORREF(Palette::GrayDarkest);
                 HFONT font = GlobalFont::Default;
                 bool isDisabled = (i == 2 && !config->isBgmEnabled);
 
                 if (i == 1)
                 {
-                    itemText += (config->isBgmEnabled ? L" [ " + GetText("btn_on") + L" ]" : L" [ " + GetText("btn_off") + L" ]");
+                    itemText += (config->isBgmEnabled ? L" [ " + s_on + L" ]" : L" [ " + s_off + L" ]");
                 }
 
                 if (i == g_PauseSelected && !isDisabled)
@@ -922,11 +952,11 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
                 {
                     color = RGB(150, 150, 150);
                     font = GlobalFont::Default;
-                    itemText = labels[i] + L" [ " + GetText("btn_locked") + L" ]";
+                    itemText = s_labels[i] + L" [ " + s_locked + L" ]";
                 }
 
                 int itemY = menuY + UIScaler::SY(140) + i * UIScaler::SY(55);
-                DrawTextCentered(hdc, (i == 2) ? labels[i] : itemText, itemY, menuX + menuW, color, font, menuX);
+                DrawTextCentered(hdc, (i == 2) ? s_labels[i] : itemText, itemY, menuX + menuW, color, font, menuX);
 
                 // Vẽ Slider cho mục Âm Lượng
                 if (i == 2)
@@ -1069,13 +1099,13 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
         if (state->winner == CELL_PLAYER1)
         {
-            winMsg = matchOver ? (L"🏆 " + p1NameW + GetText("play_win_cup") + L" 🏆") : (L"⚽ " + p1NameW + GetText("play_win_goal") + L" ⚽");
+            winMsg = matchOver ? (p1NameW + GetText("play_win_cup") ) : (p1NameW + GetText("play_win_goal"));
             winColor = ToCOLORREF(Palette::OrangeNormal);
             winGlow = RGB(255, 120, 0);
         }
         else if (state->winner == CELL_PLAYER2)
         {
-            winMsg = matchOver ? (L"🏆 " + p2NameW + GetText("play_win_cup") + L" 🏆") : (L"⚽ " + p2NameW + GetText("play_win_goal") + L" ⚽");
+            winMsg = matchOver ? p2NameW + GetText("play_win_cup") : (p2NameW + GetText("play_win_goal"));
             winColor = ToCOLORREF(Palette::CyanNormal);
             winGlow = RGB(0, 150, 255);
         }

@@ -3,13 +3,25 @@
 #include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
 #include "../SystemModules/Localization.h"
+#include "../SystemModules/AudioSystem.h"
 #include <string>
 
 void UpdateAboutScreen(ScreenState &currentState, WPARAM wParam)
 {
-    if (wParam == VK_ESCAPE)
+    bool isRepeat = (wParam & 0x20000) != 0;
+    WPARAM key = wParam & 0xFFFF;
+
+    // Throttling: Giới hạn 80ms cho phím nhấn tay
+    static DWORD lastMoveTime = 0;
+    DWORD now = GetTickCount();
+    bool canMove = (now - lastMoveTime > 80u);
+
+    if (key == VK_ESCAPE)
     {
+        if (!canMove) return;
+        if (!isRepeat) PlaySFX("sfx_move");
         currentState = SCREEN_MENU;
+        lastMoveTime = now;
     }
 }
 

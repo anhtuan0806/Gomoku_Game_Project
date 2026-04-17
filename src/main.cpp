@@ -116,82 +116,95 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     int fpsFrames = 0;
     double lastFps = 0.0;
 
-    while (msg.message != WM_QUIT)
+    bool bRunning = true;
+    while (bRunning)
     {
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        // 1. Xử lý TOÀN BỘ tin nhắn đang chờ trong hàng đợi
+        // Việc này ngăn hiện tượng "Starving" khi người dùng ấn giữ phím (input spam)
+        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
+            if (msg.message == WM_QUIT)
+            {
+                bRunning = false;
+                break;
+            }
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-        else
+
+        if (!bRunning) break;
+
+        // 2. Cập nhật Logic & Render (LUÔN CHẠY sau khi xử lý tin nhắn)
+        auto frameStart = std::chrono::high_resolution_clock::now();
+
+        // Tính toán Delta Time (dt)
+        auto currentTime = frameStart;
+        std::chrono::duration<double> elapsed = currentTime - lastTime;
+        lastTime = currentTime;
+        double dt = elapsed.count();
+
+        // Giới hạn dt tối đa để tránh "nhảy vọt" (v.d khi di chuyển cửa sổ)
+        if (dt > 0.1) dt = 0.1;
+
+        g_GlobalAnimTime += (float)dt;
+
+        // Cập nhật Logic
+        if (g_CurrentScreen == SCREEN_PLAY)
         {
-            auto frameStart = std::chrono::high_resolution_clock::now();
+            UpdatePlayLogic(&g_PlayState, dt);
+        }
+        else if (g_CurrentScreen == SCREEN_EXIT)
+        {
+            ShowWindow(hWnd, SW_HIDE); // Hide window immediately to feel instant
+            bRunning = false;
+        }
 
-            // Tính toán Delta Time (dt)
-            auto currentTime = frameStart;
-            std::chrono::duration<double> elapsed = currentTime - lastTime;
-            lastTime = currentTime;
-            double dt = elapsed.count();
+        // Cập nhật FPS và tiêu đề cửa sổ (mỗi 0.5s)
+        fpsTimer += dt;
+        fpsFrames++;
+        if (fpsTimer >= 0.5)
+        {
+            lastFps = fpsFrames / fpsTimer;
+            fpsFrames = 0;
+            fpsTimer = 0.0;
 
-            g_GlobalAnimTime += (float)dt;
+            std::wstringstream title;
+            title.setf(std::ios::fixed);
+            title.precision(1);
+            title << L"CARO: Champions League";
+            title << L" | FPS: " << (int)lastFps;
+            title << L" | Render: " << g_LastRenderMs << L" ms";
+            SetWindowTextW(hWnd, title.str().c_str());
+        }
 
-            // Cập nhật Logic (Đếm ngược, AI tự đánh)
-            if (g_CurrentScreen == SCREEN_PLAY)
+        // Ép vẽ lại toàn cục mỗi khung hình
+        if (!IsIconic(hWnd))
+        {
+            InvalidateRect(hWnd, NULL, FALSE);
+            UpdateWindow(hWnd); 
+        }
+
+        // 3. Điều khiển tốc độ khung hình (Throttling)
+        auto frameEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> frameElapsed = frameEnd - frameStart;
+
+        if (frameElapsed.count() < targetFrameSeconds)
+        {
+            double sleepTime = targetFrameSeconds - frameElapsed.count();
+            if (sleepTime > 0.001)
             {
-                UpdatePlayLogic(&g_PlayState, dt);
+                Sleep((DWORD)(sleepTime * 1000.0) - 1);
             }
-            else if (g_CurrentScreen == SCREEN_EXIT)
+            while (std::chrono::high_resolution_clock::now() - frameStart < std::chrono::duration<double>(targetFrameSeconds))
             {
-                PostQuitMessage(0);
-            }
-
-            // Cập nhật FPS và tiêu đề cửa sổ (mỗi 0.5s)
-            fpsTimer += dt;
-            fpsFrames++;
-            if (fpsTimer >= 0.5)
-            {
-                lastFps = fpsFrames / fpsTimer;
-                fpsFrames = 0;
-                fpsTimer = 0.0;
-
-                std::wstringstream title;
-                title.setf(std::ios::fixed);
-                title.precision(1);
-                title << L"CARO: Champions League";
-                title << L" | FPS: " << lastFps;
-                title << L" | Render: " << g_LastRenderMs << L" ms";
-                SetWindowTextW(hWnd, title.str().c_str());
-            }
-
-            // Ép vẽ lại toàn cục mỗi khung hình để Animation mượt
-            if (!IsIconic(hWnd))
-            {
-                InvalidateRect(hWnd, NULL, FALSE);
-                UpdateWindow(hWnd); // Ép vẽ ngay lập tức, bỏ qua độ trễ của hàng đợi tin nhắn
-            }
-
-            auto frameEnd = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> frameElapsed = frameEnd - frameStart;
-            double nextFrameTime = targetFrameSeconds;
-
-            // Cơ chế điều khiển FPS ổn định (giữ nguyên từ stash)
-            if (frameElapsed.count() < nextFrameTime)
-            {
-                double sleepTime = nextFrameTime - frameElapsed.count();
-                if (sleepTime > 0.001)
-                {
-                    Sleep((DWORD)(sleepTime * 1000.0) - 1);
-                }
-                
-                while (std::chrono::high_resolution_clock::now() - frameStart < std::chrono::duration<double>(nextFrameTime))
-                {
-                    YieldProcessor();
-                }
+                YieldProcessor();
             }
         }
     }
 
     // 7. Giải phóng tài nguyên
+    ShowWindow(hWnd, SW_HIDE); // Safety: ensure window is hidden before slow cleanup
+    
     GlobalFont::Cleanup();
     ClearUICaches();
     DeleteBuffer(g_BackBuffer);

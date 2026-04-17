@@ -1,4 +1,4 @@
-﻿#include "Localization.h"
+#include "Localization.h"
 #include <fstream>
 #include <map>
 #include <windows.h>
@@ -31,6 +31,11 @@ void LoadLanguageFile(Language lang) {
 }
 
 std::wstring GetText(const std::string& key) {
-    if (g_dictionary.find(key) != g_dictionary.end()) return g_dictionary[key];
-    return UTF8ToWString(key);
+    auto it = g_dictionary.find(key);
+    if (it != g_dictionary.end()) return it->second;
+
+    // Cache missing keys (or those not in file) to avoid repeated UTF8ToWString in hot loops
+    std::wstring wkey = UTF8ToWString(key);
+    g_dictionary[key] = wkey;
+    return wkey;
 }

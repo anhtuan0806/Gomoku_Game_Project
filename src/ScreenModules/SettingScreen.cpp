@@ -8,9 +8,9 @@
 #include "../ApplicationTypes/PlayState.h"
 #include <string>
 
-const int TOTAL_SETTING_ITEMS = 7;
+const int TOTAL_SETTING_ITEMS = 6;
 
-void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int selectedOption, int direction, bool isEnterPressed) {
+void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int selectedOption, int direction, bool isEnterPressed, bool isRepeat) {
     if (direction == 0 && !isEnterPressed) return;
 
     switch (selectedOption) {
@@ -20,7 +20,7 @@ void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int sele
 
         if (!config->isBgmEnabled) StopBGM();
         else PlayBGM("Asset/audio/c1.mp3");
-        PlaySFX("sfx_move");
+        if (!isRepeat) PlaySFX("sfx_move");
         break;
     case 1:
         if (direction != 0) {
@@ -28,40 +28,30 @@ void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int sele
             if (config->bgmVolume > 100) config->bgmVolume = 100;
             if (config->bgmVolume < 0) config->bgmVolume = 0;
             UpdateBGMVolume();
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
         }
         break;
     case 2:
         if (isEnterPressed) config->isSfxEnabled = !config->isSfxEnabled;
         else config->isSfxEnabled = (direction == 1);
-        PlaySFX("sfx_move");
+        if (!isRepeat) PlaySFX("sfx_move");
         break;
     case 3:
         if (direction != 0) {
             config->sfxVolume += direction * 10;
             if (config->sfxVolume > 100) config->sfxVolume = 100;
             if (config->sfxVolume < 0) config->sfxVolume = 0;
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
         }
         break;
     case 4:
         if (direction != 0 || isEnterPressed) {
             config->currentLang = (config->currentLang == APP_LANG_VI) ? APP_LANG_EN : APP_LANG_VI;
             LoadLanguageFile(config->currentLang);
-            PlaySFX("sfx_move");
+            if (!isRepeat) PlaySFX("sfx_move");
         }
         break;
     case 5:
-    {
-        int step = (direction != 0) ? direction : 1;
-        int themeVal = (int)config->currentTheme + step;
-        if (themeVal > (int)THEME_RETRO) themeVal = (int)THEME_CLASSIC;
-        if (themeVal < (int)THEME_CLASSIC) themeVal = (int)THEME_RETRO;
-        config->currentTheme = (BoardTheme)themeVal;
-        PlaySFX("sfx_move");
-        break;
-    }
-    case 6:
         if (isEnterPressed) {
             SaveConfig(config, "Asset/config.ini");
             PlaySFX("sfx_select");
@@ -79,18 +69,19 @@ void UpdateSettingScreen(ScreenState& currentState, GameConfig* config, int& sel
         return;
     }
 
-    // Input Throttling mechanism from stash
-    bool isRepeat = (keyCode & 0x40000000) != 0; // standard repeat bit
+    bool isRepeat = (keyCode & 0x20000) != 0;
+
+    // Throttling: Giới hạn 80ms cho phím nhấn tay, 150ms cho phím giữ (Repeat)
     static DWORD lastMoveTime = 0;
     DWORD now = GetTickCount();
-    bool canMove = !isRepeat || (now - lastMoveTime > 150);
+    bool canMove = (now - lastMoveTime > (DWORD)(isRepeat ? 150 : 80));
 
     if (keyCode == 'W' || keyCode == VK_UP) {
         if (!canMove) return;
         do {
             selectedOption = (selectedOption - 1 < 0) ? TOTAL_SETTING_ITEMS - 1 : selectedOption - 1;
         } while ((selectedOption == 1 && !config->isBgmEnabled) || (selectedOption == 3 && !config->isSfxEnabled));
-        PlaySFX("sfx_move");
+        if (!isRepeat) PlaySFX("sfx_move");
         lastMoveTime = now;
         return;
     }
@@ -99,7 +90,7 @@ void UpdateSettingScreen(ScreenState& currentState, GameConfig* config, int& sel
         do {
             selectedOption = (selectedOption + 1 >= TOTAL_SETTING_ITEMS) ? 0 : selectedOption + 1;
         } while ((selectedOption == 1 && !config->isBgmEnabled) || (selectedOption == 3 && !config->isSfxEnabled));
-        PlaySFX("sfx_move");
+        if (!isRepeat) PlaySFX("sfx_move");
         lastMoveTime = now;
         return;
     }
@@ -117,7 +108,7 @@ void UpdateSettingScreen(ScreenState& currentState, GameConfig* config, int& sel
     }
 
     bool isEnterPressed = (keyCode == VK_RETURN);
-    ProcessSettingInput(currentState, config, selectedOption, direction, isEnterPressed);
+    ProcessSettingInput(currentState, config, selectedOption, direction, isEnterPressed, isRepeat);
 }
 
 void DrawColTextSetting(HDC hdc, const std::wstring& text, int x, int y, int width, COLORREF color, HFONT font, UINT format) {
@@ -180,16 +171,12 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
         case 2: label = GetText("setting_sfx") + L":"; value = config->isSfxEnabled ? L" [ " + GetText("btn_on") + L" ]" : L" [ " + GetText("btn_off") + L" ]"; break;
         case 3: label = GetText("setting_sfx_vol") + L":"; value = L""; break;
         case 4: label = GetText("setting_lang") + L":"; value = (config->currentLang == APP_LANG_VI) ? L"< Tiếng Việt >" : L"< English >"; break;
-        case 5: label = GetText("setting_theme") + L":";
-            value = (config->currentTheme == THEME_CLASSIC) ? GetText("theme_classic")
-                : (config->currentTheme == THEME_NEON) ? GetText("theme_neon") : GetText("theme_retro");
-            break;
-        case 6: label = L""; value = L""; break;
+        case 5: label = L""; value = L""; break;
         }
 
         int yPos = startY + i * spacing;
 
-        if (i == 6) {
+        if (i == 5) {
             COLORREF btnColor = ToCOLORREF(Palette::BlueDarkest);
             if (i == selectedOption) {
                 int gCol = (int)(150 + sin(g_GlobalAnimTime * 15.0f) * 105);
@@ -229,7 +216,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
                 g.FillRectangle(&thumbBrush, thumbX, barY - UIScaler::SY(2), UIScaler::SX(10), barH + UIScaler::SY(4));
                 DrawColTextSetting(hdc, std::to_wstring(vol) + L"%", barX + barW + UIScaler::SX(15), yPos, col2W - barW - UIScaler::SX(15), valColor, fontItem, DT_LEFT);
             }
-            else if (i == 4 || i == 5) {
+            else if (i == 4) {
                 DrawColTextSetting(hdc, value, col2X, yPos, col2W, valColor, fontItem, DT_LEFT);
             }
         }

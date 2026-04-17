@@ -121,12 +121,13 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
     if (isChar)
         return; // Không xử lý WM_CHAR khi không edit
 
-    // Hiệu ứng giữ phím (Throttling) cho di chuyển menu/cài đặt
     bool isRepeat = (wParam & 0x20000) != 0;
     WPARAM rawKey = wParam & 0xFFFF;
+
+    // Throttling: Giới hạn 80ms cho phím nhấn tay, 150ms cho phím giữ (Repeat)
     static DWORD lastMoveTime = 0;
     DWORD now = GetTickCount();
-    bool canMove = !isRepeat || (now - lastMoveTime > 150);
+    bool canMove = (now - lastMoveTime > (DWORD)(isRepeat ? 150 : 80));
 
     int totalItems = (currentPage == 0) ? PAGE_0_ITEMS : PAGE_1_ITEMS;
 
@@ -143,7 +144,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
                                    )) ||
             (currentPage == 1 && playState->matchType == MATCH_PVE && (selectedOption == 2 || selectedOption == 3)) // Bỏ qua Avatar/Tên P2 nếu PvE
         );
-        PlaySFX("sfx_move");
+        if (!isRepeat) PlaySFX("sfx_move");
         lastMoveTime = now;
     }
     else if (rawKey == 'S' || rawKey == 's' || rawKey == VK_DOWN)
@@ -157,7 +158,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             (currentPage == 0 && ((selectedOption == 2 && playState->matchType == MATCH_PVP) ||
                                   (selectedOption == 3 && playState->matchType == MATCH_PVE))) ||
             (currentPage == 1 && playState->matchType == MATCH_PVE && (selectedOption == 2 || selectedOption == 3)));
-        PlaySFX("sfx_move");
+        if (!isRepeat) PlaySFX("sfx_move");
         lastMoveTime = now;
     }
 
@@ -174,13 +175,13 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
         case 0: // Chế độ
             if (dir != 0) {
                 playState->gameMode = (playState->gameMode == MODE_CARO) ? MODE_TIC_TAC_TOE : MODE_CARO;
-                PlaySFX("sfx_move"); 
+                if (!isRepeat) PlaySFX("sfx_move"); 
             }
             break;
         case 1: // PvP / PvE
             if (dir != 0) {
                 playState->matchType = (playState->matchType == MATCH_PVP) ? MATCH_PVE : MATCH_PVP;
-                PlaySFX("sfx_move");
+                if (!isRepeat) PlaySFX("sfx_move");
             }
             break;
         case 2: // Độ khó
@@ -189,7 +190,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
                 playState->difficulty += dir;
                 if (playState->difficulty < 1) playState->difficulty = 3;
                 if (playState->difficulty > 3) playState->difficulty = 1;
-                PlaySFX("sfx_move"); 
+                if (!isRepeat) PlaySFX("sfx_move"); 
             }
             break;
         case 3: // Thời gian
@@ -198,7 +199,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
                 playState->countdownTime += dir * 5;
                 if (playState->countdownTime < 10) playState->countdownTime = 10;
                 if (playState->countdownTime > 60) playState->countdownTime = 60;
-                PlaySFX("sfx_move");
+                if (!isRepeat) PlaySFX("sfx_move");
             }
             break;
         case 4: // Bo
@@ -207,7 +208,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
                 playState->targetScore += dir * 2;
                 if (playState->targetScore < 1) playState->targetScore = 5;
                 if (playState->targetScore > 5) playState->targetScore = 1;
-                PlaySFX("sfx_move");
+                if (!isRepeat) PlaySFX("sfx_move");
             }
             break;
         case 5: // Tiếp Theo
@@ -229,7 +230,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             if (dir != 0)
             {
                 p1AvatarIdx = (p1AvatarIdx + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
-                PlaySFX("sfx_move");
+                if (!isRepeat) PlaySFX("sfx_move");
             }
             break;
         case 1: // Sửa Tên P1 (Enter)
@@ -244,7 +245,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             if (!isPvE && dir != 0)
             {
                 p2AvatarIdx = (p2AvatarIdx + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
-                PlaySFX("sfx_move");
+                if (!isRepeat) PlaySFX("sfx_move");
             }
             break;
         case 3: // Sửa Tên P2 (Enter)
@@ -260,7 +261,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             {
                 currentPage = 0;
                 selectedOption = 5;
-                PlaySFX("sfx_move");
+                if (!isRepeat) PlaySFX("sfx_move");
             }
             break;
         case 5: // Bắt Đầu
