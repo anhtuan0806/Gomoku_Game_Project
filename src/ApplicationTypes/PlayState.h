@@ -21,7 +21,7 @@ struct PlayerInfo2
 {
     wstring name;
     string avatarPath;
-    char piece;              // 'X' hoặc 'O'
+    char piece = ' ';        // 'X' hoặc 'O'
     int totalWins = 0;       // Số Bàn Thắng (trong series BO hiện tại)
     int matchWins = 0;       // Số Trận Thắng BO (đã thắng trọn 1 serie BO)
     int movesCount = 0;
@@ -32,45 +32,45 @@ struct PlayerInfo2
 // Trạng thái ván đấu
 struct PlayState
 {
-    PlayMode gameMode;
-    MatchType matchType;
+    PlayMode gameMode = MODE_CARO;
+    MatchType matchType = MATCH_PVP;
 
     PlayerInfo2 p1;
     PlayerInfo2 p2;
 
-    bool isP1Turn;
+    bool isP1Turn = true;
 
-    int countdownTime;
-    int timeRemaining;
+    int countdownTime = 30;
+    int timeRemaining = 30;
 
-    int boardSize;
+    int boardSize = 15;
     // Ma trận lưu giá trị: CELL_EMPTY, CELL_PLAYER1, hoặc CELL_PLAYER2
-    int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE];
+    int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE] = {0};
 
     // Tọa độ con trỏ hiện tại trên bàn cờ
-    int cursorRow;
-    int cursorCol;
+    int cursorRow = 0;
+    int cursorCol = 0;
 
     // Lưu tọa độ vừa đánh và chuỗi các ô tạo nên đường thắng
-    int lastMoveRow;
-    int lastMoveCol;
+    int lastMoveRow = -1;
+    int lastMoveCol = -1;
     std::vector<std::pair<int, int>> winningCells;
 
     // Lịch sử bước đi
     std::vector<std::pair<int, int>> matchHistory;
     std::vector<std::pair<int, int>> redoStack;
 
-    MatchStatus status;
-    int winner; // 0: Hòa, 1: P1, 2: P2, -1: Đang chơi
+    MatchStatus status = MATCH_PLAYING;
+    int winner = -1; // 0: Hòa, 1: P1, 2: P2, -1: Đang chơi
 
-    int difficulty;  // 1: Dễ, 2: Trung bình, 3: Khó
-    int targetScore; // 1 (Bo1), 2 (Bo3 - thắng 2 ván), 3 (Bo5 - thắng 3 ván)
+    int difficulty = 2;  // 1: Dễ, 2: Trung bình, 3: Khó
+    int targetScore = 1; // 1 (Bo1), 2 (Bo3 - thắng 2 ván), 3 (Bo5 - thắng 3 ván)
 
     // Quản lý thời gian
-    float matchDuration; // Tổng thời gian PVE (giây)
-    int p1TotalTimeLeft;
-    int p2TotalTimeLeft;
-    bool isMatchTimed; // Có bật giới hạn thời gian cả trận không
+    float matchDuration = 0.0f; // Tổng thời gian PVE (giây)
+    int p1TotalTimeLeft = 0;
+    int p2TotalTimeLeft = 0;
+    bool isMatchTimed = false; // Có bật giới hạn thời gian cả trận không
 
     std::wstring saveName;      // Tên hiển thị của bản lưu
     std::wstring saveTimestamp; // Thời gian lưu (Ngày/Giờ)

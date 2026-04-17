@@ -48,7 +48,7 @@ double g_LastRenderMs = 0.0;
 // --- Khai báo hàm Win32 ---   
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
     // 1. Khởi tạo Đồ họa & Font
     timeBeginPeriod(1); // Tăng độ chính xác của bộ hẹn giờ hệ thống lên 1ms
