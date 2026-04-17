@@ -38,14 +38,19 @@ save_btn_rename=ĐỔI TÊN
 save_btn_delete=XÓA
 save_btn_deselect=BỎ CHỌN
 save_btn_back=[ TRỞ VỀ ]
+save_confirm=[ ENTER ] Xác nhận lưu
+save_back=[ ESC ] Quay lại Menu
 
 config_page1=--- 1. HỒ SƠ CHIẾN THUẬT ---
 config_size=Khổ sân thi đấu:
 config_type=Bảng Bốc Thăm:
+config_diff=Cấp độ Máy:
 config_time=Kiểm soát bóng (Lượt):
 config_bo=Thể thức phân định:
 config_next===> [ TIẾP THEO ] ===>
 config_page2=--- 2. HỒ SƠ TUYỂN THỦ ---
+config_p1_team=ĐỘI P1
+config_p2_team=ĐỘI P2
 config_locked=[ ĐÃ KHÓA ]
 config_pname=Tên: 
 config_back=< QUAY LẠI CÀI ĐẶT SÂN
@@ -65,3 +70,71 @@ pause_bgm=NHẠC NỀN:
 pause_vol=ÂM LƯỢNG NHẠC
 pause_save=GHI HÌNH TRẬN ĐẤU
 pause_exit=KẾT THÚC TRẬN ĐẤU
+
+summary_title=TỔNG KẾT VÁN ĐẤU
+summary_continue=TIẾP TỤC
+summary_save=LƯU
+summary_exit=THOÁT
+summary_dribble=DẪN BÓNG: 
+summary_poss=GIỮ BÓNG: 
+summary_goal=BÀN THẮNG: 
+summary_concede=THỦNG LƯỚI: 
+summary_bowin=TRẬN BO THẮNG: 
+summary_win= [THẮNG]
+
+val_pvp=Kinh Điển Cùng Lò (PvP)
+val_pve=Thách Đấu Máy (PvE)
+val_bronze=Phân Hạng Đồng
+val_gold=Phân Hạng Vàng
+val_challenger=Thách Đấu
+val_sec=Giây
+val_first_to=< Chạm 
+val_goals= Bàn >
+
+theme_classic=< Sân Cỏ Anh >
+theme_neon=< Sân Neon >
+theme_retro=< Retro Matrix >
+setting_hint=A / D: Thay đổi  |  W / S: Chọn mục  |  ESC / Enter: Lưu & Thoát
+
+msg_rename_success=Đã đổi tên thành công!
+msg_slot_empty=Slot này chưa có dữ liệu!
+msg_delete_success=Đã xóa bản lưu!
+msg_save_success=Đã lưu thành công!
+msg_save_error=Lỗi hệ thống khi lưu!
+
+play_undo_hint=Phím [Q]: Đi lại (Undo)  |  Phím [E]: Hoàn tác (Redo)
+play_win_cup= ĐÃ GIÀNH CUP VÔ ĐỊCH! 
+play_win_goal= ĐÃ GHI BÀN THẮNG QUYẾT ĐỊNH! 
+play_draw=TRẬN ĐẤU HÒA — KHÔNG AI GHI BÀN!
+play_win_hint=Nhấn phím bất kỳ để tiếp tục...  |  [ ESC ] Tạm dừng
+play_save_label=NHÃN BẢN LƯU (Max 15 ký tự):
+play_save_hint1=Hỗ Trợ Tiếng Việt Có Dấu
+play_save_hint2=Nhấn [ ENTER ] để Lưu  |  [ ESC ] để Hủy
+
+guild_tab1=CHẾ ĐỘ CHƠI
+guild_tab2=CÁCH ĐIỀU KHIỂN
+guild_tab3=CƠ CHẾ TRẬN ĐẤU
+guild_1_title=HÃY CHỌN KỊCH BẢN CHIẾN THUẬT CỦA BẠN
+guild_1_caro=CARO - TRUYỀN THỐNG
+guild_1_caro_desc=- Kích thước sân: 15x15 ô cực rộng. - Luật thắng: Đạt đủ 5 quân cờ liên tiếp theo hàng ngang, dọc hoặc chéo. - Cơ chế: Đây là cuộc đấu trí tầm xa, bạn cần tính toán đa bước để bẫy đối thủ. - Ghi bàn: Mỗi lần đạt chuỗi 5, bạn sẽ ghi 1 bàn thắng vào lưới đối phương.
+guild_1_ttt=TIC-TAC-TOE - TỐC ĐỘ
+guild_1_ttt_desc=- Kích thước sân: 3x3 ô nhỏ gọn. - Luật thắng: Chỉ cần 3 quân cờ liên tiếp. - Cơ chế: Trận đấu diễn ra cực nhanh, đòi hỏi phản xạ và chiếm lĩnh trung tâm ngay lập tức. - Thích hợp cho những trận đấu chớp nhoáng, phân định thắng bại tức thì.
+guild_2_title=THAO TÁC LINH HOẠT ĐỂ LÀM CHỦ TRẬN ĐẤU
+guild_2_move=DI CHUYỂN TRÊN SÂN
+guild_2_move1=[Mũi tên] hoặc [WASD]
+guild_2_move2=Di chuyển con trỏ chọn ô.
+guild_2_move3=Nhấn giữ để di chuyển nhanh
+guild_2_act=HÀNH ĐỘNG QUYẾT ĐỊNH
+guild_2_act1=[ENTER] hoặc [SPACE]
+guild_2_act2=Xác nhận đặt quân cờ.
+guild_2_act3=[ESC]: Tạm dừng / Menu
+guild_2_act4=[S]: Lưu trận đấu nhanh
+guild_3_title=THÔNG SỐ TRẬN ĐẤU & CƠ CHẾ AI
+guild_3_ai=1. CẤP ĐỘ AI
+guild_3_ai_desc=Easy: Di chuyển ngẫu nhiên. Medium: Biết chặn đòn đơn giản. Hard: AI tìm kiếm nước đi tối ưu (Legendary).
+guild_3_time=2. THỜI GIAN ĐẾM NGƯỢC
+guild_3_time_desc=Mỗi lượt có 15s/30s/45s. Nếu hết giờ mà chưa đi, máy sẽ tự động bỏ lượt hoặc đánh ngẫu nhiên.
+guild_3_target=3. MỤC TIÊU CHIẾN THẮNG
+guild_3_target_desc=Số bàn thắng cần ghi để thắng trận. Ví dụ: Target = 3 thì phe nào ghi 3 bàn trước sẽ vô địch trận BO đó.
+guild_3_save=4. LƯU & TẢI TRẬN
+guild_3_save_desc=Dữ liệu được lưu dưới dạng file nhị phân, đảm bảo bạn có thể tiếp tục hành trình vô địch bất cứ lúc nào.

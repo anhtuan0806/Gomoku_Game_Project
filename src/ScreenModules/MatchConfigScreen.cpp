@@ -291,20 +291,19 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState* confi
         int spacing = UIScaler::SY(50);
 
         // --- ĐÃ GẮN ĐA NGÔN NGỮ ---
+        // [NGÔN NGỮ] Labels (Đã sửa lại key cho đúng với từ điển)
         std::wstring labels[] = {
-            GetText("config_size"),
-            GetText("config_type"),
-            GetText("match_diff"),
-            GetText("config_time"),
-            GetText("config_bo")
+            GetText("config_size"), GetText("config_type"),
+            GetText("config_diff"), GetText("config_time"), GetText("config_bo")
         };
 
+        // [NGÔN NGỮ] Values (Đã chuyển toàn bộ sang hệ thống Đa ngôn ngữ)
         std::wstring values[] = {
             std::wstring(config->gameMode == MODE_CARO ? L"< Caro 15x15 >" : L"< Tic-Tac-Toe 3x3 >"),
-            std::wstring(config->matchType == MATCH_PVP ? L"< Kinh Điển Cùng Lò (PvP) >" : L"< Thách Đấu Máy (PvE) >"),
-            std::wstring(config->difficulty == 1 ? L"< Phân Hạng Đồng >" : (config->difficulty == 2 ? L"< Phân Hạng Vàng >" : L"< Thách Đấu >")),
-            L"< " + std::to_wstring(config->countdownTime) + L" Giây >",
-            L"< Chạm " + std::to_wstring(config->targetScore) + L" Bàn >"
+            std::wstring(config->matchType == MATCH_PVP ? L"< " + GetText("val_pvp") + L" >" : L"< " + GetText("val_pve") + L" >"),
+            std::wstring(config->difficulty == 1 ? L"< " + GetText("val_bronze") + L" >" : (config->difficulty == 2 ? L"< " + GetText("val_gold") + L" >" : L"< " + GetText("val_challenger") + L" >")),
+            L"< " + std::to_wstring(config->countdownTime) + L" " + GetText("val_sec") + L" >",
+            GetText("val_first_to") + std::to_wstring(config->targetScore) + GetText("val_goals")
         };
 
         bool isPvE_p0 = (config->matchType == MATCH_PVE);

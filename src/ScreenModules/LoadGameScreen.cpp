@@ -6,29 +6,27 @@
 #include "../SystemModules/AudioSystem.h"
 #include "../SystemModules/Localization.h"
 #include "../ApplicationTypes/GameConstants.h"
-
 #include <iostream>
 #include <string>
 #include <vector>
 #include <windows.h>
 
-// Các trạng thái của màn hình Load Game
 enum LoadScreenMode {
-    MODE_SELECT_SLOT,    // Đang chọn slot ở bảng bên trái
-    MODE_SELECT_ACTION,  // Đang chọn hành động (Tải, Đổi tên, Xóa) ở bảng bên phải
-    MODE_EDIT_NAME       // Đang nhập tên mới cho slot (Đổi tên)
+    MODE_SELECT_SLOT,
+    MODE_SELECT_ACTION,
+    MODE_EDIT_NAME
 };
 
 static LoadScreenMode g_CurrentMode = MODE_SELECT_SLOT;
-static int g_SelectedSlot = 0;   // 0 to 4 (5 slots)
-static int g_SelectedAction = 0; // 0: Tải, 1: Đổi tên, 2: Xóa
+static int g_SelectedSlot = 0;
+static int g_SelectedAction = 0;
 static std::wstring g_EditNameBuffer = L"";
 static float g_LoadFeedbackTimer = 0.0f;
 static std::wstring g_LoadStatusMsg = L"";
 
 const int MAX_SLOTS = 5;
 const int MAX_ACTIONS = 4;
-const int BACK_BTN_INDEX = 5; // Nút quay lại nằm dưới cùng danh sách slot
+const int BACK_BTN_INDEX = 5;
 
 bool ProcessLoadGameInput(WPARAM wParam, ScreenState& currentState, PlayState* playState, int& selectedOption, std::wstring& statusMessage) {
     bool hasChanged = true;
@@ -37,19 +35,20 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState& currentState, PlayState* p
 
     if (g_CurrentMode == MODE_EDIT_NAME) {
         if (isChar) {
-            if (g_EditNameBuffer.length() < 15 && ch >= 32) {
-                g_EditNameBuffer += ch;
-            }
-        } else {
+            if (g_EditNameBuffer.length() < 15 && ch >= 32) g_EditNameBuffer += ch;
+        }
+        else {
             if (wParam == VK_BACK) {
                 if (!g_EditNameBuffer.empty()) g_EditNameBuffer.pop_back();
-            } else if (wParam == VK_ESCAPE) {
+            }
+            else if (wParam == VK_ESCAPE) {
                 g_CurrentMode = MODE_SELECT_ACTION;
-            } else if (wParam == VK_RETURN) {
+            }
+            else if (wParam == VK_RETURN) {
                 if (!g_EditNameBuffer.empty()) {
                     if (RenameSave(g_SelectedSlot + 1, g_EditNameBuffer)) {
                         PlaySFX("sfx_success");
-                        g_LoadStatusMsg = L"Đã đổi tên thành công!";
+                        g_LoadStatusMsg = GetText("msg_rename_success");
                         g_LoadFeedbackTimer = 1.0f;
                         g_CurrentMode = MODE_SELECT_ACTION;
                     }
@@ -65,58 +64,72 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState& currentState, PlayState* p
         if (wParam == 'W' || wParam == VK_UP) {
             g_SelectedSlot = (g_SelectedSlot - 1 + (MAX_SLOTS + 1)) % (MAX_SLOTS + 1);
             PlaySFX("sfx_move");
-        } else if (wParam == 'S' || wParam == VK_DOWN) {
+        }
+        else if (wParam == 'S' || wParam == VK_DOWN) {
             g_SelectedSlot = (g_SelectedSlot + 1) % (MAX_SLOTS + 1);
             PlaySFX("sfx_move");
-        } else if (wParam == VK_RETURN || wParam == VK_SPACE) {
+        }
+        else if (wParam == VK_RETURN || wParam == VK_SPACE) {
             if (g_SelectedSlot == BACK_BTN_INDEX) {
+                PlaySFX("sfx_select");
                 currentState = SCREEN_MENU;
-                // Reset state
                 g_CurrentMode = MODE_SELECT_SLOT;
                 g_SelectedSlot = 0;
-            } else {
-                // Nếu slot có dữ liệu thì cho phép chọn hành động
+            }
+            else {
                 if (CheckSaveExists(g_SelectedSlot + 1)) {
+                    PlaySFX("sfx_select");
                     g_CurrentMode = MODE_SELECT_ACTION;
                     g_SelectedAction = 0;
-                } else {
-                    g_LoadStatusMsg = L"Slot này chưa có dữ liệu!";
+                }
+                else {
+                    g_LoadStatusMsg = GetText("msg_slot_empty");
                     g_LoadFeedbackTimer = 1.0f;
                 }
             }
-        } else if (wParam == VK_ESCAPE) {
+        }
+        else if (wParam == VK_ESCAPE) {
             currentState = SCREEN_MENU;
         }
-    } else if (g_CurrentMode == MODE_SELECT_ACTION) {
+    }
+    else if (g_CurrentMode == MODE_SELECT_ACTION) {
         if (wParam == 'W' || wParam == VK_UP) {
             g_SelectedAction = (g_SelectedAction - 1 + MAX_ACTIONS) % MAX_ACTIONS;
             PlaySFX("sfx_move");
-        } else if (wParam == 'S' || wParam == VK_DOWN) {
+        }
+        else if (wParam == 'S' || wParam == VK_DOWN) {
             g_SelectedAction = (g_SelectedAction + 1) % MAX_ACTIONS;
             PlaySFX("sfx_move");
-        } else if (wParam == VK_RETURN || wParam == VK_SPACE) {
-            if (g_SelectedAction == 0) { // Tải
+        }
+        else if (wParam == VK_RETURN || wParam == VK_SPACE) {
+            if (g_SelectedAction == 0) {
                 if (LoadMatchData(playState, GetSavePath(g_SelectedSlot + 1))) {
                     StopBGM();
-                    PlaySFX("sfx_whistle"); // Còi báo hiệu trận đấu tiếp tục
+                    PlaySFX("sfx_whistle");
                     playState->status = MATCH_PLAYING;
                     currentState = SCREEN_PLAY;
                     g_CurrentMode = MODE_SELECT_SLOT;
                 }
-            } else if (g_SelectedAction == 1) { // Đổi tên
+            }
+            else if (g_SelectedAction == 1) {
+                PlaySFX("sfx_select");
                 g_EditNameBuffer = GetSaveDisplayName(g_SelectedSlot + 1);
                 g_CurrentMode = MODE_EDIT_NAME;
-            } else if (g_SelectedAction == 2) { // Xóa
+            }
+            else if (g_SelectedAction == 2) {
                 if (DeleteSave(g_SelectedSlot + 1)) {
                     PlaySFX("sfx_success");
-                    g_LoadStatusMsg = L"Đã xóa bản lưu!";
+                    g_LoadStatusMsg = GetText("msg_delete_success");
                     g_LoadFeedbackTimer = 1.0f;
                     g_CurrentMode = MODE_SELECT_SLOT;
                 }
-            } else if (g_SelectedAction == 3) { // Quay lại
+            }
+            else if (g_SelectedAction == 3) {
+                PlaySFX("sfx_select");
                 g_CurrentMode = MODE_SELECT_SLOT;
             }
-        } else if (wParam == VK_ESCAPE) {
+        }
+        else if (wParam == VK_ESCAPE) {
             g_CurrentMode = MODE_SELECT_SLOT;
         }
     }
@@ -128,43 +141,34 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState& currentState, PlayState* p
 void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statusMessage, int screenWidth, int screenHeight) {
     Gdiplus::Graphics g(hdc);
     g.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
-
     DrawProceduralStadium(g, screenWidth, screenHeight);
 
-    // Kích thước bảng chính (Nới rộng thêm 5% nữa theo yêu cầu)
     int panelW = UIScaler::SX(900);
     int panelH = UIScaler::SY(540);
     int panelX = (screenWidth - panelW) / 2;
     int panelY = (screenHeight - panelH) / 2;
 
-    // Vẽ nền Panel
     Gdiplus::SolidBrush bgBrush(ToGdiColor(Theme::GlassWhite));
     g.FillRectangle(&bgBrush, panelX, panelY, panelW, panelH);
     Gdiplus::Pen borderPen(ToGdiColor(Theme::PanelBlueBorder), 3.0f);
     g.DrawRectangle(&borderPen, panelX, panelY, panelW, panelH);
 
-    // Banner Tiêu đề (ĐÃ GẮN ĐA NGÔN NGỮ)
     DrawPixelBanner(g, hdc, GetText("save_title").c_str(), screenWidth / 2, panelY + UIScaler::SY(45), panelW - UIScaler::SX(40),
         ToCOLORREF(Palette::White), RGB(0, 150, 255), "Asset/models/bg/cassette.txt");
 
-    // Tính toán lại tọa độ cho 3 Cột (Nới rộng thêm 5%)
     int col1X = panelX + UIScaler::SX(30);
     int col1W = UIScaler::SX(210);
     int col2X = col1X + col1W + UIScaler::SX(20);
     int col2W = UIScaler::SX(330);
     int col3X = col2X + col2W + UIScaler::SX(25);
     int col3W = UIScaler::SX(270);
-
     int startY = panelY + UIScaler::SY(110);
     int slotH = UIScaler::SY(50);
     int spacing = UIScaler::SY(8);
 
-    // Vẽ danh sách slot bên trái
     for (int i = 0; i < MAX_SLOTS + 1; i++) {
         int yPos = startY + i * (slotH + spacing);
-
         if (i == BACK_BTN_INDEX) {
-            // Nút TRỞ VỀ (ĐÃ GẮN ĐA NGÔN NGỮ)
             std::wstring backText = GetText("save_btn_back");
             bool isSel = (g_CurrentMode == MODE_SELECT_SLOT && g_SelectedSlot == i);
             COLORREF color = isSel ? ToCOLORREF(Palette::OrangeNormal) : ToCOLORREF(Palette::BlueDarkest);
@@ -180,7 +184,6 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
 
         std::wstring displayName = GetSaveDisplayName(i + 1);
         bool exists = CheckSaveExists(i + 1);
-        // Slot Trống (ĐÃ GẮN ĐA NGÔN NGỮ)
         std::wstring slotText = exists ? displayName : GetText("save_empty");
         if (slotText.length() > 12) slotText = slotText.substr(0, 10) + L"...";
 
@@ -188,9 +191,7 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
         bool isActive = (g_CurrentMode == MODE_SELECT_SLOT && isSelected);
 
         Gdiplus::Color boxColor = ToGdiColor(Theme::SlotNormal);
-        if (isSelected) {
-            boxColor = ToGdiColor(WithAlpha(Theme::SlotSelected, isActive ? (BYTE)220 : (BYTE)120));
-        }
+        if (isSelected) boxColor = ToGdiColor(WithAlpha(Theme::SlotSelected, isActive ? (BYTE)220 : (BYTE)120));
         Gdiplus::SolidBrush slotBrush(boxColor);
         g.FillRectangle(&slotBrush, col1X, yPos, col1W, slotH);
 
@@ -210,25 +211,20 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
         SelectObject(hdc, oldF);
     }
 
-    // Vẽ bảng hành động và chi tiết (Cột giữa)
     if (g_SelectedSlot != BACK_BTN_INDEX) {
         SaveMetadata meta = GetSaveMetadata(g_SelectedSlot + 1);
-
         if (meta.exists) {
-            // 1. Tiêu đề mục chi tiết (ĐÃ GẮN ĐA NGÔN NGỮ)
             RECT rDetailHeader = { col2X, startY, col2X + col2W, startY + UIScaler::SY(25) };
             SetTextColor(hdc, ToCOLORREF(Palette::BlueDarkest));
             HFONT oldF = (HFONT)SelectObject(hdc, GlobalFont::Bold);
             DrawTextW(hdc, GetText("save_details").c_str(), -1, &rDetailHeader, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
-            // 2. Khung chứa thông tin
             int infoH = UIScaler::SY(160);
             Gdiplus::SolidBrush infoBg(ToGdiColor(WithAlpha(Palette::CyanLight, 30)));
             g.FillRectangle(&infoBg, col2X + UIScaler::SX(5), startY + UIScaler::SY(30), col2W - UIScaler::SX(10), infoH);
             Gdiplus::Pen infoBorder(ToGdiColor(WithAlpha(Palette::CyanNormal, 100)), 1.0f);
             g.DrawRectangle(&infoBorder, col2X + UIScaler::SX(5), startY + UIScaler::SY(30), col2W - UIScaler::SX(10), infoH);
 
-            // 3. Hiển thị Metadata
             int textY = startY + UIScaler::SY(38);
             int lineH = UIScaler::SY(28);
 
@@ -236,47 +232,33 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
                 SetTextColor(hdc, ToCOLORREF(Palette::GrayDarkest));
                 SelectObject(hdc, GlobalFont::Note);
                 TextOutW(hdc, col2X + UIScaler::SX(15), textY + UIScaler::SY(4), label.c_str(), (int)label.length());
-
                 SetTextColor(hdc, valCol);
                 SelectObject(hdc, GlobalFont::Default);
                 TextOutW(hdc, col2X + UIScaler::SX(115), textY, val.c_str(), (int)val.length());
                 textY += lineH;
                 };
 
-            // (ĐÃ GẮN ĐA NGÔN NGỮ)
             DrawMetaLine(GetText("save_name"), meta.name, ToCOLORREF(Palette::OrangeNormal));
             DrawMetaLine(GetText("save_time"), meta.timestamp, ToCOLORREF(Palette::BlueDarkest));
-
             std::wstring modeStr = (meta.mode == 0) ? L"Caro 15x15" : L"TicTacToe 3x3";
             DrawMetaLine(GetText("save_mode"), modeStr, ToCOLORREF(Palette::GreenNormal));
-
             std::wstring typeStr = (meta.type == 0) ? L"PvP" : L"PvE";
             DrawMetaLine(GetText("save_opp"), typeStr, ToCOLORREF(Palette::CyanNormal));
-
             std::wstring scoreStr = std::to_wstring(meta.p1Wins) + L" - " + std::to_wstring(meta.p2Wins);
             DrawMetaLine(GetText("save_score"), scoreStr, ToCOLORREF(Palette::RedNormal));
 
-            // 4. Các nút hành động (ĐÃ GẮN ĐA NGÔN NGỮ)
-            std::wstring actions[] = {
-                GetText("save_btn_load"),
-                GetText("save_btn_rename"),
-                GetText("save_btn_delete"),
-                GetText("save_btn_deselect")
-            };
+            std::wstring actions[] = { GetText("save_btn_load"), GetText("save_btn_rename"), GetText("save_btn_delete"), GetText("save_btn_deselect") };
             int actionStartY = startY + UIScaler::SY(205);
 
             for (int j = 0; j < MAX_ACTIONS; j++) {
                 int actY = actionStartY + j * UIScaler::SY(42);
                 bool actSel = (g_CurrentMode == MODE_SELECT_ACTION && g_SelectedAction == j);
-
                 Gdiplus::SolidBrush actBrush(actSel ? ToGdiColor(Theme::SlotSelected) : ToGdiColor(Theme::SlotNormal));
                 g.FillRectangle(&actBrush, col2X + UIScaler::SX(15), actY, col2W - UIScaler::SX(30), UIScaler::SY(38));
-
                 if (actSel) {
                     Gdiplus::Pen actPen(ToGdiColor(Theme::PanelYellowBorder), 2.0f);
                     g.DrawRectangle(&actPen, col2X + UIScaler::SX(15), actY, col2W - UIScaler::SX(30), UIScaler::SY(38));
                 }
-
                 COLORREF actColor = actSel ? ToCOLORREF(Palette::White) : ToCOLORREF(Palette::GrayDarkest);
                 RECT rAct = { col2X + UIScaler::SX(15), actY, col2X + col2W - UIScaler::SX(15), actY + UIScaler::SY(38) };
                 SetTextColor(hdc, actColor);
@@ -285,7 +267,6 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
             }
             SelectObject(hdc, oldF);
 
-            // Cột 3: Khung Đổi tên (Cột Phải)
             if (g_CurrentMode == MODE_EDIT_NAME) {
                 Gdiplus::SolidBrush renameBg(ToGdiColor(Theme::GlassWhite));
                 g.FillRectangle(&renameBg, col3X, startY, col3W, UIScaler::SY(180));
@@ -295,7 +276,6 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
                 RECT rEditTitle = { col3X, startY + UIScaler::SY(10), col3X + col3W, startY + UIScaler::SY(40) };
                 SetTextColor(hdc, ToCOLORREF(Palette::OrangeNormal));
                 SelectObject(hdc, GlobalFont::Bold);
-                // Dùng chung key ĐỔI TÊN cho gọn
                 DrawTextW(hdc, GetText("save_btn_rename").c_str(), -1, &rEditTitle, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
                 int boxH = UIScaler::SY(45);
@@ -308,7 +288,6 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
                 extern float g_GlobalAnimTime;
                 bool showCursor = ((int)(g_GlobalAnimTime * 2.5f) % 2 == 0);
                 std::wstring displayBuffer = g_EditNameBuffer + (showCursor ? L"_" : L" ");
-
                 RECT rEditBuffer = { col3X + UIScaler::SX(10), boxY, col3X + col3W - UIScaler::SX(10), boxY + boxH + UIScaler::SY(10) };
                 SetTextColor(hdc, ToCOLORREF(Palette::GrayDarkest));
                 DrawTextW(hdc, displayBuffer.c_str(), -1, &rEditBuffer, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
@@ -316,37 +295,31 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring& statu
                 RECT rEditHint = { col3X, startY + UIScaler::SY(140), col3X + col3W, startY + UIScaler::SY(175) };
                 SetTextColor(hdc, ToCOLORREF(Palette::GrayDark));
                 SelectObject(hdc, GlobalFont::Note);
-                // Giữ nguyên dòng này để bạn không phải thêm key vào file txt nữa
-                DrawTextW(hdc, L"[Enter] Lưu | [Esc] Hủy", -1, &rEditHint, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+                std::wstring hintStr = L"[ Enter ] " + GetText("summary_save") + L" | [ Esc ] " + GetText("btn_back");
+                DrawTextW(hdc, hintStr.c_str(), -1, &rEditHint, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
             }
         }
         else {
             RECT rEmpty = { col2X, startY + UIScaler::SY(80), col2X + col2W, startY + UIScaler::SY(200) };
             SetTextColor(hdc, ToCOLORREF(Palette::GrayNormal));
             HFONT oldF = (HFONT)SelectObject(hdc, GlobalFont::Bold);
-            // (ĐÃ GẮN ĐA NGÔN NGỮ)
             DrawTextW(hdc, GetText("save_empty").c_str(), -1, &rEmpty, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
             SelectObject(hdc, oldF);
         }
     }
 
-    // Hiển thị status message
     if (!g_LoadStatusMsg.empty()) {
         int statusY = panelY + panelH - UIScaler::SY(60);
-        DrawTextCentered(hdc, g_LoadStatusMsg, statusY, screenWidth, ToCOLORREF(Palette::RedNormal), GlobalFont::Bold);
+        COLORREF statusColor = (g_LoadStatusMsg == GetText("msg_rename_success") || g_LoadStatusMsg == GetText("msg_delete_success")) ? ToCOLORREF(Palette::GreenNormal) : ToCOLORREF(Palette::RedNormal);
+        DrawTextCentered(hdc, g_LoadStatusMsg, statusY, screenWidth, statusColor, GlobalFont::Bold);
     }
-
-    // Gợi ý phím (Giữ nguyên để tránh rườm rà file txt lúc nửa đêm)
-    std::wstring hints = L"W/S: Di chuyển  |  ENTER: Xác nhận  |  ESC: Quay lại";
-    DrawTextCentered(hdc, hints, screenHeight - UIScaler::SY(40), screenWidth, ToCOLORREF(Palette::White), GlobalFont::Note);
 }
 
 void UpdateLoadGameScreen(ScreenState& currentState, PlayState* playState, int& selectedOption, std::wstring& statusMessage, WPARAM wParam) {
-    // Xử lý timer phản hồi
     extern float g_GlobalAnimTime;
     static double lastTime = 0;
-    double dt = 0.016; // Giả định 60fps nếu không có dt thực
-    
+    double dt = 0.016;
+
     if (g_LoadFeedbackTimer > 0) {
         g_LoadFeedbackTimer -= (float)dt;
         if (g_LoadFeedbackTimer <= 0) {

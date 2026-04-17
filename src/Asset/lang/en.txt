@@ -38,14 +38,19 @@ save_btn_rename=RENAME
 save_btn_delete=DELETE
 save_btn_deselect=DESELECT
 save_btn_back=[ RETURN ]
+save_confirm=[ ENTER ] Confirm Save
+save_back=[ ESC ] Back to Menu
 
 config_page1=--- 1. TACTICAL PROFILE ---
 config_size=Pitch Size:
 config_type=Matchup:
+config_diff=AI Difficulty:
 config_time=Ball Control (Turn):
 config_bo=Match Format:
 config_next===> [ NEXT ] ===>
 config_page2=--- 2. PLAYER PROFILE ---
+config_p1_team=TEAM P1
+config_p2_team=TEAM P2
 config_locked=[ LOCKED ]
 config_pname=Name: 
 config_back=< BACK TO PITCH SETUP
@@ -59,9 +64,77 @@ play_goals=Goals:
 play_dribble=Dribbles: 
 play_bowins=BO Wins: 
 
+val_pvp=Classic Rivalry (PvP)
+val_pve=Machine Challenger (PvE)
+val_bronze=Bronze Tier
+val_gold=Gold Tier
+val_challenger=Challenger Tier
+val_sec=Secs
+val_first_to=< First to 
+val_goals= Goals >
+
 pause_title=PAUSE
 pause_resume=>> RETURN TO PITCH <<
 pause_bgm=BGM:
 pause_vol=MUSIC VOLUME
 pause_save=RECORD MATCH (SAVE)
 pause_exit=END MATCH
+
+summary_title=MATCH SUMMARY
+summary_continue=CONTINUE
+summary_save=SAVE
+summary_exit=EXIT
+summary_dribble=DRIBBLES: 
+summary_poss=POSSESSION: 
+summary_goal=GOALS: 
+summary_concede=CONCEDED: 
+summary_bowin=BO WINS: 
+summary_win= [WINNER]
+
+theme_classic=< Classic Pitch >
+theme_neon=< Neon Pitch >
+theme_retro=< Retro Matrix >
+setting_hint=A / D: Adjust  |  W / S: Select  |  ESC / Enter: Save & Exit
+
+msg_rename_success=Rename successful!
+msg_slot_empty=This slot is empty!
+msg_delete_success=Save deleted!
+msg_save_success=Game saved successfully!
+msg_save_error=System error while saving!
+
+play_undo_hint=Press [Q]: Undo move  |  Press [E]: Redo move
+play_win_cup= WON THE CHAMPIONSHIP! 
+play_win_goal= SCORED THE DECISIVE GOAL! 
+play_draw=IT'S A DRAW — NO GOALS SCORED!
+play_win_hint=Press any key to continue...  |  [ ESC ] Pause
+play_save_label=SAVE LABEL (Max 15 chars):
+play_save_hint1=Supports special characters
+play_save_hint2=Press [ ENTER ] to Save  |  [ ESC ] to Cancel
+
+guild_tab1=GAME MODES
+guild_tab2=CONTROLS
+guild_tab3=MATCH MECHANICS
+guild_1_title=CHOOSE YOUR TACTICAL SCENARIO
+guild_1_caro=GOMOKU - TRADITIONAL
+guild_1_caro_desc=- Pitch Size: Massive 15x15 grid. - Win Rule: Connect 5 pieces horizontally, vertically, or diagonally. - Mechanics: A long-range mind game requiring multi-step calculations to trap your opponent. - Scoring: Each 5-in-a-row scores 1 goal.
+guild_1_ttt=TIC-TAC-TOE - SPEED
+guild_1_ttt_desc=- Pitch Size: Compact 3x3 grid. - Win Rule: Connect 3 pieces. - Mechanics: Extremely fast-paced, requires instant reflexes to dominate the center. - Ideal for lightning-fast matches with instant results.
+guild_2_title=FLEXIBLE CONTROLS TO DOMINATE
+guild_2_move=PITCH MOVEMENT
+guild_2_move1=[Arrow Keys] or [WASD]
+guild_2_move2=Move the cursor to select a cell.
+guild_2_move3=Hold to move quickly
+guild_2_act=DECISIVE ACTIONS
+guild_2_act1=[ENTER] or [SPACE]
+guild_2_act2=Confirm piece placement.
+guild_2_act3=[ESC]: Pause / Menu
+guild_2_act4=[S]: Quick Save Match
+guild_3_title=MATCH STATS & AI MECHANICS
+guild_3_ai=1. AI DIFFICULTY
+guild_3_ai_desc=Easy: Random moves. Medium: Simple blocking. Hard: Legendary AI finding optimal moves.
+guild_3_time=2. COUNTDOWN TIMER
+guild_3_time_desc=15s/30s/45s per turn. If time runs out, the turn is skipped or a random move is made.
+guild_3_target=3. VICTORY TARGET
+guild_3_target_desc=Goals needed to win the match. E.g., Target = 3 means the first to 3 goals wins the BO series.
+guild_3_save=4. SAVE & LOAD
+guild_3_save_desc=Data is saved in binary format, ensuring you can continue your championship journey anytime.
