@@ -19,9 +19,6 @@
     <Filter Include="ScreenModules">
       <UniqueIdentifier>{233625c2-94b0-4244-bdcf-1d52c4ec2c89}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Asset\images">
-      <UniqueIdentifier>{5dfd7986-1a13-4f45-b16e-d56aeba2b10b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Asset\audio">
       <UniqueIdentifier>{b0b6f301-a9f2-44b8-9714-583798bc2b87}</UniqueIdentifier>
     </Filter>
