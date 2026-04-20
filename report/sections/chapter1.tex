@@ -1,0 +1,197 @@
+\newpage
+\chapter*{\centering{\MakeUppercase{CHƯƠNG 1. TỔNG QUAN ĐỀ TÀI VÀ CÔNG NGHỆ}}}
+\addcontentsline{toc}{chapter}{\textcolor{fitblue}{\MakeUppercase{CHƯƠNG 1. TỔNG QUAN ĐỀ TÀI VÀ CÔNG NGHỆ}}}
+
+\section*{1.1. Giới thiệu đề tài}
+\addcontentsline{toc}{section}{\textcolor{black}{1.1. Giới thiệu đề tài}}
+
+\subsection*{1.1.1. Bối cảnh, lý do chọn đề tài}
+\addcontentsline{toc}{subsection}{\textcolor{black}{1.1.1. Bối cảnh, lý do chọn đề tài}}
+
+\begin{itemize}
+    \item \textbf{Bối cảnh thực hiện:} Đề tài được phát triển trong khuôn khổ môn học Cơ sở lập trình tại Trường Đại học Khoa học Tự nhiên TP.HCM. Dự án không chỉ là bài tập vận dụng kiến thức về xử lý mảng, con trỏ và tệp tin, mà còn là thử thách trong việc quản lý bộ nhớ và tối ưu hóa hiệu năng trong môi trường Windows.
+    \item \textbf{Sự phổ biến của trò chơi:} Cờ Caro là một trò chơi trí tuệ kinh điển, sở hữu luật chơi đơn giản nhưng chứa đựng không gian trạng thái khổng lồ, là mảnh đất màu mỡ để thử nghiệm các thuật toán tìm kiếm và trí tuệ nhân tạo.
+    \item \textbf{Lý do chọn đề tài:} 
+    \begin{itemize}
+        \item \textit{Đổi mới sáng tạo:} Dự án xóa bỏ sự khô khan của bàn cờ truyền thống bằng việc "gamification" – kết hợp không khí kịch tính của bóng đá thế giới, tạo ra sự giao thoa độc đáo giữa trò chơi dân gian và thể thao hiện đại.
+        \item \textit{Thử thách kỹ năng:} Việc xây dựng một ứng dụng Win32 hoàn chỉnh đòi hỏi khả năng tổ chức mã nguồn theo mô hình hướng mô-đun, xử lý sự kiện hệ thống và phối hợp đa luồng.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{1.1.2. Mục tiêu kỹ thuật và giá trị giải trí}
+\addcontentsline{toc}{subsection}{\textcolor{black}{1.1.2. Mục tiêu kỹ thuật và giá trị giải trí}}
+
+\begin{itemize}
+    \item \textbf{Mục tiêu kỹ thuật:}
+    \begin{itemize}
+        \item \textit{Đồ họa cao cấp:} Ứng dụng tiêu chuẩn ngôn ngữ C++17 cùng thư viện GDI+ để xây dựng hệ thống render. Áp dụng kỹ thuật \textbf{Caching System} cho tài nguyên đồ họa và phương pháp \textbf{Flicker-free rendering} (Double Buffering) để đạt trải nghiệm FPS ổn định.
+        \item \textit{Trí tuệ nhân tạo:} Cài đặt Bot AI với \textbf{Alpha-Beta Pruning} kết hợp \textbf{Zobrist Hashing} và \textbf{Transposition Table} (kèm sắp xếp nước đi), tối ưu không gian tìm kiếm ở mức độ khó.
+        \item \textit{Xử lý song song:} Hệ thống âm thanh chạy trên luồng phụ với \texttt{std::thread} và \texttt{std::condition\_variable}, xử lý hàng đợi hiệu ứng âm thanh để không gây nghẽn luồng giao diện chính.
+        \item \textit{Kiến trúc dữ liệu:} Cơ chế lưu/khôi phục trạng thái trận đấu bằng tệp nhị phân, bảo toàn dữ liệu ván chơi.
+    \end{itemize}
+
+    \item \textbf{Giá trị trải nghiệm và giải trí:}
+    \begin{itemize}
+        \item \textit{Hệ thống nhân vật:} Sử dụng phong cách đồ họa \textbf{Pixel Art} mô phỏng các huyền thoại bóng đá (Ronaldo, Messi, Neymar), được render từ các tệp dữ liệu cấu trúc tự định nghĩa thay vì ảnh bitmap tĩnh.
+        \item \textit{Tính tương tác:} Giao diện hỗ trợ đa ngôn ngữ, tích hợp hệ thống \textbf{Match Statistics} (thống kê tỷ lệ kiểm soát, lịch sử nước đi) tạo cảm giác chuyên nghiệp như một giải đấu thực thụ.
+        \item \textit{Thẩm mỹ hiện đại:} Áp dụng ngôn ngữ thiết kế \textbf{Glassmorphism} với các lớp nền kính mờ, gradient và hiệu ứng chuyển động nhẹ (nhấp nháy khán đài, nhấn nhá con trỏ, highlight ô thắng) giúp giao diện sống động và lôi cuốn.
+    \end{itemize}
+\end{itemize}
+
+
+\section*{1.2. Phạm vi và ràng buộc}
+\addcontentsline{toc}{section}{\textcolor{black}{1.2. Phạm vi và ràng buộc}}
+
+\subsection*{1.2.1. Phạm vi chức năng chính}
+\addcontentsline{toc}{subsection}{\textcolor{black}{1.2.1. Phạm vi chức năng chính}}
+
+\noindent \indent Đề tài tập trung xây dựng một hệ thống trò chơi hoàn chỉnh với các nhóm chức năng trọng tâm sau:
+
+\begin{itemize}
+    \item \textbf{Cơ chế thi đấu:}
+    \begin{itemize}
+        \item Hỗ trợ hai chế độ chơi cơ bản: Đối kháng trực tiếp giữa hai người chơi hoặc đối đầu với trí tuệ nhân tạo.
+        \item Cung cấp hai biến thể luật chơi: Cờ Caro truyền thống trên bàn cờ kích thước 15x15 và Cờ Caro rút gọn trên bàn cờ 3x3.
+        \item Hệ thống tính điểm theo thể thức chuỗi trận, cho phép người chơi thiết lập mục tiêu thắng trước một số ván nhất định để kết thúc trận đấu.
+    \end{itemize}
+
+    \item \textbf{Hệ thống trí tuệ nhân tạo:}
+    \begin{itemize}
+        \item Xây dựng ba cấp độ khó khác nhau: Cấp độ dễ sử dụng phương pháp chọn nước đi ngẫu nhiên; cấp độ trung bình và khó ứng dụng thuật toán tìm kiếm tối ưu kết hợp với các bộ hàm lượng giá bàn cờ chuyên sâu.
+        \item Tích hợp cơ chế lưu trữ các trạng thái bàn cờ đã tính toán để tăng tốc độ phản hồi trong các tình huống phức tạp.
+    \end{itemize}
+
+    \item \textbf{Quản lý dữ liệu và trạng thái:}
+    \begin{itemize}
+        \item Cho phép người chơi tạm dừng và lưu lại trạng thái trận đấu hiện tại vào bộ nhớ để tiếp tục vào lần sau.
+        \item Chức năng hoàn tác và thực hiện lại cho phép người chơi điều chỉnh các nước đi sai sót trong quá trình thi đấu.
+        \item Hệ thống lưu trữ thông tin người dùng bao gồm tên hiệu, hình đại diện và các thông số thống kê trận đấu.
+    \end{itemize}
+
+    \item \textbf{Tương tác và giao diện:}
+    \begin{itemize}
+        \item Giao diện người dùng hỗ trợ hoàn toàn hai ngôn ngữ: Tiếng Việt và Tiếng Anh.
+        \item Hệ thống cài đặt cho phép tinh chỉnh các thông số về âm thanh nền, hiệu ứng đặc biệt và thời gian giới hạn cho mỗi lượt đi.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{1.2.2. Ràng buộc hiệu năng và nền tảng}
+\addcontentsline{toc}{subsection}{\textcolor{black}{1.2.2. Ràng buộc hiệu năng và nền tảng}}
+
+\noindent \indent Để đảm bảo tính ổn định và trải nghiệm mượt mà, dự án tuân thủ các ràng buộc kỹ thuật sau:
+
+\begin{itemize}
+    \item \textbf{Nền tảng phát triển:} 
+    \begin{itemize}
+        \item Ứng dụng được thiết kế chạy trên hệ điều hành Windows, sử dụng giao diện lập trình ứng dụng Win32 và tiêu chuẩn ngôn ngữ chuyên dụng để đảm bảo hiệu suất tối đa ở mức phần cứng.
+    \end{itemize}
+
+    \item \textbf{Hiệu năng xử lý đồ họa:}
+    \begin{itemize}
+        \item Hoạt động hiển thị phải đạt tốc độ 60 khung hình trên giây để đảm bảo các hiệu ứng chuyển động và hoạt cảnh diễn ra mượt mà.
+        \item Áp dụng kỹ thuật vùng đệm kép và cơ chế bộ nhớ đệm tài nguyên để triệt tiêu hiện tượng nháy màn hình và giảm tải cho bộ vi xử lý trung tâm.
+    \end{itemize}
+
+    \item \textbf{Xử lý đa luồng và phản hồi:}
+    \begin{itemize}
+        \item Các tác vụ nặng như tính toán nước đi của máy hoặc tái tạo âm thanh phải được xử lý trên các luồng độc lập, không được phép gây nghẽn luồng xử lý giao diện chính.
+        \item Thời gian phản hồi của máy ở cấp độ khó nhất không được vượt quá 2 giây cho mỗi nước đi nhằm duy trì nhịp độ trận đấu.
+    \end{itemize}
+
+    \item \textbf{Quản lý tài nguyên:}
+    \begin{itemize}
+        \item Toàn bộ dữ liệu trận đấu và cấu hình người dùng được lưu dưới dạng tệp nhị phân nhằm tối ưu hóa không gian lưu trữ và hạn chế can thiệp chỉnh sửa thủ công từ bên ngoài.
+    \end{itemize}
+\end{itemize}
+
+
+\section*{1.3. Công nghệ và môi trường triển khai}
+\addcontentsline{toc}{section}{\textcolor{black}{1.3. Công nghệ và môi trường triển khai}}
+
+\noindent \indent Dự án được xây dựng dựa trên sự kết hợp giữa hiệu năng mạnh mẽ của ngôn ngữ lập trình hệ thống và tính ổn định của các thư viện đồ họa tích hợp sẵn trên nền tảng Windows.
+
+\subsection*{1.3.1. C++17 và tư duy lập trình mô-đun}
+\addcontentsline{toc}{subsection}{\textcolor{black}{1.3.1. C++17 và tư duy lập trình mô-đun}}
+
+\begin{itemize}
+    \item \textbf{Tiêu chuẩn ngôn ngữ C++17:} Dự án khai thác các tính năng hiện đại của ngôn ngữ C++17 nhằm tăng cường độ an toàn và hiệu suất xử lý. Việc sử dụng các cấu trúc dữ liệu tối ưu giúp quản lý bộ nhớ hiệu quả và giảm thiểu sai sót trong quá trình thao tác với các thực thể phức tạp (như bảng băm cho AI hoặc bộ đệm tài nguyên đồ họa).
+    \item \textbf{Tư duy lập trình mô-đun:} Mã nguồn được phân tách một cách khoa học thành các phân hệ chức năng độc lập, giúp việc bảo trì và mở rộng trở nên dễ dàng:
+    \begin{itemize}
+        \item \textit{Phân hệ Logic (\texttt{GameLogic}):} Chứa các quy tắc trò chơi và bộ não trí tuệ nhân tạo, hoàn toàn độc lập với phần hiển thị.
+        \item \textit{Phân hệ Hiển thị (\texttt{RenderAPI}):} Quản lý các hàm vẽ cấp thấp, xử lý mô hình điểm ảnh và các hiệu ứng hình ảnh đạo cụ.
+        \item \textit{Phân hệ Quản lý màn hình (\texttt{ScreenModules}):} Điều khiển luồng chuyển động giữa các trạng thái của ứng dụng theo mô hình máy trạng thái hữu hạn.
+        \item \textit{Phân hệ Hệ thống (\texttt{SystemModules}):} Đảm nhiệm các tác vụ phụ trợ như âm thanh, cấu hình tệp tin và đa ngôn ngữ.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{1.3.2. Win32 API + GDI+ cho đồ họa 2D}
+\addcontentsline{toc}{subsection}{\textcolor{black}{1.3.2. Win32 API + GDI+ cho đồ họa 2D}}
+
+\noindent \indent Sự kết hợp giữa Win32 API và thư viện GDI+ mang lại khả năng kiểm soát tuyệt đối trên kiến trúc Windows mà không cần phụ thuộc vào bên thứ ba:
+
+\begin{itemize}
+    \item \textbf{Win32 API:} Được sử dụng để thiết lập cửa sổ ứng dụng, quản lý hàng chờ thông điệp hệ thống và xử lý các sự kiện từ bàn phím. Hệ thống sử dụng bộ hẹn giờ độ phân giải cao để đảm bảo nhịp độ logic của trò chơi không bị biến động theo cấu hình phần cứng.
+    \item \textbf{GDI+ (Graphics Device Interface Plus):} Đóng vai trò là công cụ render chính cho toàn bộ trò chơi:
+    \begin{itemize}
+        \item Hỗ trợ các chế độ trộn màu phức tạp, độ trong suốt cho các thành phần kính mờ và kỹ thuật khử răng cưa giúp hình ảnh Pixel Art sắc nét nhưng vẫn mềm mại.
+        \item Khả năng xử lý các loại bút vẽ dải màu giúp tạo nên không gian sân vận động có chiều sâu, vượt qua giới hạn của các ứng dụng vẽ cửa sổ thông thường.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{1.3.3. Visual Studio, cấu hình build và quản lý phiên bản}
+\addcontentsline{toc}{subsection}{\textcolor{black}{1.3.3. Visual Studio, cấu hình build và quản lý phiên bản}}
+
+\begin{itemize}
+    \item \textbf{Môi trường phát triển tích hợp (IDE):} Dự án sử dụng Microsoft Visual Studio 2022. Đây là công cụ hỗ trợ mạnh mẽ nhất cho lập trình Win32 với các tính năng gỡ lỗi trực quan, phân tích hiệu năng và quản lý tài nguyên hệ thống đồng bộ.
+    \item \textbf{Cấu hình Build:}
+    \begin{itemize}
+        \item \textit{Bộ biên dịch:} Tối ưu hóa cho kiến trúc 64-bit nhằm khai thác tối đa sức mạnh của các bộ vi xử lý hiện đại.
+        \item \textit{Chế độ tối ưu hóa:} Sử dụng cấu hình phát hành để nén mã nguồn, loại bỏ các chỉ thị gỡ lỗi thừa, giúp ứng dụng có dung lượng nhỏ gọn và tốc độ khởi chạy tức thì.
+    \end{itemize}
+    \item \textbf{Quản lý phiên bản:} Toàn bộ quá trình phát triển được kiểm soát thông qua hệ thống quản lý phiên bản Git. Điều này giúp nhóm lưu trữ lịch sử thay đổi, phối hợp làm việc trên các nhánh chức năng khác nhau và đảm bảo mã nguồn luôn ở trạng thái ổn định trước khi tích hợp các tính năng mới.
+\end{itemize}
+
+
+\section*{1.4. Tổng quan chức năng hệ thống}
+\addcontentsline{toc}{section}{\textcolor{black}{1.4. Tổng quan chức năng hệ thống}}
+
+\noindent \indent Hệ thống được thiết kế nhằm cung cấp một trải nghiệm trò chơi Caro hoàn chỉnh, từ việc thi đấu, quản lý dữ liệu đến bộ máy phân tích số liệu trận đấu chuyên nghiệp.
+
+\subsection*{1.4.1. PvP, PvE và các mức độ trí tuệ nhân tạo}
+\addcontentsline{toc}{subsection}{\textcolor{black}{1.4.1. PvP, PvE và các mức độ trí tuệ nhân tạo}}
+
+\noindent \indent Trò chơi cung cấp khả năng tùy biến linh hoạt giữa các hình thức đối đầu, đáp ứng nhu cầu giải trí cá nhân hoặc thi đấu nhóm:
+
+\begin{itemize}
+    \item \textbf{Chế độ Người đấu Người (PvP):} Hai người chơi có thể thi đấu trực tiếp trên cùng một thiết bị. Hệ thống cho phép cá nhân hóa tên hiệu, hình đại diện (theo phong cách các cầu thủ huyền thoại) và chọn quân cờ đại diện.
+    \item \textbf{Chế độ Người đấu Máy (PvE):} Người chơi thử thách kỹ năng trước hệ thống AI được xây dựng theo ba cấp độ mang tính phân loại cao:
+    \begin{itemize}
+        \item \textit{Cấp độ Đồng (Dễ):} Máy thực hiện các nước đi cơ bản, ưu tiên chặn các chuỗi ngắn và tạo cơ hội cho người chơi làm quen với giao diện.
+        \item \textit{Cấp độ Vàng (Trung bình):} AI bắt đầu biết dàn trận, nhận diện các thế cờ nguy hiểm và thực hiện các chiến thuật tấn công dồn dập khi có lỗ hổng.
+        \item \textit{Cấp độ Thách đấu (Khó):} Đây là mức độ cao nhất ứng dụng thuật toán tìm kiếm theo chiều sâu. AI có khả năng đọc trước nhiều nước đi, sử dụng bộ nhớ trạng thái để đưa ra các phản hồi mang tính chiến lược cao, thách thức ngay cả những người chơi chuyên nghiệp.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{1.4.2. Lưu/Tải, Hoàn tác/Thực hiện lại và Hệ thống Thống kê}
+\addcontentsline{toc}{subsection}{\textcolor{black}{1.4.2. Lưu/Tải, Hoàn tác/Thực hiện lại và Hệ thống Thống kê}}
+
+\noindent \indent Bên cạnh lõi trò chơi, các chức năng quản trị được thiết kế đồng bộ nhằm tối ưu hóa trải nghiệm người dùng và cung cấp cái nhìn chi tiết về hiệu suất thi đấu:
+
+\begin{itemize}
+    \item \textbf{Quản lý trạng thái trận đấu:}
+    \begin{itemize}
+        \item \textit{Lưu/Tải:} Hệ thống cung cấp 05 vị trí lưu trữ độc lập (Slot). Dữ liệu được đóng gói vào tệp tin nhị phân (.bin) bao gồm: Toàn bộ ma trận bàn cờ, thông tin chi tiết của hai tuyển thủ (tên, ảnh đại diện, số bàn thắng), lịch sử nước đi và các cấu hình trận đấu (thể thức BoX, độ khó AI). Chức năng này cho phép người chơi không chỉ tải lại mà còn có thể đổi tên nhãn bản lưu hoặc xóa bỏ để tối ưu không gian.
+        \item \textit{Hoàn tác/Thực hiện lại:} Tính năng này được lập trình thông minh để thích ứng với từng chế độ. Trong chế độ Người đấu Máy, khi thực hiện Hoàn tác, hệ thống sẽ lùi lại 02 bước đi cùng lúc để trả lượt về đúng vị trí của người chơi; trong khi ở chế độ Đối kháng, việc lùi bước diễn ra tuần tự. Toàn bộ các chỉ số về lượt đánh và thời gian đếm ngược sẽ được khôi phục tương ứng.
+    \end{itemize}
+    
+    \item \textbf{Hệ thống Thống kê:} Phản ánh đúng tinh thần bóng đá, hệ thống ghi nhận và phân tích các chỉ số vận động thực tế của từng tuyển thủ tại màn hình Tổng kết ván đấu:
+    \begin{itemize}
+        \item \textit{Dẫn bóng:} Thống kê tổng số nước đi mà cầu thủ đã thực hiện trên sân cỏ, phản ánh cường độ điều phối trận đấu.
+        \item \textit{Giữ bóng:} Tính toán tổng thời gian tích lũy (theo giây) mà người chơi nắm quyền kiểm soát lượt đi. Đây là chỉ số quan trọng để đánh giá khả năng làm chủ nhịp độ trận đấu.
+        \item \textit{Bàn thắng:} Số ván thắng mà cầu thủ đã ghi được trong loạt trận hiện tại để tiến tới Cup vô địch.
+        \item \textit{Thủng lưới:} Số ván thua phản ánh sơ hở trong hệ thống phòng ngự của cầu thủ trước đối phương.
+        \item \textit{Thể thức chuỗi trận:} Theo dõi số trận thắng chung cuộc (Bo1, Bo3, Bo5) để vinh danh nhà vô địch sau cùng của giải đấu.
+        \item \textit{Thời lượng trận đấu:} Tổng thời gian thực tế diễn ra cuộc đối đầu, giúp đánh giá độ kịch tính và dai sức của các tuyển thủ.
+    \end{itemize}
+\end{itemize}
+

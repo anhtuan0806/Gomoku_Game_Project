@@ -9,7 +9,7 @@
 // Thời gian cho Animation toàn cục
 extern float g_GlobalAnimTime;
 
-// Struct quản lý trạng thái diễn hoạt (Mới - V5)
+// Struct quản lý trạng thái diễn hoạt
 struct PlayerState
 {
     int avatarType = 0;
@@ -20,7 +20,7 @@ struct PlayerState
     bool flipH = false;
 };
 
-// Cấu trúc chứa dữ liệu Ma Trận Pixel (Modular)
+// Cấu trúc chứa dữ liệu Ma Trận Pixel
 struct PixelModel
 {
     int width = 0;
@@ -37,15 +37,16 @@ void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int cx, int c
 // Vẽ văn bản căn giữa trong khoảng [leftX, rightX]
 void DrawTextCentered(HDC hdc, const std::wstring &text, int y, int rightX, COLORREF color, HFONT hFont = nullptr, int leftX = 0);
 
-// Vẽ nền sân vận động bằng giải thuật thay cho ảnh PNG
+// Vẽ nền sân vận động bằng giải thuật
 // showFlashes: chỉ bật true ở MenuScreen để hiệu ứng khán đài nhấp nháy
-void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeight, bool showFlashes = false);
+// animate: tắt để dùng nền tĩnh (tiết kiệm CPU)
+void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeight, bool showFlashes = false, bool animate = true);
 
-// Vẽ Avatar cầu thủ theo kiểu Pixel Art 8x8 từ ma trận số (hỗ trợ 9 avatar: 0-8)
+// Vẽ Avatar cầu thủ theo kiểu Pixel Art 8x8 từ ma trận số
 void DrawPixelAvatar(Gdiplus::Graphics &g, int x, int y, int size, int avatarType);
 Gdiplus::Color GetPaletteColor(int type, int code);
 
-// Vẽ hoạt họa theo thư mục Hành động mới (V5)
+// Vẽ hoạt họa theo thư mục Hành động
 void DrawPixelAction(Gdiplus::Graphics &g, int x, int y, int size, PlayerState &state);
 
 // Vẽ hoạt họa Pixel chuyên dụng cho Khán Đài

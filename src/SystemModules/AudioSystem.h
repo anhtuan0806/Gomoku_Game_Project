@@ -1,14 +1,17 @@
-﻿#pragma once
+#pragma once
 #include <string>
+
+void SFXWorker(); // Hàm luồng nền xử lý SFX
+void PreLoad(const std::string& filepath, const std::string& alias);
 
 // Nạp tất cả âm thanh vào bộ nhớ lúc mở game
 void InitAudioSystem();
 
 void PlayBGM(const std::string& filepath);
 void StopBGM();
-void UpdateBGMVolume();
+void UpdateBGMVolume(bool force = false);
 
-// Chỉnh lại hàm PlaySFX chỉ nhận alias (vì đã nạp sẵn rồi)
+// hàm PlaySFX chỉ nhận alias (vì đã nạp sẵn rồi)
 void PlaySFX(const std::string& alias);
 void StopSFX(const std::string& alias);
 

@@ -1,0 +1,610 @@
+\newpage
+\chapter*{\centering{\MakeUppercase{CHƯƠNG 8. MÔ-ĐUN HỆ THỐNG PHỤ TRỢ}}}
+\addcontentsline{toc}{chapter}{\textcolor{fitblue}{\MakeUppercase{CHƯƠNG 8. MÔ-ĐUN HỆ THỐNG PHỤ TRỢ}}}
+\setlength{\parindent}{1.5em}
+
+\section*{8.1. Lưu trữ và serialization}
+\addcontentsline{toc}{section}{\textcolor{black}{8.1. Lưu trữ và serialization}}
+
+\setlength{\parindent}{1.5em} Hệ thống lưu/đọc ván đấu được triển khai trong mô-đun \texttt{SaveLoadSystem}. Mục tiêu là lưu trữ đầy đủ trạng thái trận đấu (PlayState) dưới dạng binary để tốc độ đọc/ghi nhanh, đồng thời có khả năng tương thích phiên bản và chống lỗi file \cite{ms_cpp_language_ref}. Cấu trúc dữ liệu lưu giữ bao gồm các trường POD (game mode, thời gian, bàn cờ, lượt, v.v.) và các trường động (thông tin người chơi, lịch sử nước đi, redo stack, danh sách ô thắng).
+
+\setlength{\parindent}{1.5em} Thiết kế ưu tiên tốc độ I/O: dữ liệu được ghi theo thứ tự tuyến tính, hạn chế chuyển đổi trung gian. Việc dùng định dạng binary giúp file nhỏ hơn so với JSON/XML, giảm thời gian đọc/ghi và ít gây phân mảnh dữ liệu trong quá trình lưu liên tục. Hệ thống cũng đảm bảo tính nhất quán bằng cách coi việc ghi/đọc như một giao thức tuần tự: chỉ cần sai lệch thứ tự hoặc độ dài là quá trình đọc sẽ dừng sớm và trả về lỗi, tránh gây hỏng trạng thái trong bộ nhớ.
+
+\subsection*{8.1.1. Binary Save: magic, version và chuỗi Unicode}
+\addcontentsline{toc}{subsection}{\textcolor{black}{8.1.1. Binary Save: magic, version và chuỗi Unicode}}
+
+\setlength{\parindent}{1.5em} File lưu bắt đầu bằng \texttt{SAVE\_MAGIC} và \texttt{SAVE\_VERSION} nhằm xác thực tính hợp lệ và cho phép nâng cấp cấu trúc theo thời gian. Chuỗi tiếng Việt được lưu bằng \texttt{std::wstring} để đảm bảo hiển thị đúng dấu, trong khi avatar path dùng \texttt{std::string}. Các hàm hỗ trợ \texttt{WriteWStr/ReadWStr} và \texttt{WriteStr/ReadStr} giúp thống nhất quy ước ghi độ dài trước khi ghi dữ liệu thô.
+
+\setlength{\parindent}{1.5em} Tổ hợp \texttt{magic + version} đóng vai trò như chữ ký file và mốc phát triển định dạng. Nhờ đó, hệ thống có thể từ chối các file không thuộc trò chơi hoặc file bị sửa tay. Việc lưu chuỗi theo định dạng \texttt{[len][data]} giúp tránh đọc tràn, đồng thời giữ được ký tự Unicode đầy đủ. Các giới hạn độ dài (4096 ký tự) đóng vai trò bộ lọc an toàn trong trường hợp file bị hỏng hoặc bị chèn dữ liệu rác.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Ghi/đọc chuỗi Unicode kèm độ dài}
+\label{lst:ch8_write_read_wstr}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{static} \cppkw{void} WriteWStr(std::ofstream\& f, \cppkw{const} std::wstring\& s) \{ \\ \hline
+2 & \ \ \cppkw{uint32\_t} len = (\cppkw{uint32\_t})s.size(); \\ \hline
+3 & \ \ f.write(reinterpret\_cast<\cppkw{const} char*>(\&len), \cppkw{sizeof}(len)); \\ \hline
+4 & \ \ \cppkw{if} (len > 0) \{ \\ \hline
+5 & \ \ \ \ f.write(reinterpret\_cast<\cppkw{const} char*>(s.data()), len * \cppkw{sizeof}(wchar\_t)); \\ \hline
+6 & \ \ \} \\ \hline
+7 & \} \\ \hline
+8 & \cppkw{static} \cppkw{bool} ReadWStr(std::ifstream\& f, std::wstring\& s) \{ \\ \hline
+9 & \ \ \cppkw{uint32\_t} len = 0; \\ \hline
+10 & \ \ \cppkw{if} (!f.read(reinterpret\_cast<char*>(\&len), \cppkw{sizeof}(len))) \cppkw{return} \cppkw{false}; \\ \hline
+11 & \ \ \cppkw{if} (len > 4096) \cppkw{return} \cppkw{false}; \\ \hline
+12 & \ \ s.resize(len); \\ \hline
+13 & \ \ \cppkw{if} (len > 0 \&\& !f.read(reinterpret\_cast<char*>(\&s[0]), len * \cppkw{sizeof}(wchar\_t))) \cppkw{return} \cppkw{false}; \\ \hline
+14 & \ \ \cppkw{return} \cppkw{true}; \\ \hline
+15 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Độ dài chuỗi được giới hạn (4096 ký tự) để tránh file lỗi hoặc dữ liệu rác gây tràn bộ nhớ khi đọc.
+
+\subsection*{8.1.2. Serialize PlayerInfo2 và các vector động}
+\addcontentsline{toc}{subsection}{\textcolor{black}{8.1.2. Serialize PlayerInfo2 và các vector động}}
+
+\setlength{\parindent}{1.5em} Đối tượng người chơi \texttt{PlayerInfo2} chứa cả dữ liệu tĩnh (tên, avatar, ký hiệu quân) và dữ liệu động theo ván (wins, số nước đi, thời gian). Hệ thống ghi theo thứ tự cố định; khi đọc sẽ dựa vào \texttt{SAVE\_VERSION} để quyết định có tồn tại các trường mới hay không. Với các mảng động như \texttt{winningCells}, \texttt{matchHistory}, \texttt{redoStack}, hệ thống ghi số lượng phần tử rồi ghi mảng thô.
+
+\setlength{\parindent}{1.5em} Việc tuần tự hóa \texttt{PlayerInfo2} tách rõ phần "dữ liệu nhận diện" (name, avatar, piece) và phần "thống kê" (wins, moves, time). Nhờ đó, khi bổ sung trường mới ở phiên bản sau, hệ thống vẫn có thể gán giá trị mặc định trong quá trình đọc để tránh rác bộ nhớ. Các vector động được ghi bằng \texttt{WriteVec} với độ dài trước, giúp phục hồi chính xác số phần tử và tránh đọc sai biên.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Serialize PlayerInfo2 theo phiên bản}
+\label{lst:ch8_serialize_player}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{static} \cppkw{void} WritePlayer(std::ofstream\& f, \cppkw{const} PlayerInfo2\& p) \{ \\ \hline
+2 & \ \ WriteWStr(f, p.name); \\ \hline
+3 & \ \ WriteStr(f, p.avatarPath); \\ \hline
+4 & \ \ f.write(\&p.piece, \cppkw{sizeof}(p.piece)); \\ \hline
+5 & \ \ f.write(reinterpret\_cast<\cppkw{const} char*>(\&p.totalWins), \cppkw{sizeof}(p.totalWins)); \\ \hline
+6 & \ \ f.write(reinterpret\_cast<\cppkw{const} char*>(\&p.matchWins), \cppkw{sizeof}(p.matchWins)); \\ \hline
+7 & \ \ f.write(reinterpret\_cast<\cppkw{const} char*>(\&p.movesCount), \cppkw{sizeof}(p.movesCount)); \\ \hline
+8 & \ \ f.write(reinterpret\_cast<\cppkw{const} char*>(\&p.maxTurnTime), \cppkw{sizeof}(p.maxTurnTime)); \\ \hline
+9 & \ \ f.write(reinterpret\_cast<\cppkw{const} char*>(\&p.totalTimePossessed), \cppkw{sizeof}(p.totalTimePossessed)); \\ \hline
+10 & \} \\ \hline
+11 & \cppkw{static} \cppkw{bool} ReadPlayer(std::ifstream\& f, PlayerInfo2\& p, \cppkw{uint32\_t} version) \{ \\ \hline
+12 & \ \ \cppkw{if} (!ReadWStr(f, p.name)) \cppkw{return} \cppkw{false}; \\ \hline
+13 & \ \ \cppkw{if} (!ReadStr(f, p.avatarPath)) \cppkw{return} \cppkw{false}; \\ \hline
+14 & \ \ \cppkw{if} (!f.read(\&p.piece, \cppkw{sizeof}(p.piece))) \cppkw{return} \cppkw{false}; \\ \hline
+15 & \ \ \cppkw{if} (!f.read(reinterpret\_cast<char*>(\&p.totalWins), \cppkw{sizeof}(p.totalWins))) \cppkw{return} \cppkw{false}; \\ \hline
+16 & \ \ \cppkw{if} (version >= 5) \{ \cppkw{if} (!f.read(reinterpret\_cast<char*>(\&p.matchWins), \cppkw{sizeof}(p.matchWins))) \cppkw{return} \cppkw{false}; \} \cppkw{else} \{ p.matchWins = 0; \} \\ \hline
+17 & \ \ \cppkw{if} (!f.read(reinterpret\_cast<char*>(\&p.movesCount), \cppkw{sizeof}(p.movesCount))) \cppkw{return} \cppkw{false}; \\ \hline
+18 & \ \ \cppkw{if} (!f.read(reinterpret\_cast<char*>(\&p.maxTurnTime), \cppkw{sizeof}(p.maxTurnTime))) \cppkw{return} \cppkw{false}; \\ \hline
+19 & \ \ \cppkw{if} (version >= 5) \{ \\ \hline
+20 & \ \ \ \cppkw{if} (!f.read(reinterpret\_cast<char*>(\&p.totalTimePossessed), \cppkw{sizeof}(p.totalTimePossessed))) \cppkw{return} \cppkw{false}; \} \\ \hline
+21 & \ \ \ \cppkw{else} \{ p.totalTimePossessed = 0.0f; \} \\ \hline
+22 & \ \ \cppkw{return} \cppkw{true}; \\ \hline
+23 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Cách đọc có điều kiện theo phiên bản giúp các bản lưu cũ vẫn mở được mà không gây crash. Đây là cơ chế then chốt để duy trì tính tương thích ngược khi game mở rộng tính năng.
+
+\subsection*{8.1.3. Save/Load toàn bộ PlayState}
+\addcontentsline{toc}{subsection}{\textcolor{black}{8.1.3. Save/Load toàn bộ PlayState}}
+
+\setlength{\parindent}{1.5em} Hàm \texttt{SaveMatchData} ghi toàn bộ \texttt{PlayState} vào file binary, từ thông tin meta (tên bản lưu, timestamp) đến dữ liệu trận đấu. Ngược lại, \texttt{LoadMatchData} đọc dữ liệu, kiểm tra \texttt{SAVE\_MAGIC} và \texttt{SAVE\_VERSION}, sau đó lần lượt khôi phục trạng thái.
+
+\setlength{\parindent}{1.5em} Điểm quan trọng là các trường POD được ghi theo đúng thứ tự mà mã nguồn định nghĩa trong \texttt{SaveMatchData} (tuần tự cố định). Điều này giúp thao tác đọc nhanh (sequential read) và dễ kiểm soát lỗi. Khi xảy ra lỗi đọc ở bất kỳ bước nào, hàm trả về \texttt{false} để tầng trên quyết định xử lý (ví dụ: báo file lỗi hoặc tự reset ván).
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Ghi trạng thái trận đấu ra file nhị phân}
+\label{lst:ch8_save_match}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{bool} SaveMatchData(\cppkw{const} PlayState* state, \cppkw{const} std::wstring\& filename) \{ \\ \hline
+2 & \ \ CreateDirectoryW(L"Asset", NULL); \\ \hline
+3 & \ \ CreateDirectoryW(L"Asset/save", NULL); \\ \hline
+4 & \ \ std::ofstream file(filename, std::ios::binary); \\ \hline
+5 & \ \ \cppkw{if} (!file.is\_open()) \cppkw{return} \cppkw{false}; \\ \hline
+6 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&SAVE\_MAGIC), \cppkw{sizeof}(SAVE\_MAGIC)); \\ \hline
+7 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&SAVE\_VERSION), \cppkw{sizeof}(SAVE\_VERSION)); \\ \hline
+8 & \ \ WriteWStr(file, state->saveName); \\ \hline
+9 & \ \ \textcolor{dkgreen}{// Tự tạo timestamp nếu chưa có} \\ \hline
+10 & \ \ \cppkw{if} (state->saveTimestamp.empty()) \{ \ldots \} \\ \hline
+11 & \ \ WriteWStr(file, ts); \\ \hline
+12 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->gameMode), \cppkw{sizeof}(state->gameMode)); \\ \hline
+13 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->matchType), \cppkw{sizeof}(state->matchType)); \\ \hline
+14 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->isP1Turn), \cppkw{sizeof}(state->isP1Turn)); \\ \hline
+15 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->countdownTime), \cppkw{sizeof}(state->countdownTime)); \\ \hline
+16 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->timeRemaining), \cppkw{sizeof}(state->timeRemaining)); \\ \hline
+17 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->boardSize), \cppkw{sizeof}(state->boardSize)); \\ \hline
+18 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(state->board), \cppkw{sizeof}(state->board)); \\ \hline
+19 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->cursorRow), \cppkw{sizeof}(state->cursorRow)); \\ \hline
+20 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->cursorCol), \cppkw{sizeof}(state->cursorCol)); \\ \hline
+21 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->lastMoveRow), \cppkw{sizeof}(state->lastMoveRow)); \\ \hline
+22 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->lastMoveCol), \cppkw{sizeof}(state->lastMoveCol)); \\ \hline
+23 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->status), \cppkw{sizeof}(state->status)); \\ \hline
+24 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->winner), \cppkw{sizeof}(state->winner)); \\ \hline
+25 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->difficulty), \cppkw{sizeof}(state->difficulty)); \\ \hline
+26 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->targetScore), \cppkw{sizeof}(state->targetScore)); \\ \hline
+27 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->matchDuration), \cppkw{sizeof}(state->matchDuration)); \\ \hline
+28 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->p1TotalTimeLeft), \cppkw{sizeof}(state->p1TotalTimeLeft)); \\ \hline
+29 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->p2TotalTimeLeft), \cppkw{sizeof}(state->p2TotalTimeLeft)); \\ \hline
+30 & \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(\&state->isMatchTimed), \cppkw{sizeof}(state->isMatchTimed)); \\ \hline
+31 & \ \ WritePlayer(file, state->p1); \\ \hline
+32 & \ \ WritePlayer(file, state->p2); \\ \hline
+33 & \ \ WriteVec(file, state->winningCells); \\ \hline
+34 & \ \ WriteVec(file, state->matchHistory); \\ \hline
+35 & \ \ WriteVec(file, state->redoStack); \\ \hline
+36 & \ \ file.close(); \\ \hline
+37 & \ \ \cppkw{return} \cppkw{true}; \\ \hline
+21 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Khi đọc dữ liệu, hệ thống trả về \texttt{false} nếu file lỗi hoặc không đúng phiên bản yêu cầu. Việc đọc theo thứ tự cố định đảm bảo mọi trường dữ liệu được phục hồi chính xác.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Đọc và khôi phục trạng thái trận đấu}
+\label{lst:ch8_load_match}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{bool} LoadMatchData(PlayState* state, \cppkw{const} std::wstring\& filename) \{ \\ \hline
+2 & \ \ std::ifstream file(filename, std::ios::binary); \\ \hline
+3 & \ \ \cppkw{if} (!file.is\_open()) \cppkw{return} \cppkw{false}; \\ \hline
+4 & \ \ \cppkw{uint32\_t} magic = 0, version = 0; \\ \hline
+5 & \ \ file.read(reinterpret\_cast<char*>(\&magic), \cppkw{sizeof}(magic)); \\ \hline
+6 & \ \ file.read(reinterpret\_cast<char*>(\&version), \cppkw{sizeof}(version)); \\ \hline
+7 & \ \ \cppkw{if} (magic != SAVE\_MAGIC || version < 3) \{ file.close(); \cppkw{return} \cppkw{false}; \} \\ \hline
+8 & \ \ \cppkw{if} (!ReadWStr(file, state->saveName)) \cppkw{return} \cppkw{false}; \\ \hline
+9 & \ \ \cppkw{if} (version >= 4) \{ \cppkw{if} (!ReadWStr(file, state->saveTimestamp)) \cppkw{return} \cppkw{false}; \} \cppkw{else} \{ state->saveTimestamp = L"N/A (Bản cũ)"; \} \\ \hline
+10 & \ \ \textcolor{dkgreen}{// Đọc lần lượt các trường POD và dữ liệu động} \\ \hline
+11 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->gameMode), \cppkw{sizeof}(state->gameMode))) \cppkw{return} \cppkw{false}; \\ \hline
+12 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->matchType), \cppkw{sizeof}(state->matchType))) \cppkw{return} \cppkw{false}; \\ \hline
+13 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->isP1Turn), \cppkw{sizeof}(state->isP1Turn))) \cppkw{return} \cppkw{false}; \\ \hline
+14 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->countdownTime), \cppkw{sizeof}(state->countdownTime))) \cppkw{return} \cppkw{false}; \\ \hline
+15 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->timeRemaining), \cppkw{sizeof}(state->timeRemaining))) \cppkw{return} \cppkw{false}; \\ \hline
+16 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->boardSize), \cppkw{sizeof}(state->boardSize))) \cppkw{return} \cppkw{false}; \\ \hline
+17 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(state->board), \cppkw{sizeof}(state->board))) \cppkw{return} \cppkw{false}; \\ \hline
+18 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->cursorRow), \cppkw{sizeof}(state->cursorRow))) \cppkw{return} \cppkw{false}; \\ \hline
+19 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->cursorCol), \cppkw{sizeof}(state->cursorCol))) \cppkw{return} \cppkw{false}; \\ \hline
+20 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->lastMoveRow), \cppkw{sizeof}(state->lastMoveRow))) \cppkw{return} \cppkw{false}; \\ \hline
+21 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->lastMoveCol), \cppkw{sizeof}(state->lastMoveCol))) \cppkw{return} \cppkw{false}; \\ \hline
+22 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->status), \cppkw{sizeof}(state->status))) \cppkw{return} \cppkw{false}; \\ \hline
+23 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->winner), \cppkw{sizeof}(state->winner))) \cppkw{return} \cppkw{false}; \\ \hline
+24 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->difficulty), \cppkw{sizeof}(state->difficulty))) \cppkw{return} \cppkw{false}; \\ \hline
+25 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->targetScore), \cppkw{sizeof}(state->targetScore))) \cppkw{return} \cppkw{false}; \\ \hline
+26 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->matchDuration), \cppkw{sizeof}(state->matchDuration))) \cppkw{return} \cppkw{false}; \\ \hline
+27 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->p1TotalTimeLeft), \cppkw{sizeof}(state->p1TotalTimeLeft))) \cppkw{return} \cppkw{false}; \\ \hline
+28 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->p2TotalTimeLeft), \cppkw{sizeof}(state->p2TotalTimeLeft))) \cppkw{return} \cppkw{false}; \\ \hline
+29 & \ \ \cppkw{if} (!file.read(reinterpret\_cast<char*>(\&state->isMatchTimed), \cppkw{sizeof}(state->isMatchTimed))) \cppkw{return} \cppkw{false}; \\ \hline
+30 & \ \ \cppkw{if} (!ReadPlayer(file, state->p1, version)) \cppkw{return} \cppkw{false}; \\ \hline
+31 & \ \ \cppkw{if} (!ReadPlayer(file, state->p2, version)) \cppkw{return} \cppkw{false}; \\ \hline
+32 & \ \ \cppkw{if} (!ReadVec(file, state->winningCells)) \cppkw{return} \cppkw{false}; \\ \hline
+33 & \ \ \cppkw{if} (!ReadVec(file, state->matchHistory)) \cppkw{return} \cppkw{false}; \\ \hline
+34 & \ \ \cppkw{if} (!ReadVec(file, state->redoStack)) \cppkw{return} \cppkw{false}; \\ \hline
+35 & \ \ file.close(); \\ \hline
+36 & \ \ \cppkw{return} \cppkw{true}; \\ \hline
+18 & \} \\ \hline
+\end{longtable}
+
+\subsection*{8.1.4. Hệ thống slot và metadata}
+\addcontentsline{toc}{subsection}{\textcolor{black}{8.1.4. Hệ thống slot và metadata}}
+
+\setlength{\parindent}{1.5em} Game hỗ trợ tối đa \texttt{MAX\_SAVE\_SLOTS} slot. Mỗi slot là một file \texttt{Asset/save/slot\_X.bin}. Ngoài việc lưu/đọc, hệ thống còn hỗ trợ kiểm tra tồn tại, xóa, đổi tên, và trích xuất metadata phục vụ giao diện danh sách bản lưu.
+
+\setlength{\parindent}{1.5em} Metadata được đọc nhanh từ phần đầu file (magic, version, name, timestamp, mode, type) nhằm giảm chi phí I/O khi hiển thị danh sách. Điều này tránh phải load toàn bộ \texttt{PlayState} cho mỗi slot. Với các bản lưu cũ, hệ thống gắn nhãn "Bản cũ" và cung cấp timestamp mặc định, giúp UI vẫn hiển thị ổn định.
+
+\begin{table}[H]
+\caption*{Bảng 8.1: Cấu hình slot lưu game và metadata}
+\addcontentsline{lot}{table}{Bảng 8.1: Cấu hình slot lưu game và metadata}
+\label{tbl:ch8_save_slots}
+\centering
+\renewcommand{\arraystretch}{0.9}
+\begin{tabularx}{\linewidth}{|L{3.3cm}|L{6.0cm}|X|}
+\hline
+\textbf{Thành phần} & \textbf{Giá trị/Nguồn} & \textbf{Ghi chú} \\ \hline
+Số slot tối đa & \texttt{MAX\_SAVE\_SLOTS = 5} & Giới hạn cố định trong \texttt{GameConstants.h} \\ \hline
+Tên hiển thị tối đa & \texttt{MAX\_SAVE\_NAME\_LEN = 15} & Khi đổi tên, hệ thống cắt theo giới hạn này \\ \hline
+Đường dẫn slot & \texttt{Asset/save/slot\_N.bin} & Sinh bởi \texttt{GetSavePath(slot)} \\ \hline
+Metadata chính & name, timestamp, mode, type, p1Wins, p2Wins, difficulty, boardSize, version & Đọc nhanh để hiển thị danh sách \\ \hline
+Thao tác hỗ trợ & Check, delete, rename, đọc metadata & Phục vụ màn hình Load/Save \\ \hline
+\end{tabularx}
+\end{table}
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Truy xuất metadata bản lưu để hiển thị danh sách}
+\label{lst:ch8_save_metadata}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{struct} SaveMetadata \{ \\ \hline
+2 & \ \ std::wstring name; \\ \hline
+3 & \ \ std::wstring timestamp; \\ \hline
+4 & \ \ \cppkw{int} mode; \ \ \cppkw{int} type; \\ \hline
+5 & \ \ \cppkw{int} p1Wins; \ \ \cppkw{int} p2Wins; \\ \hline
+6 & \ \ \cppkw{int} difficulty; \ \ \cppkw{int} boardSize; \\ \hline
+7 & \ \ \cppkw{bool} exists; \ \ \cppkw{uint32\_t} version; \\ \hline
+8 & \}; \\ \hline
+9 & \cppkw{std::wstring} GetSavePath(\cppkw{int} slot) \{ \cppkw{return} L"Asset/save/slot\_" + std::to\_wstring(slot) + L".bin"; \} \\ \hline
+10 & \cppkw{bool} CheckSaveExists(\cppkw{int} slot) \{ \\ \hline
+11 & \ \ DWORD dwAttrib = GetFileAttributesW(GetSavePath(slot).c\_str()); \\ \hline
+12 & \ \ \cppkw{return} (dwAttrib != INVALID\_FILE\_ATTRIBUTES \&\& !(dwAttrib \& FILE\_ATTRIBUTE\_DIRECTORY)); \\ \hline
+13 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Trích xuất metadata giúp giao diện hiển thị nhanh mà không cần load toàn bộ trạng thái, giảm chi phí đọc I/O khi mở màn hình Load Game.
+
+\section*{8.2. Đa phương tiện}
+\addcontentsline{toc}{section}{\textcolor{black}{8.2. Đa phương tiện}}
+
+\subsection*{8.2.1. AudioSystem: preload và phát âm thanh}
+\addcontentsline{toc}{subsection}{\textcolor{black}{8.2.1. AudioSystem: preload và phát âm thanh}}
+
+\setlength{\parindent}{1.5em} Hệ thống âm thanh sử dụng API MCI (Media Control Interface) của Windows để phát nhạc nền (BGM) và hiệu ứng (SFX). Để kiểm soát volume ổn định, SFX được mở bằng type \texttt{mpegvideo} và preload một lần khi khởi động game. Sau đó, PlaySFX chỉ phát bằng alias thay vì mở file lặp lại, giúp giảm độ trễ khi thao tác.
+
+\setlength{\parindent}{1.5em} MCI phù hợp cho dự án desktop nhẹ vì có sẵn trong Windows và không cần thư viện ngoài. Việc preload tạo "alias" cố định cho từng hiệu ứng, cho phép hệ thống gọi phát tức thời mà không cần truy xuất file trên đĩa mỗi lần. Luồng SFX được khởi tạo bằng \texttt{std::call\_once} để đảm bảo chỉ có một worker nền.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Preload các SFX và khởi tạo luồng nền}
+\label{lst:ch8_audio_init}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{void} InitAudioSystem() \{ \\ \hline
+2 & \ \ EnsureSFXThread(); \\ \hline
+3 & \ \ PreLoad("Asset/audio/move.wav", "sfx\_move"); \\ \hline
+4 & \ \ PreLoad("Asset/audio/select.wav", "sfx\_select"); \\ \hline
+5 & \ \ PreLoad("Asset/audio/DatCo.wav", "sfx\_place"); \\ \hline
+6 & \ \ PreLoad("Asset/audio/Tiengcoi.wav", "sfx\_whistle"); \\ \hline
+7 & \ \ PreLoad("Asset/audio/MatLuot.wav", "sfx\_timeout"); \\ \hline
+8 & \ \ PreLoad("Asset/audio/select.wav", "sfx\_error"); \\ \hline
+9 & \ \ PreLoad("Asset/audio/siuuu.wav", "sfx\_success"); \\ \hline
+10 & \ \ PreLoad("Asset/audio/siuuu.wav", "sfx\_siu"); \\ \hline
+11 & \ \ PreLoad("Asset/audio/TiengKhanGia\_Het\_Tran.wav", "sfx\_crowd"); \\ \hline
+13 & \} \\ \hline
+\end{longtable}
+
+\begin{table}[H]
+\caption*{Bảng 8.2: Danh sách SFX preload và alias}
+\addcontentsline{lot}{table}{Bảng 8.2: Danh sách SFX preload và alias}
+\label{tbl:ch8_sfx_alias}
+\centering
+\renewcommand{\arraystretch}{0.9}
+\begin{tabularx}{\linewidth}{|L{3.0cm}|L{7.0cm}|X|}
+\hline
+\textbf{Alias} & \textbf{File âm thanh} & \textbf{Tác vụ} \\ \hline
+\texttt{sfx\_move} & \texttt{Asset/audio/move.wav} & Di chuyển con trỏ \\ \hline
+\texttt{sfx\_select} & \texttt{Asset/audio/select.wav} & Chọn menu \\ \hline
+\texttt{sfx\_place} & \texttt{Asset/audio/DatCo.wav} & Đặt quân \\ \hline
+\texttt{sfx\_whistle} & \texttt{Asset/audio/Tiengcoi.wav} & Còi hiệu ứng \\ \hline
+\texttt{sfx\_timeout} & \texttt{Asset/audio/MatLuot.wav} & Hết lượt / timeout \\ \hline
+\texttt{sfx\_error} & \texttt{Asset/audio/select.wav} & Báo lỗi thao tác \\ \hline
+\texttt{sfx\_success} & \texttt{Asset/audio/siuuu.wav} & Thắng ván / lưu thành công \\ \hline
+\texttt{sfx\_siu} & \texttt{Asset/audio/siuuu.wav} & Khán đài cổ vũ \\ \hline
+\texttt{sfx\_crowd} & \texttt{Asset/audio/Tieng..Tran.wav} & Khán giả hết trận \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection*{8.2.2. SFX bất đồng bộ và cơ chế chống spam}
+\addcontentsline{toc}{subsection}{\textcolor{black}{8.2.2. SFX bất đồng bộ và cơ chế chống spam}}
+
+\setlength{\parindent}{1.5em} Để tránh giật khi phát âm thanh liên tục, các yêu cầu SFX được đẩy vào hàng đợi và xử lý bởi một worker thread. Hệ thống đặt cooldown 50ms theo alias để tránh spam, giới hạn hàng đợi tối đa 32 yêu cầu, đồng thời chỉ cập nhật volume khi có thay đổi để giảm số lệnh MCI.
+
+\setlength{\parindent}{1.5em} Hàng đợi SFX giúp tách biệt luồng render/logic khỏi thao tác I/O âm thanh. Cơ chế \texttt{mutex + condition\_variable} đảm bảo thread nền ngủ khi không có yêu cầu và chỉ thức dậy khi có lệnh mới. Việc kiểm soát volume theo alias tránh gửi lệnh "setaudio" liên tục, giảm overhead và hạn chế trễ âm thanh. Khi alias chưa sẵn sàng, worker tự động \texttt{open} lại để đảm bảo lần phát đầu không bị rớt.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Hàng đợi SFX và xử lý luồng nền}
+\label{lst:ch8_sfx_worker}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{void} SFXWorker() \{ \\ \hline
+2 & \ \ \cppkw{while} (\cppkw{true}) \{ \\ \hline
+3 & \ \ \ \ SFXRequest req; \\ \hline
+4 & \ \ \ \ \{ \textcolor{dkgreen}{// Lấy yêu cầu từ queue} \\ \hline
+5 & \ \ \ \ \ \ std::unique\_lock<std::mutex> lock(g\_SFXMutex); \\ \hline
+6 & \ \ \ \ \ \ g\_SFXCond.wait(lock, []() \{ \cppkw{return} !g\_SFXQueue.empty() || !g\_SFXRunning; \}); \\ \hline
+7 & \ \ \ \ \ \ \cppkw{if} (!g\_SFXRunning \&\& g\_SFXQueue.empty()) \cppkw{break}; \\ \hline
+8 & \ \ \ \ \ \ \cppkw{if} (g\_SFXQueue.empty()) \cppkw{continue}; \\ \hline
+9 & \ \ \ \ \ \ req = g\_SFXQueue.front(); \\ \hline
+10 & \ \ \ \ \ \ g\_SFXQueue.pop(); \\ \hline
+11 & \ \ \ \ \} \\ \hline
+12 & \ \ \ \ \cppkw{if} (req.command == SFXCommand::Preload) \{ \\ \hline
+13 & \ \ \ \ \ \ mciSendStringA(("close " + req.alias).c\_str(), NULL, 0, NULL); \\ \hline
+14 & \ \ \ \ \ \ \cppkw{bool} opened = OpenSFXAlias(req.path, req.alias); \\ \hline
+15 & \ \ \ \ \ \ \{ std::lock\_guard<std::mutex> lock(g\_SFXMutex); g\_SFXReady[req.alias] = opened; \} \\ \hline
+16 & \ \ \ \ \ \ \cppkw{continue}; \\ \hline
+17 & \ \ \ \ \} \\ \hline
+18 & \ \ \ \ \cppkw{if} (req.command == SFXCommand::Stop) \{ \\ \hline
+19 & \ \ \ \ \ \ mciSendStringA(("stop " + req.alias).c\_str(), NULL, 0, NULL); \\ \hline
+20 & \ \ \ \ \ \ \cppkw{continue}; \\ \hline
+21 & \ \ \ \ \} \\ \hline
+22 & \ \ \ \ \cppkw{if} (req.command != SFXCommand::Play) \cppkw{continue}; \\ \hline
+23 & \ \ \ \ \cppkw{bool} isReady = \cppkw{false}; std::string path; \\ \hline
+24 & \ \ \ \ \{ std::lock\_guard<std::mutex> lock(g\_SFXMutex); \\ \hline
+25 & \ \ \ \ \ \ \cppkw{auto} readyIt = g\_SFXReady.find(req.alias); \\ \hline
+26 & \ \ \ \ \ \ isReady = (readyIt != g\_SFXReady.end() \&\& readyIt->second); \\ \hline
+27 & \ \ \ \ \ \ \cppkw{auto} pathIt = g\_SFXPaths.find(req.alias); \\ \hline
+28 & \ \ \ \ \ \ \cppkw{if} (pathIt != g\_SFXPaths.end()) path = pathIt->second; \} \\ \hline
+29 & \ \ \ \ \cppkw{if} (!isReady \&\& !path.empty()) \{ \\ \hline
+30 & \ \ \ \ \ \ mciSendStringA(("close " + req.alias).c\_str(), NULL, 0, NULL); \\ \hline
+31 & \ \ \ \ \ \ \cppkw{bool} opened = OpenSFXAlias(path, req.alias); \\ \hline
+32 & \ \ \ \ \ \ \{ std::lock\_guard<std::mutex> lock(g\_SFXMutex); g\_SFXReady[req.alias] = opened; \} \\ \hline
+33 & \ \ \ \ \} \\ \hline
+34 & \ \ \ \ ULONGLONG now = GetTickCount64(); \\ \hline
+35 & \ \ \ \ \cppkw{auto} lastTimeIt = g\_LastSFXTime.find(req.alias); \\ \hline
+36 & \ \ \ \ \cppkw{if} (lastTimeIt != g\_LastSFXTime.end() \&\& (now - lastTimeIt->second) < 50ULL) \cppkw{continue}; \\ \hline
+37 & \ \ \ \ g\_LastSFXTime[req.alias] = now; \\ \hline
+38 & \ \ \ \ \cppkw{auto} lastVolIt = g\_LastSFXVolume.find(req.alias); \\ \hline
+39 & \ \ \ \ \cppkw{int} lastVol = (lastVolIt == g\_LastSFXVolume.end()) ? -1 : lastVolIt->second; \\ \hline
+40 & \ \ \ \ \cppkw{if} (lastVol != req.volume) \{ \\ \hline
+41 & \ \ \ \ \ \ std::string volCmd = "setaudio " + req.alias + " volume to " + std::to\_string(req.volume); \\ \hline
+42 & \ \ \ \ \ \ mciSendStringA(volCmd.c\_str(), NULL, 0, NULL); \\ \hline
+43 & \ \ \ \ \ \ g\_LastSFXVolume[req.alias] = req.volume; \\ \hline
+44 & \ \ \ \ \} \\ \hline
+45 & \ \ \ \ mciSendStringA(("stop " + req.alias).c\_str(), NULL, 0, NULL); \\ \hline
+46 & \ \ \ \ mciSendStringA(("play " + req.alias + " from 0").c\_str(), NULL, 0, NULL); \\ \hline
+47 & \ \ \} \\ \hline
+48 & \} \\ \hline
+\end{longtable}
+
+\subsection*{8.2.3. BGM: lặp vô hạn và quản lý volume}
+\addcontentsline{toc}{subsection}{\textcolor{black}{8.2.3. BGM: lặp vô hạn và quản lý volume}}
+
+\setlength{\parindent}{1.5em} Nhạc nền được phát theo cơ chế repeat và cập nhật âm lượng dựa trên cấu hình toàn cục. Để tránh gửi lệnh không cần thiết, hệ thống chỉ cập nhật volume khi có sự thay đổi.
+
+\setlength{\parindent}{1.5em} Vòng đời BGM gồm 3 bước: đóng nhạc cũ (nếu có), mở file mới, thiết lập volume và lặp vô hạn. Cách làm này ngăn rò rỉ handle MCI khi người chơi đổi màn hình hoặc thay đổi bài nhạc. Khi thoát game, \texttt{ShutdownAudioSystem} sẽ dừng thread và gọi \texttt{close all} để giải phóng tài nguyên.
+
+\begin{table}[H]
+\caption*{Bảng 8.3: Cấu hình BGM và quy tắc cập nhật âm lượng}
+\addcontentsline{lot}{table}{Bảng 8.3: Cấu hình BGM và quy tắc cập nhật âm lượng}
+\label{tbl:ch8_bgm_config}
+\centering
+\renewcommand{\arraystretch}{0.9}
+\begin{tabularx}{\linewidth}{|L{3.3cm}|L{5.4cm}|X|}
+\hline
+\textbf{Thành phần} & \textbf{Giá trị/Nguồn} & \textbf{Ghi chú} \\ \hline
+Điều kiện phát BGM & \texttt{g\_Config.isBgmEnabled} & Nếu tắt thì bỏ qua \texttt{PlayBGM} \\ \hline
+Alias BGM & \texttt{bgm} & Dùng lệnh MCI mở/phát/đóng \\ \hline
+Âm lượng & \texttt{g\_Config.bgmVolume * 10} & Scale sang thang MCI (0--1000) \\ \hline
+Lặp vô hạn & \texttt{play bgm repeat} & Tự lặp khi hết nhạc \\ \hline
+Tối ưu cập nhật & \texttt{lastBgmVol} & Chỉ gửi lệnh khi volume đổi \\ \hline
+\end{tabularx}
+\end{table}
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Phát nhạc nền và cập nhật volume}
+\label{lst:ch8_bgm_play}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{void} PlayBGM(\cppkw{const} std::string\& filepath) \{ \\ \hline
+2 & \ \ \cppkw{if} (!g\_Config.isBgmEnabled) \cppkw{return}; \\ \hline
+3 & \ \ StopBGM(); \\ \hline
+4 & \ \ std::string cmd = "open \"" + filepath + "\" type mpegvideo alias bgm"; \\ \hline
+5 & \ \ mciSendStringA(cmd.c\_str(), NULL, 0, NULL); \\ \hline
+6 & \ \ UpdateBGMVolume(\cppkw{true}); \\ \hline
+7 & \ \ mciSendStringA("play bgm repeat", NULL, 0, NULL); \\ \hline
+8 & \} \\ \hline
+9 & \cppkw{void} UpdateBGMVolume(\cppkw{bool} force) \{ \\ \hline
+10 & \ \ \cppkw{static} \cppkw{int} lastBgmVol = -1; \\ \hline
+11 & \ \ \cppkw{int} vol = g\_Config.bgmVolume * 10; \\ \hline
+12 & \ \ \cppkw{if} (!force \&\& lastBgmVol == vol) \cppkw{return}; \\ \hline
+13 & \ \ std::string volCmd = "setaudio bgm volume to " + std::to\_string(vol); \\ \hline
+14 & \ \ mciSendStringA(volCmd.c\_str(), NULL, 0, NULL); \\ \hline
+15 & \ \ lastBgmVol = vol; \\ \hline
+16 & \} \\ \hline
+\end{longtable}
+
+\section*{8.3. Ngôn ngữ}
+\addcontentsline{toc}{section}{\textcolor{black}{8.3. Ngôn ngữ}}
+
+\setlength{\parindent}{1.5em} Hệ thống đa ngôn ngữ nằm trong \texttt{Localization}, sử dụng file text dạng \texttt{key=value}. Khi tải, toàn bộ cặp khóa-giá trị được đưa vào \texttt{map}. Việc chuyển đổi UTF-8 sang \texttt{wstring} đảm bảo ký tự tiếng Việt hiển thị đúng trong UI.
+
+\setlength{\parindent}{1.5em} Thiết kế này giúp nội dung giao diện tách khỏi mã nguồn: khi cần thay đổi câu chữ hoặc bổ sung ngôn ngữ mới, chỉ cần chỉnh file \texttt{Asset/lang}. Mã nguồn chỉ làm nhiệm vụ tra cứu, không cần sửa đổi từng chuỗi literal trong UI.
+
+\setlength{\parindent}{1.5em} Ví dụ trích một phần nội dung \texttt{key=value} trong file ngôn ngữ:
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Ví dụ định dạng \texttt{key=value} trong file ngôn ngữ}
+\label{lst:ch8_lang_kv_example}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & menu\_play=Chơi nhanh \\ \hline
+2 & menu\_load=Tiếp tục \\ \hline
+3 & menu\_settings=Cài đặt \\ \hline
+4 & match\_turn=Lượt của bạn \\ \hline
+5 & result\_draw=Hòa \\ \hline
+\end{longtable}
+
+\begin{table}[H]
+\caption*{Bảng 8.4: Danh sách ngôn ngữ và file bản địa hóa}
+\addcontentsline{lot}{table}{Bảng 8.4: Danh sách ngôn ngữ và file bản địa hóa}
+\label{tbl:ch8_languages}
+\centering
+\renewcommand{\arraystretch}{0.9}
+\begin{tabularx}{\linewidth}{|L{2.0cm}|L{3.2cm}|L{4.5cm}|X|}
+\hline
+\textbf{Mã} & \textbf{Enum} & \textbf{File} & \textbf{Ghi chú} \\ \hline
+VI & \texttt{APP\_LANG\_VI} & \texttt{Asset/lang/vi.txt} & UTF-8 \textrightarrow{} \texttt{wstring} \\ \hline
+EN & \texttt{APP\_LANG\_EN} & \texttt{Asset/lang/en.txt} & UTF-8 \textrightarrow{} \texttt{wstring} \\ \hline
+\end{tabularx}
+\end{table}
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Nạp từ điển ngôn ngữ và chuyển UTF-8}
+\label{lst:ch8_localization_load}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{static} std::wstring UTF8ToWString(\cppkw{const} std::string\& str) \{ \\ \hline
+2 & \ \ \cppkw{if} (str.empty()) \cppkw{return} L""; \\ \hline
+3 & \ \ \cppkw{int} size\_needed = MultiByteToWideChar(CP\_UTF8, 0, \&str[0], (\cppkw{int})str.size(), NULL, 0); \\ \hline
+4 & \ \ std::wstring wstrTo(size\_needed, 0); \\ \hline
+5 & \ \ MultiByteToWideChar(CP\_UTF8, 0, \&str[0], (\cppkw{int})str.size(), \&wstrTo[0], size\_needed); \\ \hline
+6 & \ \ \cppkw{return} wstrTo; \\ \hline
+7 & \} \\ \hline
+8 & \cppkw{void} LoadLanguageFile(Language lang) \{ \\ \hline
+9 & \ \ g\_dictionary.clear(); \\ \hline
+10 & \ \ std::string filepath = (lang == APP\_LANG\_VI) ? "Asset/lang/vi.txt" : "Asset/lang/en.txt"; \\ \hline
+11 & \ \ std::ifstream file(filepath); \\ \hline
+12 & \ \ \cppkw{if} (!file.is\_open()) \cppkw{return}; \\ \hline
+13 & \ \ std::string line; \\ \hline
+14 & \ \ \cppkw{while} (std::getline(file, line)) \{ \\ \hline
+15 & \ \ \ \ size\_t pos = line.find('='); \\ \hline
+16 & \ \ \ \ \cppkw{if} (pos != std::string::npos) \{ \\ \hline
+17 & \ \ \ \ \ \ std::string key = line.substr(0, pos); \\ \hline
+18 & \ \ \ \ \ \ std::string val = line.substr(pos + 1); \\ \hline
+19 & \ \ \ \ \ \ g\_dictionary[key] = UTF8ToWString(val); \\ \hline
+20 & \ \ \ \ \} \\ \hline
+21 & \ \ \} \\ \hline
+22 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Khi UI truy vấn một khóa chưa tồn tại, hệ thống sẽ tự cache chính khóa đó dưới dạng \texttt{wstring}. Cơ chế này giảm chi phí chuyển đổi lặp lại trong các vòng lặp render.
+
+\setlength{\parindent}{1.5em} Ngoài ra, hành vi "fallback về chính key" giúp phát hiện lỗi dịch: nếu một key bị thiếu trong file ngôn ngữ, UI sẽ hiển thị key đó thay vì chuỗi rỗng, hỗ trợ kiểm thử nhanh và tránh mất thông tin.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Truy xuất text với cache khóa thiếu}
+\label{lst:ch8_get_text}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{std::wstring} GetText(\cppkw{const} std::string\& key) \{ \\ \hline
+2 & \ \ \cppkw{auto} it = g\_dictionary.find(key); \\ \hline
+3 & \ \ \cppkw{if} (it != g\_dictionary.end()) \cppkw{return} it->second; \\ \hline
+4 & \ \ std::wstring wkey = UTF8ToWString(key); \\ \hline
+5 & \ \ g\_dictionary[key] = wkey; \\ \hline
+6 & \ \ \cppkw{return} wkey; \\ \hline
+7 & \} \\ \hline
+\end{longtable}
+
+\section*{8.4. Thời gian}
+\addcontentsline{toc}{section}{\textcolor{black}{8.4. Thời gian}}
+
+\setlength{\parindent}{1.5em} Hệ thống thời gian phục vụ đếm ngược theo lượt, hiển thị dạng \texttt{MM:SS}, và hỗ trợ reset theo người chơi hiện tại. Biến \texttt{timeAccumulator} tích lũy \texttt{dt} để giảm sai số và chỉ trừ thời gian khi đủ một giây thực.
+
+\setlength{\parindent}{1.5em} Cách tích lũy \texttt{dt} tránh tình trạng trừ thời gian theo từng frame (dễ gây lệch khi FPS không ổn định). Khi đủ 1 giây, hệ thống mới giảm \texttt{timeRemaining}, giúp đồng hồ đếm ngược sát với thời gian thực hơn.
+
+\subsection*{8.4.1. Cập nhật bộ đếm theo dt}
+\addcontentsline{toc}{subsection}{\textcolor{black}{8.4.1. Cập nhật bộ đếm theo dt}}
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Cập nhật đếm ngược và phát hiện hết lượt}
+\label{lst:ch8_update_countdown}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{bool} UpdateCountdown(PlayState* state, \cppkw{double} dt) \{ \\ \hline
+2 & \ \ \cppkw{if} (state->timeRemaining <= 0) \cppkw{return} \cppkw{true}; \\ \hline
+3 & \ \ timeAccumulator += dt; \\ \hline
+4 & \ \ \cppkw{if} (timeAccumulator >= 1.0) \{ \\ \hline
+5 & \ \ \ \ timeAccumulator -= 1.0; \\ \hline
+6 & \ \ \ \ state->timeRemaining--; \\ \hline
+7 & \ \ \ \ \cppkw{if} (state->timeRemaining <= 0) \{ state->timeRemaining = 0; \} \\ \hline
+8 & \ \ \ \ \cppkw{return} \cppkw{true}; \\ \hline
+9 & \ \ \} \\ \hline
+10 & \ \ \cppkw{return} \cppkw{false}; \\ \hline
+11 & \} \\ \hline
+\end{longtable}
+
+\subsection*{8.4.2. Reset theo lượt và cơ chế failsafe}
+\addcontentsline{toc}{subsection}{\textcolor{black}{8.4.2. Reset theo lượt và cơ chế failsafe}}
+
+\setlength{\parindent}{1.5em} Khi chuyển lượt, bộ đếm thời gian được reset theo \texttt{maxTurnTime} của người chơi hiện tại. Nếu giá trị này bị lỗi (<=0) do dữ liệu cũ hoặc bộ nhớ chưa khởi tạo, hệ thống tự động dùng \texttt{countdownTime} hoặc mặc định 30 giây để tránh game bị treo thời gian.
+
+\setlength{\parindent}{1.5em} Điều này đặc biệt quan trọng khi load bản lưu cũ: nếu phiên bản trước chưa lưu \texttt{maxTurnTime}, hệ thống sẽ tự khôi phục giá trị hợp lệ và ghi lại vào state để những lần sau chạy ổn định.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Reset bộ đếm kèm kiểm tra an toàn}
+\label{lst:ch8_reset_timer}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{void} ResetTimer(PlayState* state) \{ \\ \hline
+2 & \ \ \cppkw{float} maxFloatTime = state->isP1Turn ? state->p1.maxTurnTime : state->p2.maxTurnTime; \\ \hline
+3 & \ \ \cppkw{if} (maxFloatTime <= 0.0f) \{ \\ \hline
+4 & \ \ \ \ maxFloatTime = (state->countdownTime > 0) ? \cppkw{static\_cast}<\cppkw{float}>(state->countdownTime) : 30.0f; \\ \hline
+5 & \ \ \ \ \cppkw{if} (state->isP1Turn) \{ state->p1.maxTurnTime = maxFloatTime; \} \cppkw{else} \{ state->p2.maxTurnTime = maxFloatTime; \} \\ \hline
+6 & \ \ \} \\ \hline
+7 & \ \ state->timeRemaining = \cppkw{static\_cast}<\cppkw{int}>(maxFloatTime); \\ \hline
+8 & \ \ state->countdownTime = state->timeRemaining; \\ \hline
+9 & \ \ timeAccumulator = 0.0; \\ \hline
+10 & \} \\ \hline
+\end{longtable}
+
+\subsection*{8.4.3. Hiển thị thời gian dạng MM:SS}
+\addcontentsline{toc}{subsection}{\textcolor{black}{8.4.3. Hiển thị thời gian dạng MM:SS}}
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Định dạng thời gian hiển thị}
+\label{lst:ch8_time_display}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{std::string} GetTimeDisplay(PlayState* state) \{ \\ \hline
+2 & \ \ \cppkw{int} minutes = state->timeRemaining / 60; \\ \hline
+3 & \ \ \cppkw{int} seconds = state->timeRemaining \% 60; \\ \hline
+4 & \ \ std::ostringstream oss; \\ \hline
+5 & \ \ oss << std::setfill('0') << std::setw(2) << minutes << ":" << std::setfill('0') << std::setw(2) << seconds; \\ \hline
+6 & \ \ \cppkw{return} oss.str(); \\ \hline
+7 & \} \\ \hline
+\end{longtable}
+
+\section*{8.5. Cấu hình hệ thống}
+\addcontentsline{toc}{section}{\textcolor{black}{8.5. Cấu hình hệ thống}}
+
+\setlength{\parindent}{1.5em} Các thiết lập cơ bản (BGM/SFX bật tắt, âm lượng, ngôn ngữ) được lưu trong \texttt{GameConfig} và được đọc/ghi bằng \texttt{ConfigLoader}. Nếu file cấu hình chưa tồn tại, hệ thống tự tạo giá trị mặc định nhằm đảm bảo game luôn khởi động được.
+
+\setlength{\parindent}{1.5em} Việc lưu cấu hình dạng binary giúp quá trình tải nhanh và cấu trúc dữ liệu gọn. Cấu hình được nạp ngay khi mở game để các mô-đun khác (Audio, Localization) có thể dựa vào giá trị thiết lập hiện hành. Thiết kế này cũng tránh trường hợp game chạy với trạng thái nửa cấu hình khi người dùng chưa vào phần Settings.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Thiết lập mặc định và nạp cấu hình}
+\label{lst:ch8_config_load}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{static} \cppkw{void} SetDefaultConfig(GameConfig* config) \{ \\ \hline
+2 & \ \ config->isBgmEnabled = \cppkw{true}; \\ \hline
+3 & \ \ config->bgmVolume = 50; \\ \hline
+4 & \ \ config->isSfxEnabled = \cppkw{true}; \\ \hline
+5 & \ \ config->sfxVolume = 50; \\ \hline
+6 & \ \ config->currentLang = APP\_LANG\_VI; \\ \hline
+7 & \} \\ \hline
+8 & \cppkw{void} LoadConfig(GameConfig* config, \cppkw{const} std::string\& filepath) \{ \\ \hline
+9 & \ \ std::ifstream file(filepath, std::ios::binary); \\ \hline
+10 & \ \ \cppkw{if} (!file.is\_open()) \{ SetDefaultConfig(config); \cppkw{return}; \} \\ \hline
+11 & \ \ file.read(reinterpret\_cast<char*>(config), \cppkw{sizeof}(GameConfig)); \\ \hline
+12 & \ \ file.close(); \\ \hline
+13 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Việc lưu cấu hình cũng ở dạng binary để đơn giản hóa thao tác và giảm thời gian I/O.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Lưu cấu hình hiện hành}
+\label{lst:ch8_config_save}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{void} SaveConfig(\cppkw{const} GameConfig* config, \cppkw{const} std::string\& filepath) \{ \\ \hline
+2 & \ \ std::ofstream file(filepath, std::ios::binary); \\ \hline
+3 & \ \ \cppkw{if} (file.is\_open()) \{ \\ \hline
+4 & \ \ \ \ file.write(reinterpret\_cast<\cppkw{const} char*>(config), \cppkw{sizeof}(GameConfig)); \\ \hline
+5 & \ \ \ \ file.close(); \\ \hline
+6 & \ \ \} \\ \hline
+7 & \} \\ \hline
+\end{longtable}

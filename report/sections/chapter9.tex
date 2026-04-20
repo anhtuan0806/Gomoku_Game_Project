@@ -1,0 +1,103 @@
+\newpage
+\chapter*{\centering{\MakeUppercase{CHƯƠNG 9. TỔNG KẾT}}}
+\addcontentsline{toc}{chapter}{\textcolor{fitblue}{\MakeUppercase{CHƯƠNG 9. TỔNG KẾT}}}
+\setlength{\parindent}{1.5em}
+
+\section*{9.1. Kết quả đạt được}
+\addcontentsline{toc}{section}{\textcolor{black}{9.1. Kết quả đạt được}}
+
+\setlength{\parindent}{1.5em} Dự án đã hoàn thiện một trò chơi Gomoku/TTT có đầy đủ vòng đời trận đấu: cấu hình, chơi, tạm dừng, lưu/đọc, và tổng kết. Hệ thống logic tách lớp rõ ràng, các mô-đun phụ trợ (âm thanh, ngôn ngữ, thời gian, cấu hình) hoạt động ổn định, và phần đồ họa/UX đảm bảo tính trực quan, phản hồi tốt trong thời gian thực.
+
+\setlength{\parindent}{1.5em} Các mục tiêu chính đã đạt: hỗ trợ nhiều chế độ chơi (PvP/PvE), tùy biến kích thước bàn cờ, quản lý lượt và thời gian, lưu/đọc đa slot, và trải nghiệm UI theo phong cách pixel art kết hợp procedural graphics.
+
+\section*{9.2. Các hạng mục đã hoàn thiện}
+\addcontentsline{toc}{section}{\textcolor{black}{9.2. Các hạng mục đã hoàn thiện}}
+
+\setlength{\parindent}{1.5em} \textbf{Logic trò chơi:} Cơ chế luật chơi, kiểm tra thắng/hòa, xử lý lượt, và thống kê được triển khai nhất quán trên mọi kích thước bàn cờ và chế độ (Caro/TTT).
+
+\setlength{\parindent}{1.5em} \textbf{Đồ họa và UI/UX:} Hệ thống RenderAPI dựa trên Win32 GDI/GDI+ với bộ đệm kép, cache bitmap, palette động, và các màn hình UI hoàn chỉnh (Menu, Play, Pause, Settings, Load/Save, Summary...).
+
+\setlength{\parindent}{1.5em} \textbf{Mô-đun phụ trợ:} Hệ thống Save/Load dạng binary có versioning; AudioSystem hỗ trợ SFX async và BGM; Localization đọc file key=value; TimeSystem xử lý đếm ngược và hiển thị thời gian; ConfigLoader đọc/ghi thiết lập.
+
+\begin{table}[H]
+\caption*{Bảng 9.1: Ma trận chức năng các mô-đun phụ trợ}
+\addcontentsline{lot}{table}{Bảng 9.1: Ma trận chức năng các mô-đun phụ trợ}
+\label{tbl:ch9_modules}
+\centering
+\renewcommand{\arraystretch}{0.9}
+\begin{tabularx}{\linewidth}{|L{3.4cm}|L{5.5cm}|X|}
+\hline
+\textbf{Mô-đun} & \textbf{Tệp chính} & \textbf{Chức năng} \\ \hline
+SaveLoadSystem & \texttt{SaveLoadSystem.h/.cpp} & Lưu/tải binary, versioning, metadata slot \\ \hline
+AudioSystem & \texttt{AudioSystem.h/.cpp} & Preload SFX, BGM lặp, kiểm soát volume \\ \hline
+Localization & \texttt{Localization.h/.cpp} & Đọc \texttt{key=value}, UTF-8 \textrightarrow{} \texttt{wstring} \\ \hline
+TimeSystem & \texttt{TimeSystem.h/.cpp} & Đếm ngược, reset theo lượt, hiển thị \texttt{MM:SS} \\ \hline
+ConfigLoader & \texttt{ConfigLoader.h/.cpp} & Nạp/lưu \texttt{GameConfig} dạng binary \\ \hline
+\end{tabularx}
+\end{table}
+
+\section*{9.3. Dấu ấn kỹ thuật nổi bật}
+\addcontentsline{toc}{section}{\textcolor{black}{9.3. Dấu ấn kỹ thuật nổi bật}}
+
+\setlength{\parindent}{1.5em} Dự án sử dụng cơ chế định nghĩa trạng thái ván đấu tập trung trong \texttt{PlayState}, giúp các hệ thống (game logic, UI, save/load) dùng chung nguồn dữ liệu và giảm sai lệch. Với AI, hệ thống áp dụng alpha-beta pruning và Zobrist hashing trong quá trình đánh giá nước đi, giúp giảm nhánh tìm kiếm và tăng tốc độ tra cứu trạng thái. Các hằng số cốt lõi được gom về \texttt{GameConstants} để đồng bộ hóa kích thước bàn cờ, giá trị ô cờ và giới hạn slot lưu.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Các hằng số nền tảng cho bàn cờ và lưu game}
+\label{lst:ch9_constants}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \#define GOMOKU\_SIZE 15 \\ \hline
+2 & \#define WIN\_CONDITION 5 \\ \hline
+3 & \#define MAX\_BOARD\_SIZE 20 \\ \hline
+4 & \#define CELL\_EMPTY 0 \\ \hline
+5 & \#define CELL\_PLAYER1 1 \\ \hline
+6 & \#define CELL\_PLAYER2 2 \\ \hline
+7 & \#define MAX\_SAVE\_SLOTS 5 \\ \hline
+8 & \#define MAX\_SAVE\_NAME\_LEN 15 \\ \hline
+\end{longtable}
+
+\begin{table}[H]
+\caption*{Bảng 9.2: Tóm tắt các trường quan trọng trong PlayState}
+\addcontentsline{lot}{table}{Bảng 9.2: Tóm tắt các trường quan trọng trong PlayState}
+\label{tbl:ch9_playstate_fields}
+\centering
+\renewcommand{\arraystretch}{0.9}
+\begin{tabularx}{\linewidth}{|L{4.0cm}|L{3.2cm}|X|}
+\hline
+\textbf{Trường} & \textbf{Kiểu/nhóm} & \textbf{Vai trò (và lưu/đọc)} \\ \hline
+\texttt{gameMode, matchType} & enum & Chế độ ván đấu (được lưu) \\ \hline
+\texttt{p1, p2} & PlayerInfo2 & Thông tin người chơi, thống kê (được lưu) \\ \hline
+\texttt{boardSize, board} & int + ma trận & Kích thước và trạng thái bàn cờ (được lưu) \\ \hline
+\texttt{isP1Turn} & bool & Lượt hiện tại (được lưu) \\ \hline
+\texttt{countdownTime, timeRemaining} & int & Thời gian lượt (được lưu) \\ \hline
+\texttt{cursorRow, cursorCol} & int & Con trỏ UI (được lưu để phục hồi) \\ \hline
+\texttt{lastMoveRow, lastMoveCol} & int & Highlight nước đi cuối (được lưu) \\ \hline
+\texttt{winningCells} & vector pair & Chuỗi thắng (được lưu) \\ \hline
+\texttt{matchHistory, redoStack} & vector pair & Lịch sử và hoàn tác (được lưu) \\ \hline
+\texttt{status, winner} & enum/int & Trạng thái ván và kết quả (được lưu) \\ \hline
+\texttt{difficulty, targetScore} & int & Thiết lập PvE/BO (được lưu) \\ \hline
+\texttt{matchDuration, p1TotalTimeLeft, p2TotalTimeLeft, isMatchTimed} & float/int/bool & Thời gian toàn trận (được lưu) \\ \hline
+\texttt{saveName, saveTimestamp} & wstring & Metadata bản lưu (được lưu) \\ \hline
+\end{tabularx}
+\end{table}
+
+\setlength{\parindent}{1.5em} Cấu trúc \texttt{PlayState} bao phủ cả dữ liệu logic và dữ liệu hiển thị (cursor, winningCells, matchHistory...), nhờ đó UI phản ánh đúng trạng thái trận đấu và save/load có thể phục hồi đầy đủ ván đang chơi.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Trạng thái ván đấu tập trung trong PlayState}
+\label{lst:ch9_playstate}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{int} boardSize = 15; \\ \hline
+2 & \cppkw{int} board[MAX\_BOARD\_SIZE][MAX\_BOARD\_SIZE] = \{0\}; \\ \hline
+3 & \cppkw{int} lastMoveRow = -1; \\ \hline
+4 & \cppkw{int} lastMoveCol = -1; \\ \hline
+5 & std::vector<std::pair<int, int>> winningCells; \\ \hline
+6 & std::vector<std::pair<int, int>> matchHistory; \\ \hline
+7 & std::vector<std::pair<int, int>> redoStack; \\ \hline
+8 & \cppkw{bool} isP1Turn = \cppkw{true}; \\ \hline
+\end{longtable}

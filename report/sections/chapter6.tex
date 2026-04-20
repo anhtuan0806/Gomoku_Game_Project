@@ -1,0 +1,293 @@
+\newpage
+\chapter*{\centering{\MakeUppercase{CHƯƠNG 6. BỘ MÁY ĐIỀU PHỐI TRẬN ĐẤU}}}
+\addcontentsline{toc}{chapter}{\textcolor{fitblue}{\MakeUppercase{CHƯƠNG 6. BỘ MÁY ĐIỀU PHỐI TRẬN ĐẤU}}}
+\setlength{\parindent}{1.5em}
+
+\section*{6.1. Điều phối lượt đánh}
+\addcontentsline{toc}{section}{\textcolor{black}{6.1. Điều phối lượt đánh}}
+
+\setlength{\parindent}{1.5em} Bộ máy điều phối ván đấu được tập trung tại GameEngine. Mục tiêu của lớp này là đóng gói toàn bộ pipeline xử lý nước đi thành một điểm vào duy nhất, giúp UI (PlayScreen) chỉ phát lệnh hành động và nhận kết quả, không can thiệp trực tiếp vào luật. Cách tổ chức này tách rõ ba lớp trách nhiệm: GameRules phán xét, GameEngine điều phối, TimeSystem quản lý thời gian. Nhờ vậy, mọi cập nhật đều nhất quán, tránh sai lệch trạng thái khi có nhiều thao tác đồng thời (đặt quân, lưu lịch sử, cập nhật điểm, kiểm tra thắng, đổi lượt).
+
+\subsection*{6.1.1. Luồng xử lý: Nhập lệnh \texorpdfstring{$\rightarrow$}{} Luật \texorpdfstring{$\rightarrow$}{} Cập nhật trạng thái}
+\addcontentsline{toc}{subsection}{\textcolor{black}{6.1.1. Luồng xử lý: Nhập lệnh \texorpdfstring{$\rightarrow$}{} Luật \texorpdfstring{$\rightarrow$}{} Cập nhật trạng thái}}
+
+\setlength{\parindent}{1.5em} Hàm \texttt{processMove()} là luồng chuẩn cho một nước đi: kiểm tra hợp lệ, ghi quân lên bàn, cập nhật nước đi cuối, lưu lịch sử, xóa redo (nếu có), cập nhật thống kê, sau đó kiểm tra thắng hoặc đổi lượt. Chỉ khi toàn bộ trạng thái đã cập nhật xong, hệ thống mới phát âm thanh hoặc chuyển màn hình. Thiết kế này giúp việc phục hồi (undo/redo) và đồng bộ thời gian không bị lệch, đồng thời tránh hiện tượng “bán cập nhật” khi có lỗi giữa chừng.
+
+\setlength{\parindent}{1.5em} Để đảm bảo tính nguyên tử, các cập nhật quan trọng được thực hiện theo thứ tự cố định: (1) cập nhật bàn cờ và nước đi cuối, (2) ghi lịch sử và xóa redo, (3) cập nhật thống kê, (4) phán xét thắng/thua, (5) đổi lượt hoặc kết thúc ván. Thứ tự này phản ánh đúng logic vận hành của ván đấu và bảo toàn tính nhất quán khi undo/redo.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Luồng xử lý một nước đi trong processMove}\label{lst:ch6_process_move}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} (state->status != MATCH\_PLAYING || !isValidMove(state, row, col)) \\ \hline
+2 & \ \ \cppkw{return} \cppkw{false}; \\ \hline
+3 & state->board[row][col] = state->isP1Turn ? CELL\_PLAYER1 : CELL\_PLAYER2; \\ \hline
+4 & state->lastMoveRow = row; \\ \hline
+5 & state->lastMoveCol = col; \\ \hline
+6 & state->matchHistory.push\_back(\{ row, col \}); \\ \hline
+7 & state->redoStack.clear(); \\ \hline
+8 & \cppkw{if} (state->isP1Turn) state->p1.movesCount++; \cppkw{else} state->p2.movesCount++; \\ \hline
+9 & \cppkw{int} winStatus = checkWinCondition(state, row, col, \&state->winningCells); \\ \hline
+10 & \cppkw{if} (winStatus != -1) \{ \\ \hline
+11 & \ \ \cppkw{if} (winStatus == CELL\_PLAYER1) state->p1.totalWins++; \\ \hline
+12 & \ \ \cppkw{else if} (winStatus == CELL\_PLAYER2) state->p2.totalWins++; \\ \hline
+13 & \ \ \cppkw{int} winRequired = (state->targetScore + 1) / 2; \\ \hline
+14 & \ \ \cppkw{if} (state->targetScore > 1) \{ winRequired = state->targetScore; \} \\ \hline
+15 & \ \ \cppkw{bool} seriesWon = (state->p1.totalWins >= winRequired || state->p2.totalWins >= winRequired); \\ \hline
+16 & \ \ \cppkw{if} (seriesWon) \{ \ldots \} \\ \hline
+17 & \ \ state->status = MATCH\_FINISHED; \\ \hline
+18 & \ \ state->winner = winStatus; \\ \hline
+19 & \ \ PlaySFX("sfx\_whistle"); \ \ PlaySFX("sfx\_crowd"); \ \ PlaySFX("sfx\_siu"); \\ \hline
+20 & \} \cppkw{else} \{ switchTurn(state); \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Pipeline này đảm bảo nguyên tắc “nguồn sự thật duy nhất”: trạng thái luôn được cập nhật tập trung ở GameEngine, tránh sai lệch do cập nhật phân tán. Ngoài ra, việc lưu \texttt{lastMoveRow/Col} ngay tại thời điểm đặt quân giúp các bước kiểm tra thắng và highlight luôn bám đúng nước đi cuối.
+
+\subsection*{6.1.2. Đồng bộ lượt và biến isP1Turn}
+\addcontentsline{toc}{subsection}{\textcolor{black}{6.1.2. Đồng bộ lượt và biến isP1Turn}}
+
+\setlength{\parindent}{1.5em} Biến \texttt{isP1Turn} trong PlayState đóng vai trò nguồn sự thật duy nhất cho lượt chơi. Mọi hệ thống phụ (UI, AI, TimeSystem) đều đọc biến này thay vì tự suy diễn. Hàm \texttt{switchTurn()} đảo lượt và reset thời gian theo cấu hình, đảm bảo đồng bộ tuyệt đối giữa luật chơi và bộ đếm giờ. Cơ chế này cũng giúp việc undo/redo khôi phục đúng lượt hiện tại mà không cần suy luận lại từ lịch sử.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Đổi lượt và đồng bộ timer}\label{lst:ch6_switch_turn}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{void} switchTurn(PlayState* state) \{ \\ \hline
+2 & \ \ state->isP1Turn = !state->isP1Turn; \\ \hline
+3 & \ \ state->timeRemaining = state->countdownTime; \\ \hline
+4 & \ \ ResetTimer(state); \\ \hline
+5 & \} \\ \hline
+\end{longtable}
+
+\section*{6.2. Điều phối match series}
+\addcontentsline{toc}{section}{\textcolor{black}{6.2. Điều phối match series}}
+
+\subsection*{6.2.1. BO1/BO3/BO5 và mục tiêu thắng}
+\addcontentsline{toc}{subsection}{\textcolor{black}{6.2.1. BO1/BO3/BO5 và mục tiêu thắng}}
+
+\setlength{\parindent}{1.5em} Quy tắc BO đã được trình bày ở chương luật chơi. Tại đây chỉ tập trung vào cách engine hiện thực hóa việc cộng dồn và chốt series. Sau mỗi ván thắng, GameEngine tăng \texttt{totalWins}, tính ngưỡng \texttt{winRequired} từ \texttt{targetScore} và kiểm tra đã đủ điều kiện thắng series hay chưa. Khi thắng series, \texttt{matchWins} tăng và \texttt{totalWins} được reset về 0 để chuẩn bị cho series tiếp theo. Việc tách biệt này giúp luật chơi rõ ràng, còn engine chỉ chịu trách nhiệm cập nhật trạng thái.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Xác định thắng series trong processMove}\label{lst:ch6_bo_series}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{int} winRequired = (state->targetScore + 1) / 2; \\ \hline
+2 & \cppkw{if} (state->targetScore > 1) \{ winRequired = state->targetScore; \} \\ \hline
+3 & \cppkw{bool} seriesWon = (state->p1.totalWins >= winRequired || state->p2.totalWins >= winRequired); \\ \hline
+4 & \cppkw{if} (seriesWon) \{ \ldots \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Cách tính này hoạt động nhất quán với mọi cấu hình \texttt{targetScore} và đảm bảo trạng thái series luôn đồng bộ với số ván đã thắng của từng người chơi.
+
+\subsection*{6.2.2. Reset hiệp và bảo toàn tỷ số}
+\addcontentsline{toc}{subsection}{\textcolor{black}{6.2.2. Reset hiệp và bảo toàn tỷ số}}
+
+\setlength{\parindent}{1.5em} Khi chuyển sang một round mới trong cùng series, \texttt{startNextRound()} reset bàn cờ, lịch sử nước đi và dữ liệu thời gian, nhưng giữ nguyên điểm series. Điều này giúp kết quả từng ván tách biệt khỏi tiến trình series. Hệ thống cũng đưa con trỏ về giữa bàn và xóa danh sách ô thắng để bắt đầu ván mới sạch sẽ. Ngoài ra, bảng băm trạng thái (nếu dùng cho AI) được xóa để tránh dùng lại dữ liệu của ván trước.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Khởi tạo round mới, giữ nguyên tiến trình series}\label{lst:ch6_start_round}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & state->timeRemaining = state->countdownTime; \\ \hline
+2 & state->isP1Turn = \cppkw{true}; \\ \hline
+3 & state->status = MATCH\_PLAYING; \\ \hline
+4 & state->winner = -1; \\ \hline
+5 & resetPlayerForRound(state->p1); \\ \hline
+6 & resetPlayerForRound(state->p2); \\ \hline
+7 & state->lastMoveRow = -1; \\ \hline
+8 & state->lastMoveCol = -1; \\ \hline
+9 & state->winningCells.clear(); \\ \hline
+10 & state->matchHistory.clear(); \\ \hline
+11 & state->redoStack.clear(); \\ \hline
+12 & state->matchDuration = 0.0f; \\ \hline
+13 & \cppkw{for} (\cppkw{int} r = 0; r < MAX\_BOARD\_SIZE; r++) \\ \hline
+14 & \ \ \cppkw{for} (\cppkw{int} c = 0; c < MAX\_BOARD\_SIZE; c++) \\ \hline
+15 & \ \ \ \ state->board[r][c] = CELL\_EMPTY; \\ \hline
+16 & state->cursorRow = state->boardSize / 2; \\ \hline
+17 & state->cursorCol = state->boardSize / 2; \\ \hline
+18 & clearTranspositionTable(); \\ \hline
+19 & ResetTimer(state); \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Việc reset bộ đếm lượt được thực hiện ở PlayerEngineer, tách rõ dữ liệu ván (movesCount) khỏi dữ liệu series (totalWins, matchWins).
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Reset thống kê lượt, giữ nguyên tiến trình BO}\label{lst:ch6_reset_player_round}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{void} resetPlayerForRound(PlayerInfo2\& player) \{ \\ \hline
+2 & \ \ player.movesCount = 0; \\ \hline
+3 & \ \ \textcolor{dkgreen}{// totalWins và matchWins được giữ nguyên} \\ \hline
+4 & \} \\ \hline
+\end{longtable}
+
+\section*{6.3. Undo/Redo và lịch sử}
+\addcontentsline{toc}{section}{\textcolor{black}{6.3. Undo/Redo và lịch sử}}
+
+\subsection*{6.3.1. Stack lưu nước đi}
+\addcontentsline{toc}{subsection}{\textcolor{black}{6.3.1. Stack lưu nước đi}}
+
+\setlength{\parindent}{1.5em} Lịch sử nước đi được quản lý bằng hai vector đóng vai trò stack: \texttt{matchHistory} (stack chính) và \texttt{redoStack} (stack phục hồi). Khi đặt nước mới, hệ thống push vào history và xóa redo để tránh sai lệch nhánh. Cơ chế này tương đương với mô hình lệnh: mỗi nước đi là một lệnh có thể hoàn tác hoặc phục hồi.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Ghi lịch sử và hủy nhánh redo khi có nước mới}\label{lst:ch6_history_push}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & state->matchHistory.push\_back(\{ row, col \}); \\ \hline
+2 & state->redoStack.clear(); \\ \hline
+\end{longtable}
+
+\subsection*{6.3.2. Khôi phục trạng thái và đồng hồ}
+\addcontentsline{toc}{subsection}{\textcolor{black}{6.3.2. Khôi phục trạng thái và đồng hồ}}
+
+\setlength{\parindent}{1.5em} Undo không chỉ cập nhật bàn cờ mà còn phải đồng bộ lượt chơi, bộ đếm nước đi, trạng thái thắng và timer. Ở chế độ PvE, hệ thống hoàn tác hai nước cùng lúc để luôn trả lượt về người chơi. Điều này tránh tình huống người chơi phải chờ bot đi ngay sau khi hoàn tác.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Undo theo cơ chế 2 bước trong PvE}\label{lst:ch6_undo_pve}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{int} popCount = (state->matchType == MATCH\_PVE \\ \hline
+2 & \ \ \ \ \&\& state->matchHistory.size() >= 2) ? 2 : 1; \\ \hline
+3 & \cppkw{for} (\cppkw{int} i = 0; i < popCount; i++) \{ \\ \hline
+4 & \ \ \cppkw{if} (state->matchHistory.empty()) \cppkw{break}; \\ \hline
+5 & \ \ \cppkw{auto} last = state->matchHistory.back(); \\ \hline
+6 & \ \ state->matchHistory.pop\_back(); \\ \hline
+7 & \ \ state->redoStack.push\_back(last); \\ \hline
+8 & \ \ state->board[last.first][last.second] = CELL\_EMPTY; \\ \hline
+9 & \ \ state->isP1Turn = !state->isP1Turn; \\ \hline
+10 & \ \ \cppkw{if} (state->isP1Turn) state->p1.movesCount--; \cppkw{else} state->p2.movesCount--; \\ \hline
+11 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Sau khi hoàn tác, hệ thống phải cập nhật lại nước đi cuối để phục vụ việc highlight và kiểm tra thắng ở các thao tác tiếp theo. Nếu lịch sử rỗng, nước đi cuối được đặt về trạng thái chưa khởi tạo.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Cập nhật nước đi cuối sau Undo}\label{lst:ch6_undo_last_move}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} (state->matchHistory.empty()) \{ \\ \hline
+2 & \ \ state->lastMoveRow = -1; \\ \hline
+3 & \ \ state->lastMoveCol = -1; \\ \hline
+4 & \} \cppkw{else} \{ \\ \hline
+5 & \ \ \cppkw{auto} last = state->matchHistory.back(); \\ \hline
+6 & \ \ state->lastMoveRow = last.first; \\ \hline
+7 & \ \ state->lastMoveCol = last.second; \\ \hline
+8 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Nếu ván đã kết thúc mà người chơi thực hiện Undo, hệ thống mở lại trạng thái chơi và điều chỉnh điểm thắng để nhất quán với lịch sử, sau đó reset timer cho lượt hiện tại. Ngoài ra, \texttt{winningCells} được xóa để tránh highlight cũ ảnh hưởng lên ván đã mở lại.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Reopen ván đấu sau Undo}\label{lst:ch6_undo_reopen}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} (state->status == MATCH\_FINISHED) \{ \\ \hline
+2 & \ \ state->status = MATCH\_PLAYING; \\ \hline
+3 & \ \ \cppkw{if} (state->winner == CELL\_PLAYER1) state->p1.totalWins--; \\ \hline
+4 & \ \ \cppkw{else if} (state->winner == CELL\_PLAYER2) state->p2.totalWins--; \\ \hline
+5 & \ \ state->winner = -1; \\ \hline
+6 & \} \\ \hline
+7 & state->winningCells.clear(); \\ \hline
+8 & ResetTimer(state); \\ \hline
+\end{longtable}
+
+\section*{6.4. Hệ thống thời gian}
+\addcontentsline{toc}{section}{\textcolor{black}{6.4. Hệ thống thời gian}}
+
+\subsection*{6.4.1. Đếm ngược lượt và thời gian giữ bóng}
+\addcontentsline{toc}{subsection}{\textcolor{black}{6.4.1. Đếm ngược lượt và thời gian giữ bóng}}
+
+\setlength{\parindent}{1.5em} Hệ thống thời gian quản lý hai trục độc lập: đếm ngược cho từng lượt (\texttt{timeRemaining}) và tổng thời gian giữ bóng (\texttt{totalTimePossessed}). Tại vòng lặp PlayScreen, mỗi khung hình cộng dồn thời gian cho người đang tới lượt, đồng thời cập nhật đếm ngược để kiểm soát timeout. Nhờ vậy, luật chơi vẫn chuẩn xác ngay cả khi tốc độ khung hình dao động.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Cộng dồn thời gian giữ bóng và kiểm soát timeout}\label{lst:ch6_possession_time}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} (state->status == MATCH\_PLAYING) \{ \\ \hline
+2 & \ \ state->matchDuration += (float)dt; \\ \hline
+3 & \ \ \cppkw{if} (state->isP1Turn) \{ state->p1.totalTimePossessed += (float)dt; \} \\ \hline
+4 & \ \ \cppkw{else} \{ state->p2.totalTimePossessed += (float)dt; \} \\ \hline
+5 & \ \ \cppkw{if} (state->matchType == MATCH\_PVE) \{ \ldots \} \\ \hline
+6 & \ \ \cppkw{else if} (UpdateCountdown(state, dt)) \{ \\ \hline
+7 & \ \ \ \ \cppkw{if} (state->timeRemaining <= 0) \{ PlaySFX("sfx\_timeout"); switchTurn(state); \} \\ \hline
+8 & \ \ \} \\ \hline
+9 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Việc tách riêng hai loại thời gian giúp luật chơi (timeout) và thống kê sau trận (possession) không ảnh hưởng lẫn nhau, đồng thời cung cấp dữ liệu phân tích cho người chơi.
+
+\subsection*{6.4.2. Quỹ thời gian toàn trận và khởi tạo match}
+\addcontentsline{toc}{subsection}{\textcolor{black}{6.4.2. Quỹ thời gian toàn trận và khởi tạo match}}
+
+\setlength{\parindent}{1.5em} Khi khởi tạo match mới, \texttt{initNewMatch()} thiết lập đầy đủ thông số chế độ, kích thước bàn, thời gian lượt, độ khó bot và điểm mục tiêu BO. Đồng thời, nếu người chơi bật chế độ tính giờ toàn trận, hệ thống sẽ khởi tạo quỹ thời gian cho mỗi bên ngay tại đây. Hàm này cũng khởi tạo thông tin người chơi, xóa bảng băm AI và gọi \texttt{startNextRound()} để đảm bảo trạng thái ban đầu sạch.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Khởi tạo trận mới và quỹ thời gian toàn trận}\label{lst:ch6_match_time_bank}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & state->gameMode = mode; \\ \hline
+2 & state->matchType = type; \\ \hline
+3 & state->boardSize = boardSize; \\ \hline
+4 & state->countdownTime = countdownTime; \\ \hline
+5 & state->difficulty = difficulty; \\ \hline
+6 & state->targetScore = targetScore; \\ \hline
+7 & state->isMatchTimed = (totalTime > 0); \\ \hline
+8 & state->p1TotalTimeLeft = totalTime * 60; \\ \hline
+9 & state->p2TotalTimeLeft = totalTime * 60; \\ \hline
+10 & initPlayer(state->p1, state->p1.name, state->p1.avatarPath, 'X', (float)countdownTime); \\ \hline
+11 & initPlayer(state->p2, state->p2.name, state->p2.avatarPath, 'O', (float)countdownTime); \\ \hline
+12 & clearTranspositionTable(); \\ \hline
+13 & startNextRound(state); \\ \hline
+\end{longtable}
+
+\subsection*{6.3.3. Phục hồi redo và phán xét lại trạng thái}
+\addcontentsline{toc}{subsection}{\textcolor{black}{6.3.3. Phục hồi redo và phán xét lại trạng thái}}
+
+\setlength{\parindent}{1.5em} Redo thực hiện ngược với Undo: lấy nước đi từ \texttt{redoStack}, đặt lại lên bàn, cập nhật lịch sử, rồi kiểm tra thắng. Nếu phát hiện kết thúc ván, hệ thống cập nhật trạng thái và người thắng; nếu chưa kết thúc thì đổi lượt bình thường.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Phục hồi nước đi trong redoMove}\label{lst:ch6_redo_move}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} (state->redoStack.empty()) \cppkw{return}; \\ \hline
+2 & \cppkw{int} popCount = (state->matchType == MATCH\_PVE \\ \hline
+3 & \ \ \ \ \&\& state->redoStack.size() >= 2) ? 2 : 1; \\ \hline
+4 & \cppkw{for} (\cppkw{int} i = 0; i < popCount; i++) \{ \\ \hline
+5 & \ \ \cppkw{if} (state->redoStack.empty()) \cppkw{break}; \\ \hline
+6 & \ \ \cppkw{auto} nextMove = state->redoStack.back(); \\ \hline
+7 & \ \ state->redoStack.pop\_back(); \\ \hline
+8 & \ \ state->board[nextMove.first][nextMove.second] = state->isP1Turn ? CELL\_PLAYER1 : CELL\_PLAYER2; \\ \hline
+9 & \ \ state->lastMoveRow = nextMove.first; \\ \hline
+10 & \ \ state->lastMoveCol = nextMove.second; \\ \hline
+11 & \ \ state->matchHistory.push\_back(nextMove); \\ \hline
+12 & \ \ \cppkw{if} (state->isP1Turn) state->p1.movesCount++; \cppkw{else} state->p2.movesCount++; \\ \hline
+13 & \ \ \cppkw{int} winStatus = checkWinCondition(state, nextMove.first, nextMove.second, \&state->winningCells); \\ \hline
+14 & \ \ \cppkw{if} (winStatus != -1) \{ state->status = MATCH\_FINISHED; state->winner = winStatus; \} \\ \hline
+15 & \ \ \cppkw{else} \{ state->isP1Turn = !state->isP1Turn; \} \\ \hline
+16 & \} \\ \hline
+17 & ResetTimer(state); \\ \hline
+\end{longtable}

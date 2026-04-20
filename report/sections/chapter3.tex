@@ -1,0 +1,355 @@
+\newpage
+\chapter*{\centering CHƯƠNG 3. THIẾT KẾ DỮ LIỆU VÀ CẤU TRÚC CỐT LÕI}
+\addcontentsline{toc}{chapter}{\textcolor{fitblue}{CHƯƠNG 3. THIẾT KẾ DỮ LIỆU VÀ CẤU TRÚC CỐT LÕI}}
+
+\section*{3.1. Quản lý trạng thái ván đấu}
+\addcontentsline{toc}{section}{\textcolor{black}{3.1. Quản lý trạng thái ván đấu}}
+
+\noindent \indent Lõi dữ liệu của toàn bộ hệ thống được gom vào cấu trúc \texttt{PlayState}. Cấu trúc này lưu tất cả thông tin cần thiết để khôi phục ván đấu, điều phối lượt đi, hiển thị giao diện và hỗ trợ lưu/tải. Dữ liệu được thiết kế theo hướng POD để tối ưu hiệu năng và đơn giản hóa việc tuần tự hóa.
+
+\subsection*{3.1.1. Ma trận bàn cờ và tối ưu bộ nhớ}
+\addcontentsline{toc}{subsection}{\textcolor{black}{3.1.1. Ma trận bàn cờ và tối ưu bộ nhớ}}
+
+\noindent \indent Bàn cờ được lưu dưới dạng mảng tĩnh hai chiều, kết hợp các hằng số hệ thống trong \texttt{GameConstants.h}. Thiết kế này tránh cấp phát động lặp lại, giúp truy cập theo chỉ số O(1) và giảm overhead khi kiểm tra luật thắng.
+
+\begin{itemize}
+  \item \textbf{Kích thước và giới hạn:} \texttt{GOMOKU\_SIZE = 15}, \texttt{WIN\_CONDITION = 5}, \\ \texttt{MAX\_BOARD\_SIZE = 20} đảm bảo đủ vùng đệm cho mọi chế độ.
+  \item \textbf{Giá trị ô:} mỗi ô mang một trong ba trạng thái \texttt{CELL\_EMPTY}, \texttt{CELL\_PLAYER1}, \texttt{CELL\_PLAYER2}.
+  \item \textbf{Kích thước thực tế:} \texttt{boardSize} cho phép chuyển giữa Caro (15x15) và TTT (3x3) mà không đổi cấu trúc lưu trữ.
+\end{itemize}
+
+\begin{table}[H]
+\captionsetup{type=lstlisting}
+\caption{Mã nguồn Hằng số và định nghĩa trạng thái ô bàn cờ}
+\label{lst:gameconstants}
+\centering
+\renewcommand{\arraystretch}{0.8}
+\begin{tabularx}{\linewidth}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}X|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{\#define} GOMOKU\_SIZE 15 \\ \hline
+2 & \cppkw{\#define} WIN\_CONDITION 5 \\ \hline
+3 & \cppkw{\#define} MAX\_BOARD\_SIZE 20 \\ \hline
+4 &  \\ \hline
+5 & \cppkw{\#define} CELL\_EMPTY 0 \\ \hline
+6 & \cppkw{\#define} CELL\_PLAYER1 1 \\ \hline
+7 & \cppkw{\#define} CELL\_PLAYER2 2 \\ \hline
+8 &  \\ \hline
+9 & \cppkw{\#define} MAX\_SAVE\_SLOTS 5 \textcolor{dkgreen}{// Giới hạn 5 slot lưu game} \\ \hline
+10 & \cppkw{\#define} MAX\_SAVE\_NAME\_LEN 15 \textcolor{dkgreen}{// Giới hạn 15 ký tự cho tên/thông tin hiển thị} \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\captionsetup{type=lstlisting}
+\caption{Mã nguồn Ma trận bàn cờ trong PlayState}
+\label{lst:playstate_board}
+\centering
+\renewcommand{\arraystretch}{0.8}
+\begin{tabularx}{\linewidth}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}X|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{int} boardSize = 15; \\ \hline
+2 & \textcolor{dkgreen}{// Ma trận lưu giá trị: CELL\_EMPTY, CELL\_PLAYER1, hoặc CELL\_PLAYER2} \\ \hline
+3 & \cppkw{int} board[MAX\_BOARD\_SIZE][MAX\_BOARD\_SIZE] = {0}; \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection*{3.1.2. Turn-based logic và Match Status}
+\addcontentsline{toc}{subsection}{\textcolor{black}{3.1.2. Turn-based logic và Match Status}}
+
+\noindent \indent Vòng đời ván đấu được điều phối bằng các trường trạng thái trong \texttt{PlayState} và enum \texttt{MatchStatus}. Trạng thái này là cơ sở để GameEngine quyết định xử lý nước đi, tạm dừng hoặc tổng kết.
+
+\begin{itemize}
+  \item \textbf{Lượt chơi:} \texttt{isP1Turn} quyết định quân cờ đang được đặt và cập nhật đếm lượt.
+  \item \textbf{Trạng thái ván:} \texttt{MATCH\_PLAYING}, \texttt{MATCH\_PAUSED}, \texttt{MATCH\_FINISHED}, \\ \texttt{MATCH\_SUMMARY}.
+  \item \textbf{Kết quả:} \texttt{winner} lưu giá trị \texttt{-1} (đang chơi), \texttt{0} (hòa), \texttt{1} (P1), \texttt{2} (P2).
+  \item \textbf{Thời gian:} \texttt{countdownTime} và \texttt{timeRemaining} quản lý thời gian lượt; \\ \texttt{isMatchTimed}, \texttt{p1TotalTimeLeft}, \texttt{p2TotalTimeLeft} quản lý thời gian toàn trận.
+\end{itemize}
+
+\begin{table}[H]
+\captionsetup{type=lstlisting}
+\caption{Mã nguồn Enum MatchStatus trong PlayState}
+\label{lst:matchstatus}
+\centering
+\renewcommand{\arraystretch}{0.8}
+\begin{tabularx}{\linewidth}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}X|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{enum} MatchStatus \\ \hline
+2 & \{ \\ \hline
+3 & \ \ MATCH\_PLAYING, \\ \hline
+4 & \ \ MATCH\_PAUSED, \\ \hline
+5 & \ \ MATCH\_FINISHED, \\ \hline
+6 & \ \ MATCH\_SUMMARY \\ \hline
+7 & \}; \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection*{3.1.3. Lịch sử nước đi và cơ chế Undo/Redo}
+\addcontentsline{toc}{subsection}{\textcolor{black}{3.1.3. Lịch sử nước đi và cơ chế Undo/Redo}}
+
+\noindent \indent Dữ liệu lịch sử được lưu trong \texttt{matchHistory} và \texttt{redoStack}. Điều này cho phép hoàn tác và thực hiện lại một cách nhất quán giữa PvP và PvE.
+
+\begin{itemize}
+  \item \textbf{matchHistory:} chuỗi các tọa độ đã đánh, dùng để khôi phục và tính toán kết quả.
+  \item \textbf{redoStack:} lưu các nước đã hoàn tác để có thể thực hiện lại.
+  \item \textbf{lastMoveRow/Col và winningCells:} phục vụ hiển thị nước đi cuối và highlight chuỗi thắng.
+\end{itemize}
+
+\begin{table}[H]
+\captionsetup{type=lstlisting}
+\caption{Mã nguồn Quy tắc Undo cho PvE (lùi 2 nước)}
+\label{lst:undo_pve}
+\centering
+\renewcommand{\arraystretch}{0.8}
+\begin{tabularx}{\linewidth}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}X|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{void} undoMove(PlayState* state) \{ \\ \hline
+2 & \ \ \cppkw{if} (state->matchHistory.empty()) \cppkw{return}; \\ \hline
+3 &  \\ \hline
+4 & \ \ \textcolor{dkgreen}{// PVE: lùi 2 bước để trả lượt về người chơi} \\ \hline
+5 & \ \ \cppkw{int} popCount = (state->matchType == MATCH\_PVE \\ \hline
+6 & \ \ \ \ \&\& state->matchHistory.size() >= 2) ? 2 : 1; \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection*{3.1.4. Kiểm tra điều kiện thắng và trạng thái kết thúc}
+\addcontentsline{toc}{subsection}{\textcolor{black}{3.1.4. Kiểm tra điều kiện thắng và trạng thái kết thúc}}
+
+\noindent \indent Luật thắng được xử lý trong \texttt{GameRules::checkWinCondition}. Hệ thống tự động chọn độ dài thắng theo chế độ (Caro: 5, TTT: 3), quét 4 hướng và trả về toàn bộ chuỗi thắng để hiển thị.
+
+\begin{table}[H]
+\captionsetup{type=lstlisting}
+\caption{Mã nguồn Xác định độ dài thắng theo chế độ chơi}
+\label{lst:winlen}
+\centering
+\renewcommand{\arraystretch}{0.8}
+\begin{tabularx}{\linewidth}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}X|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{const} \cppkw{int} winLength = (state->gameMode == MODE\_CARO) ? 5 : 3; \\ \hline
+2 & \cppkw{const} \cppkw{int} size = state->boardSize; \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\captionsetup{type=lstlisting}
+\caption{Mã nguồn Trả về toàn bộ chuỗi thắng để highlight}
+\label{lst:winline}
+\centering
+\renewcommand{\arraystretch}{0.8}
+\begin{tabularx}{\linewidth}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}X|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} ((\cppkw{int})line.size() >= winLength) \{ \\ \hline
+2 & \ \ \cppkw{if} (outWinCells) \\ \hline
+3 & \ \ \ \ *outWinCells = line; \textcolor{dkgreen}{// Trả về toàn bộ chuỗi, không cắt} \\ \hline
+4 & \ \ \cppkw{return} currentPiece; \\ \hline
+5 & \} \\ \hline
+\end{tabularx}
+\end{table}
+
+\section*{3.2. Mô hình người chơi}
+\addcontentsline{toc}{section}{\textcolor{black}{3.2. Mô hình người chơi}}
+
+\noindent \indent Thông tin người chơi được chuẩn hóa qua \texttt{PlayerInfo2}. Cấu trúc này tập trung các thống kê phục vụ hiển thị, tính điểm và lưu/tải.
+
+\subsection*{3.2.1. PlayerInfo2: Wins, Moves, Possession Time}
+\addcontentsline{toc}{subsection}{\textcolor{black}{3.2.1. PlayerInfo2: Wins, Moves, Possession Time}}
+
+\begin{itemize}
+  \item \textbf{name, avatarPath, piece:} thông tin định danh và quân cờ đại diện.
+  \item \textbf{totalWins:} số ván thắng trong series BO hiện tại.
+  \item \textbf{matchWins:} số series BO đã thắng.
+  \item \textbf{movesCount:} tổng số nước đã đi trong ván.
+  \item \textbf{maxTurnTime, totalTimePossessed:} giới hạn thời gian lượt và tổng thời gian giữ lượt.
+\end{itemize}
+
+\begin{table}[H]
+\captionsetup{type=lstlisting}
+\caption{Mã nguồn Cấu trúc PlayerInfo2}
+\label{lst:playerinfo2}
+\centering
+\renewcommand{\arraystretch}{0.8}
+\begin{tabularx}{\linewidth}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}X|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{struct} PlayerInfo2 \\ \hline
+2 & \{ \\ \hline
+3 & \ \ \cppkw{wstring} name; \\ \hline
+4 & \ \ \cppkw{string} avatarPath; \\ \hline
+5 & \ \ \cppkw{char} piece = ' '; \textcolor{dkgreen}{// 'X' hoặc 'O'} \\ \hline
+6 & \ \ \cppkw{int} totalWins = 0; \textcolor{dkgreen}{// Số Bàn Thắng (trong series BO hiện tại)} \\ \hline
+7 & \ \ \cppkw{int} matchWins = 0; \textcolor{dkgreen}{// Số Trận Thắng BO (đã thắng trọn 1 serie BO)} \\ \hline
+8 & \ \ \cppkw{int} movesCount = 0; \\ \hline
+9 & \ \ \cppkw{float} maxTurnTime = 0.0f; \textcolor{dkgreen}{// Thời gian tối đa cho 1 lượt} \\ \hline
+10 & \ \ \cppkw{float} totalTimePossessed = 0.0f; \textcolor{dkgreen}{// Tổng thời gian giữ bóng (giây), cộng dồn theo phiên} \\ \hline
+11 & \}; \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection*{3.2.2. PlayerEngineer và vòng đời thực thể}
+\addcontentsline{toc}{subsection}{\textcolor{black}{3.2.2. PlayerEngineer và vòng đời thực thể}}
+
+\noindent \indent \texttt{PlayerEngineer} đóng vai trò khởi tạo và reset chỉ số theo vòng đời ván đấu. Các thao tác này được GameEngine gọi khi bắt đầu match hoặc round mới.
+
+\begin{itemize}
+  \item \textbf{initPlayer:} gán tên, avatar, quân cờ và reset các thống kê cần thiết.
+  \item \textbf{resetPlayerForRound:} chỉ reset thống kê theo round (ví dụ \texttt{movesCount}), giữ nguyên tiến trình series BO.
+\end{itemize}
+
+\begin{table}[H]
+\captionsetup{type=lstlisting}
+\caption{Mã nguồn Reset thống kê theo round trong PlayerEngineer}
+\label{lst:resetplayer}
+\centering
+\renewcommand{\arraystretch}{0.8}
+\begin{tabularx}{\linewidth}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}X|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{void} resetPlayerForRound(PlayerInfo2\& player) \{ \\ \hline
+2 & \ \ player.movesCount = 0; \\ \hline
+3 & \ \ \textcolor{dkgreen}{// Lưu ý: totalWins và matchWins được giữ nguyên để tính tiến trình series BO} \\ \hline
+4 & \} \\ \hline
+\end{tabularx}
+\end{table}
+
+\section*{3.3. Cấu hình và môi trường}
+\addcontentsline{toc}{section}{\textcolor{black}{3.3. Cấu hình và môi trường}}
+
+\subsection*{3.3.1. Nạp Config và thiết lập mặc định}
+\addcontentsline{toc}{subsection}{\textcolor{black}{3.3.1. Nạp Config và thiết lập mặc định}}
+
+\noindent \indent Thông số hệ thống (âm thanh, ngôn ngữ) được gói trong \texttt{GameConfig}. \texttt{ConfigLoader} đọc/ghi trực tiếp cấu trúc này theo dạng nhị phân và tự tạo mặc định nếu thiếu tệp.
+
+\begin{itemize}
+  \item \textbf{Audio:} \texttt{isBgmEnabled}, \texttt{bgmVolume}, \texttt{isSfxEnabled}, \texttt{sfxVolume}.
+  \item \textbf{Language:} \texttt{currentLang} với hai lựa chọn \texttt{APP\_LANG\_VI} và \texttt{APP\_LANG\_EN}.
+\end{itemize}
+
+\begin{table}[H]
+\captionsetup{type=lstlisting}
+\caption{Mã nguồn Thiết lập mặc định trong ConfigLoader}
+\label{lst:defaultconfig}
+\centering
+\renewcommand{\arraystretch}{0.8}
+\begin{tabularx}{\linewidth}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}X|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{static} \cppkw{void} SetDefaultConfig(GameConfig* config) \{ \\ \hline
+2 & \ \ config->isBgmEnabled = \cppkw{true}; \\ \hline
+3 & \ \ config->bgmVolume = 50; \\ \hline
+4 & \ \ config->isSfxEnabled = \cppkw{true}; \\ \hline
+5 & \ \ config->sfxVolume = 50; \\ \hline
+6 & \ \ config->currentLang = APP\_LANG\_VI; \\ \hline
+7 & \} \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection*{3.3.2. Lưu/Tải trạng thái và metadata}
+\addcontentsline{toc}{subsection}{\textcolor{black}{3.3.2. Lưu/Tải trạng thái và metadata}}
+
+\noindent \indent Hệ thống lưu/tải được triển khai trong \texttt{SaveLoadSystem}. Mỗi bản lưu được quản lý theo slot, kèm metadata để hiển thị ở màn hình Load Game. File save có magic number và version để kiểm tra tính hợp lệ.
+
+\begin{itemize}
+  \item \textbf{MAX\_SAVE\_SLOTS = 5:} giới hạn số slot lưu.
+  \item \textbf{SaveMetadata:} lưu tên, thời gian, chế độ, điểm và độ khó.
+  \item \textbf{SAVE\_MAGIC / SAVE\_VERSION:} dùng để kiểm tra định dạng file và tương thích phiên bản.
+\end{itemize}
+
+\begin{table}[H]
+\captionsetup{type=lstlisting}
+\caption{Mã nguồn Cấu trúc metadata cho slot lưu}
+\label{lst:savemetadata}
+\centering
+\renewcommand{\arraystretch}{0.8}
+\begin{tabularx}{\linewidth}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}X|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{struct} SaveMetadata \{ \\ \hline
+2 & \ \ std::wstring name; \\ \hline
+3 & \ \ std::wstring timestamp; \\ \hline
+4 & \ \ \cppkw{int} mode; \textcolor{dkgreen}{// 0: Caro, 1: TTT} \\ \hline
+5 & \ \ \cppkw{int} type; \textcolor{dkgreen}{// 0: PvP, 1: PvE} \\ \hline
+6 & \ \ \cppkw{int} p1Wins; \\ \hline
+7 & \ \ \cppkw{int} p2Wins; \\ \hline
+8 & \ \ \cppkw{int} difficulty; \\ \hline
+9 & \ \ \cppkw{int} boardSize; \\ \hline
+10 & \ \ \cppkw{bool} exists; \\ \hline
+11 & \ \ \cppkw{uint32\_t} version; \\ \hline
+12 & \}; \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\captionsetup{type=lstlisting}
+\caption{Mã nguồn Magic number và phiên bản file save}
+\label{lst:savemagic}
+\centering
+\renewcommand{\arraystretch}{0.8}
+\begin{tabularx}{\linewidth}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}X|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{static} \cppkw{const} \cppkw{uint32\_t} SAVE\_MAGIC = 0xCA05A1E2; \\ \hline
+2 & \cppkw{static} \cppkw{const} \cppkw{uint32\_t} SAVE\_VERSION = 5; \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection*{3.3.3. Hệ thống màu sắc và theme động}
+\addcontentsline{toc}{subsection}{\textcolor{black}{3.3.3. Hệ thống màu sắc và theme động}}
+
+\noindent \indent Hệ thống màu được chuẩn hóa qua \texttt{SmartColor}, \texttt{Palette} và \texttt{Theme}. Điều này giúp giao diện đồng nhất, dễ mở rộng, và hỗ trợ pha trộn alpha cho hiệu ứng kính mờ và highlight.
+
+\begin{itemize}
+  \item \textbf{SmartColor:} cấu trúc ARGB dạng POD, dùng chung cho GDI và GDI+.
+  \item \textbf{Palette:} tập hợp màu cơ bản (đen, trắng, xám, đỏ, xanh, cyan...) và các dải màu phụ trợ.
+  \item \textbf{Theme:} màu theo ngữ nghĩa (panel, pitch, highlight, border, turn pulse).
+\end{itemize}
+
+\begin{table}[H]
+\captionsetup{type=lstlisting}
+\caption{Mã nguồn Cấu trúc SmartColor}
+\label{lst:smartcolor}
+\centering
+\renewcommand{\arraystretch}{0.8}
+\begin{tabularx}{\linewidth}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}X|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{struct} SmartColor \\ \hline
+2 & \{ \\ \hline
+3 & \ \ \cppkw{BYTE} a; \\ \hline
+4 & \ \ \cppkw{BYTE} r; \\ \hline
+5 & \ \ \cppkw{BYTE} g; \\ \hline
+6 & \ \ \cppkw{BYTE} b; \\ \hline
+7 & \}; \\ \hline
+\end{tabularx}
+\end{table}
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+
+\captionof{lstlisting}{Mã nguồn Một số màu chủ đạo trong Theme}\label{lst:theme} 
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{\dimexpr\linewidth-0.8cm-3\tabcolsep-2\arrayrulewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+\endfirsthead
+
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+\endhead
+
+1 & \cppkw{constexpr} SmartColor GlassWhite = \{220, 255, 255, 255\}; \textcolor{dkgreen}{// Panel trắng mờ} \\ \hline
+2 & \cppkw{constexpr} SmartColor GlassDark = \{200, 15, 20, 30\}; \textcolor{dkgreen}{// Panel tối (pause)} \\ \hline
+3 & \cppkw{constexpr} SmartColor GlassGleam = \{150, 255, 255, 255\}; \textcolor{dkgreen}{// Viền trắng mờ} \\ \hline
+4 &  \\ \hline
+5 & \cppkw{constexpr} SmartColor P1TurnPulse = \{30, 255, 150, 0\}; \\ \hline
+6 & \cppkw{constexpr} SmartColor P1TurnBorder = \{200, 255, 150, 0\}; \\ \hline
+7 & \cppkw{constexpr} SmartColor P1Watermark = \{60, 255, 150, 0\}; \\ \hline
+8 &  \\ \hline
+9 & \cppkw{constexpr} SmartColor P2TurnPulse = \{30, 0, 255, 255\}; \\ \hline
+10 & \cppkw{constexpr} SmartColor P2TurnBorder = \{200, 0, 255, 255\}; \\ \hline
+11 & \cppkw{constexpr} SmartColor P2Watermark = \{60, 0, 255, 255\}; \\ \hline
+
+\end{longtable}

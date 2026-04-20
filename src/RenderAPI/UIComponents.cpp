@@ -46,9 +46,10 @@ Gdiplus::SolidBrush *GetCachedBrush(const Gdiplus::Color &color)
 // -------------------------------------------------------------
 PixelModel LoadPixelModel(const std::string &filePath)
 {
-    // Tối ưu: Kiểm tra cache trước khi đọc file từ đĩa
+    // Kiểm tra cache trước khi đọc file từ đĩa
     auto it = g_RawModelCache.find(filePath);
-    if (it != g_RawModelCache.end()) return it->second;
+    if (it != g_RawModelCache.end())
+        return it->second;
 
     PixelModel model;
     std::ifstream file(filePath);
@@ -67,12 +68,14 @@ PixelModel LoadPixelModel(const std::string &filePath)
     model.data.resize(model.height, std::vector<int>(model.width, 0));
     for (int r = 0; r < model.height; ++r)
     {
-        if (!std::getline(file, line)) break;
+        if (!std::getline(file, line))
+            break;
         std::stringstream ss(line);
         for (int c = 0; c < model.width; ++c)
         {
             int val = 0;
-            if (ss >> val) model.data[r][c] = val;
+            if (ss >> val)
+                model.data[r][c] = val;
         }
     }
     model.isLoaded = true;
@@ -89,12 +92,13 @@ void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int cx, int c
 
     // Tự động tính toán kích thước mỗi điểm ảnh dựa trên diện tích mục tiêu
     int pSize = totalSize / max(model.width, model.height);
-    if (pSize < 1) pSize = 1;
+    if (pSize < 1)
+        pSize = 1;
 
     // --- Hashing Key Optimization (No string concatenation in hot loop) ---
     size_t key = (size_t)&model;
     hash_combine(key, totalSize);
-    
+
     if (manualPaletteHash != 0)
     {
         hash_combine(key, manualPaletteHash);
@@ -304,7 +308,7 @@ void DrawPixelAvatar(Gdiplus::Graphics &g, int x, int y, int size, int avatarTyp
         std::string filename = "Asset/models/avt_0" + std::to_string(avatarType) + "/avt.txt";
         PixelModel model = LoadPixelModel(filename);
 
-        // Fallback: Nếu không load được avatar yêu cầu, thử load avatar mặc định (type 0)
+        // Fallback: Nếu không load được avatar yêu cầu, load avatar mặc định (type 0)
         if (!model.isLoaded && avatarType != 0)
         {
             filename = "Asset/models/avt_00/avt.txt";
@@ -351,7 +355,7 @@ void DrawPixelAvatar(Gdiplus::Graphics &g, int x, int y, int size, int avatarTyp
                         Gdiplus::SolidBrush *brush = GetCachedBrush(color);
                         gBmp.FillRectangle(brush, c * pixelSize, r * pixelSize, pixelSize, pixelSize);
 
-                        // 2. Tối ưu hóa: Chỉ vẽ viền lưới cho các nhân vật ít chi tiết (Type < 6)
+                        // 2. Chỉ vẽ viền lưới cho các nhân vật ít chi tiết
                         if (avatarType < 6)
                         {
                             gBmp.DrawRectangle(&pixelPen, c * pixelSize, r * pixelSize, pixelSize, pixelSize);
@@ -590,7 +594,7 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
     SelectObject(hdc, oldF);
 }
 
-void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeight, bool showFlashes)
+void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeight, bool showFlashes, bool animate)
 {
     // --- CACHE TẦNG TĨNH (Pitch & Lines) ---
     static Gdiplus::Bitmap *pitchCache = nullptr;
@@ -646,101 +650,104 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
     // Vẽ nền tĩnh từ Cache
     g.DrawImage(pitchCache, 0, 0);
 
-    // 2. Hiệu ứng Camera Flash (CHỈ vẽ ở MenuScreen khi showFlashes = true)
-    if (showFlashes)
+    if (animate)
     {
-        const int flashCount = 15; // Giảm xuống 15 để tối ưu hiệu suất tối đa
-        for (int i = 0; i < flashCount; i++)
+        // 2. Hiệu ứng Camera Flash (CHỈ vẽ ở MenuScreen khi showFlashes = true)
+        if (showFlashes)
         {
-            int fx = (i * 918273) % screenWidth;
-            int fy = (i * 374621) % (screenHeight / 3);
-            float phase = (i * 137) % 314 / 50.0f;
+            const int flashCount = 15;
+            for (int i = 0; i < flashCount; i++)
+            {
+                int fx = (i * 918273) % screenWidth;
+                int fy = (i * 374621) % (screenHeight / 3);
+                float phase = (i * 137) % 314 / 50.0f;
 
-            float rawPulse = sin(g_GlobalAnimTime * 15.0f + phase);
-            if (rawPulse > 0.92f)
-            { // Ngưỡng cao hơn để chớp dứt khoát hơn
-                int alpha = (int)((rawPulse - 0.92f) * 12.5f * 255);
-                alpha = max(0, min(255, alpha));
+                float rawPulse = sin(g_GlobalAnimTime * 15.0f + phase);
+                if (rawPulse > 0.92f)
+                { // Ngưỡng cao hơn để chớp dứt khoát hơn
+                    int alpha = (int)((rawPulse - 0.92f) * 12.5f * 255);
+                    alpha = max(0, min(255, alpha));
 
-                Gdiplus::SolidBrush flashBrush(Gdiplus::Color((BYTE)alpha, 255, 255, 255));
-                // Vẽ một hình chữ thập đơn giản thay vì 3 hình chữ nhật
-                g.FillRectangle(&flashBrush, fx - 1, fy - 6, 2, 12);
-                g.FillRectangle(&flashBrush, fx - 6, fy - 1, 12, 2);
+                    Gdiplus::SolidBrush flashBrush(Gdiplus::Color((BYTE)alpha, 255, 255, 255));
+                    // Vẽ một hình chữ thập đơn giản thay vì 3 hình chữ nhật
+                    g.FillRectangle(&flashBrush, fx - 1, fy - 6, 2, 12);
+                    g.FillRectangle(&flashBrush, fx - 6, fy - 1, 12, 2);
+                }
             }
         }
-    }
 
-    // 3. Rạch gió (Wind Streaks) bay ngang sân cỏ
-    {
-        const int WIND_COUNT = 8;
-        static const struct WindLine
+        // 3. Rạch gió (Wind Streaks) bay ngang sân cỏ
         {
-            float yFrac, speed;
-            int len, alpha;
-        } WIND_LINES[] = {
-            {0.18f, 55.0f, 160, 45}, {0.31f, 40.0f, 220, 50}, {0.44f, 60.0f, 140, 40}, {0.60f, 50.0f, 180, 45}, {0.72f, 45.0f, 200, 50}, {0.85f, 62.0f, 150, 42}, {0.24f, 80.0f, 90, 30}, {0.52f, 75.0f, 110, 35}};
-
-        for (int i = 0; i < WIND_COUNT; i++)
-        {
-            const WindLine &wl = WIND_LINES[i];
-            int wy = (int)(wl.yFrac * screenHeight);
-            int wx = (int)fmod(wl.speed * g_GlobalAnimTime + i * (screenWidth / (float)WIND_COUNT), (float)(screenWidth + wl.len)) - wl.len;
-
-            Gdiplus::SolidBrush windBrush(Gdiplus::Color((BYTE)wl.alpha, 255, 255, 255));
-            g.FillRectangle(&windBrush, wx, wy, wl.len, UIScaler::SY(2));
-        }
-    }
-
-    // 4. Đám mây trôi ngang
-    {
-        static PixelModel cloudModel;
-        if (!cloudModel.isLoaded)
-        {
-            cloudModel = LoadPixelModel("Asset/models/bg/cloud.txt");
-        }
-        if (cloudModel.isLoaded)
-        {
-            static std::map<int, Gdiplus::Color> cloudPalette = {{1, Gdiplus::Color(170, 245, 248, 255)}};
-            const float clouds[][3] = {{22.0f, 0.04f, 0.18f}, {14.0f, 0.10f, 0.12f}, {30.0f, 0.02f, 0.10f}};
-            for (int i = 0; i < 3; i++)
+            const int WIND_COUNT = 8;
+            static const struct WindLine
             {
-                int cSize = (int)(screenWidth * clouds[i][2]);
-                int cx = (int)fmod(clouds[i][0] * g_GlobalAnimTime + i * (screenWidth / 3.0f), (float)(screenWidth + UIScaler::SX(200)));
-                int cy = (int)(clouds[i][1] * screenHeight) + (int)(sin(g_GlobalAnimTime * 0.8f + i) * UIScaler::SY(4));
-                DrawPixelModel(g, cloudModel, cx, cy, cSize, cloudPalette, 9991); // 9991 is clouds fixed palette hash
+                float yFrac, speed;
+                int len, alpha;
+            } WIND_LINES[] = {
+                {0.18f, 55.0f, 160, 45}, {0.31f, 40.0f, 220, 50}, {0.44f, 60.0f, 140, 40}, {0.60f, 50.0f, 180, 45}, {0.72f, 45.0f, 200, 50}, {0.85f, 62.0f, 150, 42}, {0.24f, 80.0f, 90, 30}, {0.52f, 75.0f, 110, 35}};
+
+            for (int i = 0; i < WIND_COUNT; i++)
+            {
+                const WindLine &wl = WIND_LINES[i];
+                int wy = (int)(wl.yFrac * screenHeight);
+                int wx = (int)fmod(wl.speed * g_GlobalAnimTime + i * (screenWidth / (float)WIND_COUNT), (float)(screenWidth + wl.len)) - wl.len;
+
+                Gdiplus::SolidBrush windBrush(Gdiplus::Color((BYTE)wl.alpha, 255, 255, 255));
+                g.FillRectangle(&windBrush, wx, wy, wl.len, UIScaler::SY(2));
             }
         }
-    }
 
-    // 5. Bóng bay (Balloons)
-    {
-        static PixelModel balloonModel;
-        if (!balloonModel.isLoaded)
+        // 4. Đám mây trôi ngang
         {
-            balloonModel = LoadPixelModel("Asset/models/bg/balloon.txt");
+            static PixelModel cloudModel;
+            if (!cloudModel.isLoaded)
+            {
+                cloudModel = LoadPixelModel("Asset/models/bg/cloud.txt");
+            }
+            if (cloudModel.isLoaded)
+            {
+                static std::map<int, Gdiplus::Color> cloudPalette = {{1, Gdiplus::Color(170, 245, 248, 255)}};
+                const float clouds[][3] = {{22.0f, 0.04f, 0.18f}, {14.0f, 0.10f, 0.12f}, {30.0f, 0.02f, 0.10f}};
+                for (int i = 0; i < 3; i++)
+                {
+                    int cSize = (int)(screenWidth * clouds[i][2]);
+                    int cx = (int)fmod(clouds[i][0] * g_GlobalAnimTime + i * (screenWidth / 3.0f), (float)(screenWidth + UIScaler::SX(200)));
+                    int cy = (int)(clouds[i][1] * screenHeight) + (int)(sin(g_GlobalAnimTime * 0.8f + i) * UIScaler::SY(4));
+                    DrawPixelModel(g, cloudModel, cx, cy, cSize, cloudPalette, 9991); // 9991 is clouds fixed palette hash
+                }
+            }
         }
-        if (balloonModel.isLoaded)
-        {
-            static const struct BalloonDef
-            {
-                float s = 0.0f;
-                float x = 0.0f;
-                Gdiplus::Color c = Gdiplus::Color(0, 0, 0, 0);
-                Gdiplus::Color sh = Gdiplus::Color(0, 0, 0, 0);
-            } bs[] = {
-                {28.0f, 0.10f, Gdiplus::Color(210, 230, 50, 50), Gdiplus::Color(255, 255, 180, 180)},
-                {20.0f, 0.35f, Gdiplus::Color(210, 50, 120, 220), Gdiplus::Color(255, 160, 200, 255)},
-                {35.0f, 0.60f, Gdiplus::Color(210, 50, 200, 80), Gdiplus::Color(255, 160, 255, 180)},
-                {24.0f, 0.82f, Gdiplus::Color(210, 220, 160, 30), Gdiplus::Color(255, 255, 230, 140)}};
-            for (int i = 0; i < 4; i++)
-            {
-                int bx = (int)(bs[i].x * screenWidth) + (int)(sin(g_GlobalAnimTime * 1.2f + i * 1.1f) * UIScaler::SX(18));
-                int by = screenHeight - (int)fmod(bs[i].s * g_GlobalAnimTime + i * (screenHeight / 4.0f), (float)(screenHeight + UIScaler::SY(120)));
 
-                std::map<int, Gdiplus::Color> bPalette = {{1, Gdiplus::Color(200, 30, 30, 30)}, {2, bs[i].c}, {3, bs[i].sh}};
-                // Balloons palette is unique per balloon but constant over time.
-                // Use a key based on balloon index i
-                DrawPixelModel(g, balloonModel, bx, by, UIScaler::S(48), bPalette, 8880 + i);
+        // 5. Bóng bay
+        {
+            static PixelModel balloonModel;
+            if (!balloonModel.isLoaded)
+            {
+                balloonModel = LoadPixelModel("Asset/models/bg/balloon.txt");
+            }
+            if (balloonModel.isLoaded)
+            {
+                static const struct BalloonDef
+                {
+                    float s = 0.0f;
+                    float x = 0.0f;
+                    Gdiplus::Color c = Gdiplus::Color(0, 0, 0, 0);
+                    Gdiplus::Color sh = Gdiplus::Color(0, 0, 0, 0);
+                } bs[] = {
+                    {28.0f, 0.10f, Gdiplus::Color(210, 230, 50, 50), Gdiplus::Color(255, 255, 180, 180)},
+                    {20.0f, 0.35f, Gdiplus::Color(210, 50, 120, 220), Gdiplus::Color(255, 160, 200, 255)},
+                    {35.0f, 0.60f, Gdiplus::Color(210, 50, 200, 80), Gdiplus::Color(255, 160, 255, 180)},
+                    {24.0f, 0.82f, Gdiplus::Color(210, 220, 160, 30), Gdiplus::Color(255, 255, 230, 140)}};
+                for (int i = 0; i < 4; i++)
+                {
+                    int bx = (int)(bs[i].x * screenWidth) + (int)(sin(g_GlobalAnimTime * 1.2f + i * 1.1f) * UIScaler::SX(18));
+                    int by = screenHeight - (int)fmod(bs[i].s * g_GlobalAnimTime + i * (screenHeight / 4.0f), (float)(screenHeight + UIScaler::SY(120)));
+
+                    std::map<int, Gdiplus::Color> bPalette = {{1, Gdiplus::Color(200, 30, 30, 30)}, {2, bs[i].c}, {3, bs[i].sh}};
+                    // Balloons palette is unique per balloon but constant over time.
+                    // Use a key based on balloon index i
+                    DrawPixelModel(g, balloonModel, bx, by, UIScaler::S(48), bPalette, 8880 + i);
+                }
             }
         }
     }
@@ -753,7 +760,7 @@ void DrawTextCentered(HDC hdc, const std::wstring &text, int y, int rightX, COLO
     SetTextColor(hdc, color);
     SetBkMode(hdc, TRANSPARENT);
 
-    RECT rect = { leftX, y, rightX, y + 100 };
+    RECT rect = {leftX, y, rightX, y + 100};
     DrawTextW(hdc, text.c_str(), -1, &rect, DT_CENTER | DT_SINGLELINE | DT_NOPREFIX);
 
     SelectObject(hdc, hOldFont);
@@ -764,7 +771,7 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
     int size = state->boardSize;
     int boardLength = size * cellSize;
 
-    // 1. Vẽ lưới (Grid) - GDI thuần (Nhanh nhất cho các đường thẳng đơn giản)
+    // 1. Vẽ lưới (Grid) - GDI thuần
     HPEN hPen = CreatePen(PS_SOLID, max(1, UIScaler::S(2)), ToCOLORREF(Palette::White));
     HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
 
@@ -782,7 +789,7 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
 
     // 2. GIAI ĐOẠN 1 (GDI+): Vẽ các hiệu ứng Highlight & Animation
     // Không tạo Graphics mới ở đây, dùng đối tượng g truyền từ ngoài vào để tránh overhead
-    
+
     // Highlight ô thắng (Draw Win Brushes first)
     if (!state->winningCells.empty())
     {
@@ -795,7 +802,7 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
         for (const auto &wCell : state->winningCells)
         {
             int drawX = offsetX + wCell.second * cellSize;
-            int drawY = offsetX + wCell.first * cellSize; // Lỗi logic cũ? r=first=Y, c=second=X
+            int drawY = offsetX + wCell.first * cellSize;
             // Kiểm tra lại logic tọa độ: state->board[r][c] -> r là Row (Y), c là Col (X)
             drawX = offsetX + wCell.second * cellSize;
             drawY = offsetY + wCell.first * cellSize;
@@ -821,7 +828,7 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
         }
     }
 
-    // Vẽ Con trỏ (Cursor Neon) nếu đang chơi
+    // Vẽ Con trỏ nếu đang chơi
     if (state->status == MATCH_PLAYING)
     {
         int cursorX = offsetX + state->cursorCol * cellSize;
@@ -859,7 +866,8 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
     {
         for (int c = 0; c < size; c++)
         {
-            if (state->board[r][c] == CELL_EMPTY) continue;
+            if (state->board[r][c] == CELL_EMPTY)
+                continue;
 
             int drawX = offsetX + c * cellSize;
             int drawY = offsetY + r * cellSize;
@@ -940,7 +948,7 @@ void DrawPixelAction(Gdiplus::Graphics &g, int cx, int cy, int size, PlayerState
 
         if (!model.isLoaded || model.width == 0)
         {
-            // Thử fallback sang avt_00 nếu load thất bại
+            // fallback sang avt_00 nếu load thất bại
             if (state.avatarType != 0)
             {
                 std::string fallbackPath = "Asset/models/avt_00/" + state.currentAction + "/f_" + std::to_string(state.currentFrame) + ".txt";

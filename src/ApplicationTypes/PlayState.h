@@ -16,7 +16,7 @@ enum MatchStatus
     MATCH_SUMMARY
 };
 
-// Thông tin người chơi (mới)
+// Thông tin người chơi 
 struct PlayerInfo2
 {
     wstring name;

@@ -8,7 +8,7 @@ bool isValidMove(const PlayState* state, int row, int col) {
 
 // ============================================================
 //  checkWinCondition
-//  FIX: collect TẤT CẢ ô trong chuỗi thắng (không giới hạn winLength phần tử).
+//      collect TẤT CẢ ô trong chuỗi thắng (không giới hạn winLength phần tử).
 //       Chuỗi có thể dài hơn winLength (vd đặt ô giữa nối 2 đoạn), 
 //       tất cả ô đều được highlight.
 // ============================================================

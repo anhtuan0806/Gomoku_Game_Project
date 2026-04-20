@@ -207,8 +207,6 @@ bool processMove(PlayState* state, int row, int col) {
 
         PlaySFX("sfx_whistle");
         PlaySFX("sfx_crowd");
-
-        // Bonus quả "Siuuu" thương hiệu
         PlaySFX("sfx_siu");
     }
     else {

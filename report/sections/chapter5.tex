@@ -1,0 +1,238 @@
+\newpage
+\chapter*{\centering{\MakeUppercase{CHƯƠNG 5. LUẬT CHƠI VÀ CƠ CHẾ KIỂM TRA}}}
+\addcontentsline{toc}{chapter}{\textcolor{fitblue}{\MakeUppercase{CHƯƠNG 5. LUẬT CHƠI VÀ CƠ CHẾ KIỂM TRA}}}
+\setlength{\parindent}{1.5em}
+
+\section*{5.1. Luật và biến thể}
+\addcontentsline{toc}{section}{\textcolor{black}{5.1. Luật và biến thể}}
+
+\setlength{\parindent}{1.5em} Chương này tập trung mô tả hệ luật của trò chơi, cách kiểm tra hợp lệ của nước đi và cơ chế phán xét kết quả theo thời gian thực. Toàn bộ logic luật chơi nằm trong mô-đun GameRules và GameEngine, trong khi trạng thái được lưu ở PlayState. Thiết kế tách lớp giúp luật chơi độc lập với UI, đảm bảo có thể tái sử dụng cho nhiều chế độ và kích thước bàn cờ.
+
+\subsection*{5.1.1. Caro 5 quân và Tic-Tac-Toe}
+\addcontentsline{toc}{subsection}{\textcolor{black}{5.1.1. Caro 5 quân và Tic-Tac-Toe}}
+
+\setlength{\parindent}{1.5em} Dự án hỗ trợ hai chế độ chơi được định nghĩa bằng PlayMode: MODE\_CARO (Gomoku/Caro 5 quân) và MODE\_TTT (Tic-Tac-Toe 3 quân). Hai chế độ dùng chung một engine, chỉ khác tham số độ dài chuỗi thắng (winLength). Nhờ đó, quy tắc thắng được thay đổi mà không cần nhân đôi code.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Xác định độ dài chuỗi thắng theo chế độ chơi}\label{lst:ch5_win_length}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{const} \cppkw{int} winLength = (state->gameMode == MODE\_CARO) ? 5 : 3; \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Bàn cờ lưu trong ma trận hai chiều \texttt{board[MAX\_BOARD\_SIZE][MAX\_BOARD\_SIZE]} với kích thước thực tế theo \texttt{boardSize}. Mỗi ô có giá trị \texttt{CELL\_EMPTY}, \texttt{CELL\_PLAYER1} hoặc \texttt{CELL\_PLAYER2}, cho phép thuật toán kiểm tra thắng hoạt động nhất quán trên mọi kích thước. Ở chế độ Caro, giá trị mặc định là 15x15; trong khi Tic-Tac-Toe thường dùng 3x3, nhưng thuật toán vẫn giữ nguyên logic.
+
+\subsection*{5.1.2. Kiểm tra hợp lệ và biên}
+\addcontentsline{toc}{subsection}{\textcolor{black}{5.1.2. Kiểm tra hợp lệ và biên}}
+
+\setlength{\parindent}{1.5em} Trước khi đặt quân, hệ thống bắt buộc kiểm tra hai điều kiện: (1) tọa độ nằm trong phạm vi bàn cờ, (2) ô đang trống. Việc kiểm tra biên không dùng hằng số cứng mà dựa vào \texttt{boardSize}, giúp luật chơi tự thích nghi khi người chơi thay đổi kích thước bàn cờ.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Mã nguồn kiểm tra hợp lệ nước đi}\label{lst:ch5_valid_move}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{bool} isValidMove(\cppkw{const} PlayState* state, \cppkw{int} row, \cppkw{int} col) \{ \\ \hline
+2 & \ \ \cppkw{if} (row < 0 || row >= state->boardSize || col < 0 || col >= state->boardSize) \\ \hline
+3 & \ \ \ \ \cppkw{return} \cppkw{false}; \\ \hline
+4 & \ \ \cppkw{return} state->board[row][col] == CELL\_EMPTY; \\ \hline
+5 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Thiết kế này đảm bảo không thể đánh tràn biên, đồng thời tránh ghi đè quân đã có. Đây là tầng bảo vệ đầu tiên trước khi engine chấp nhận cập nhật trạng thái trận đấu.
+
+\subsection*{5.1.3. Trạng thái tối thiểu phục vụ kiểm tra}
+\addcontentsline{toc}{subsection}{\textcolor{black}{5.1.3. Trạng thái tối thiểu phục vụ kiểm tra}}
+
+\setlength{\parindent}{1.5em} Để việc kiểm tra thắng và kết thúc ván diễn ra chính xác, PlayState duy trì các trường dữ liệu tối thiểu: kích thước bàn cờ, ma trận trạng thái, nước đi cuối, danh sách ô thắng và bộ đếm số nước đi của mỗi người chơi. Những trường này giúp thuật toán kiểm tra thắng và điều kiện hòa chạy nhanh mà không phải quét lại toàn bộ bàn cờ.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Các trường dữ liệu phục vụ kiểm tra thắng và hòa}\label{lst:ch5_playstate_core}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{int} boardSize = 15; \\ \hline
+2 & \cppkw{int} board[MAX\_BOARD\_SIZE][MAX\_BOARD\_SIZE] = \{0\}; \\ \hline
+3 & \cppkw{int} lastMoveRow = -1; \\ \hline
+4 & \cppkw{int} lastMoveCol = -1; \\ \hline
+5 & std::vector<std::pair<int, int>> winningCells; \\ \hline
+6 & \cppkw{int} movesCount; \ \textcolor{dkgreen}{// nằm trong PlayerInfo2 của từng người chơi} \\ \hline
+\end{longtable}
+
+\section*{5.2. Thuật toán xác định thắng}
+\addcontentsline{toc}{section}{\textcolor{black}{5.2. Thuật toán xác định thắng}}
+
+\subsection*{5.2.1. Quét 4 hướng tối ưu}
+\addcontentsline{toc}{subsection}{\textcolor{black}{5.2.1. Quét 4 hướng tối ưu}}
+
+\setlength{\parindent}{1.5em} Thuật toán phán xét thắng sử dụng ô vừa đặt làm điểm neo và quét theo bốn hướng cơ bản: ngang, dọc, chéo chính và chéo phụ. Mỗi hướng được quét hai chiều (tiến và lùi) để gom toàn bộ chuỗi liên tiếp cùng màu. Nhờ chỉ quét từ nước đi cuối, chi phí tính toán gần như tuyến tính theo độ dài chuỗi thắng thay vì theo kích thước bàn cờ, và dừng sớm ngay khi phát hiện thắng.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Mã nguồn quét 4 hướng từ nước đi cuối}\label{lst:ch5_scan_four_dirs}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{static} \cppkw{const} \cppkw{int} dr[] = \{ 0, 1, 1, \ 1 \}; \\ \hline
+2 & \cppkw{static} \cppkw{const} \cppkw{int} dc[] = \{ 1, 0, 1, -1 \}; \\ \hline
+3 & \cppkw{for} (\cppkw{int} dir = 0; dir < 4; dir++) \{ \\ \hline
+4 & \ \ std::vector<std::pair<int, int>> line; \\ \hline
+5 & \ \ line.push\_back(\{ lastRow, lastCol \}); \\ \hline
+6 & \ \ \textcolor{dkgreen}{// Quét tiến} \\ \hline
+7 & \ \ \cppkw{for} (\cppkw{int} step = 1; step < size; step++) \{ \ldots \} \\ \hline
+8 & \ \ \textcolor{dkgreen}{// Quét lùi} \\ \hline
+9 & \ \ \cppkw{for} (\cppkw{int} step = 1; step < size; step++) \{ \ldots \} \\ \hline
+10 & \ \ \cppkw{if} ((\cppkw{int})line.size() >= winLength) \{ \ldots \} \\ \hline
+11 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Thuật toán dừng ngay khi phát hiện chuỗi đủ dài. Điều này giảm độ trễ khi bàn cờ lớn và đảm bảo việc kiểm tra thắng vẫn mượt trong thời gian thực.
+
+\subsection*{5.2.3. Kiểm tra điều kiện hợp lệ trước khi quét}
+\addcontentsline{toc}{subsection}{\textcolor{black}{5.2.3. Kiểm tra điều kiện hợp lệ trước khi quét}}
+
+\setlength{\parindent}{1.5em} Trước khi bắt đầu quét, hệ thống xác thực nước đi cuối có nằm trong biên và có quân thực sự hay không. Điều này tránh các phép quét thừa và ngăn lỗi khi trạng thái chưa được khởi tạo đầy đủ (ví dụ lúc vừa reset bàn hoặc chưa có nước đi).
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Chặn sớm khi nước đi cuối không hợp lệ}\label{lst:ch5_early_abort}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} (lastRow < 0 || lastRow >= size || lastCol < 0 || lastCol >= size) \\ \hline
+2 & \ \ \cppkw{return} -1; \\ \hline
+3 & \cppkw{const} \cppkw{int} currentPiece = state->board[lastRow][lastCol]; \\ \hline
+4 & \cppkw{if} (currentPiece == CELL\_EMPTY) \\ \hline
+5 & \ \ \cppkw{return} -1; \\ \hline
+\end{longtable}
+
+\subsection*{5.2.2. Truy vết winningCells cho highlight}
+\addcontentsline{toc}{subsection}{\textcolor{black}{5.2.2. Truy vết winningCells cho highlight}}
+
+\setlength{\parindent}{1.5em} Hàm \texttt{checkWinCondition()} hỗ trợ tham số tùy chọn \texttt{outWinCells}. Khi phát hiện thắng, toàn bộ chuỗi liên tiếp được trả về, không bị cắt ở đúng \texttt{winLength}. Điều này xử lý đúng trường hợp người chơi đặt quân ở giữa, nối hai đoạn rời thành một chuỗi dài hơn. Danh sách ô thắng được lưu trong PlayState và dùng trực tiếp bởi lớp render để highlight.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Trả về toàn bộ chuỗi thắng và lưu trong PlayState}\label{lst:ch5_win_cells}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} ((\cppkw{int})line.size() >= winLength) \{ \\ \hline
+2 & \ \ \cppkw{if} (outWinCells) *outWinCells = line; \\ \hline
+3 & \ \ \cppkw{return} currentPiece; \\ \hline
+4 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Khi vẽ bàn cờ, UIComponents sử dụng danh sách này để tạo hiệu ứng highlight động trên đúng các ô thắng, đảm bảo trực quan và nhất quán với luật chơi.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Highlight các ô thắng dựa trên winningCells}\label{lst:ch5_ui_highlight}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} (!state->winningCells.empty()) \{ \\ \hline
+2 & \ \ \cppkw{for} (\cppkw{const} \cppkw{auto} \&wCell : state->winningCells) \{ \\ \hline
+3 & \ \ \ \ \cppkw{int} drawX = offsetX + wCell.second * cellSize; \\ \hline
+4 & \ \ \ \ \cppkw{int} drawY = offsetY + wCell.first * cellSize; \\ \hline
+5 & \ \ \ \ g.FillRectangle(winBrush, drawX + 1, drawY + 1, cellSize - 2, cellSize - 2); \\ \hline
+6 & \ \ \ \ g.DrawRectangle(\&winPen, drawX + 2, drawY + 2, cellSize - 4, cellSize - 4); \\ \hline
+7 & \ \ \} \\ \hline
+8 & \} \\ \hline
+\end{longtable}
+
+\section*{5.3. Trạng thái kết thúc đặc biệt}
+\addcontentsline{toc}{section}{\textcolor{black}{5.3. Trạng thái kết thúc đặc biệt}}
+
+\subsection*{5.3.1. Hòa và chặn nước đi}
+\addcontentsline{toc}{subsection}{\textcolor{black}{5.3.1. Hòa và chặn nước đi}}
+
+\setlength{\parindent}{1.5em} Ván đấu kết thúc hòa nếu toàn bộ bàn cờ đã đầy mà không xuất hiện chuỗi thắng. Thay vì quét lại toàn bộ bàn cờ để kiểm tra còn ô trống hay không, hệ thống dùng tổng số nước đi của hai người chơi, giúp tối ưu thời gian kiểm tra.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Kiểm tra điều kiện hòa bằng bộ đếm nước đi}\label{lst:ch5_draw_check}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} (state->p1.movesCount + state->p2.movesCount == size * size) \\ \hline
+2 & \ \ \cppkw{return} CELL\_EMPTY; \\ \hline
+3 & \cppkw{return} -1; \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Khi \texttt{checkWinCondition()} trả về trạng thái thắng hoặc hòa, GameEngine lập tức kết thúc ván đấu, cập nhật trạng thái và người thắng trong PlayState.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Cập nhật trạng thái ván đấu sau khi kiểm tra thắng}\label{lst:ch5_process_move}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{int} winStatus = checkWinCondition(state, row, col, \&state->winningCells); \\ \hline
+2 & \cppkw{if} (winStatus != -1) \{ \\ \hline
+3 & \ \ state->status = MATCH\_FINISHED; \\ \hline
+4 & \ \ state->winner = winStatus; \\ \hline
+5 & \} \cppkw{else} \{ \ \ switchTurn(state); \} \\ \hline
+\end{longtable}
+
+\subsection*{5.3.2. Cơ chế BO (Best-of) và thắng series}
+\addcontentsline{toc}{subsection}{\textcolor{black}{5.3.2. Cơ chế BO (Best-of) và thắng series}}
+
+\setlength{\parindent}{1.5em} Ngoài luật thắng từng ván, hệ thống còn hỗ trợ luật thắng theo series BO (BO1/BO3/BO5) thông qua \texttt{targetScore}. Sau mỗi ván thắng, engine kiểm tra số bàn thắng cần để kết thúc series. Nếu đã đủ, \texttt{matchWins} được tăng, và \texttt{totalWins} được reset để bắt đầu series tiếp theo.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Xác định thắng series BO trong processMove}\label{lst:ch5_bo_series}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{int} winRequired = (state->targetScore + 1) / 2; \\ \hline
+2 & \cppkw{if} (state->targetScore > 1) \{ \ \ winRequired = state->targetScore; \} \\ \hline
+3 & \cppkw{bool} seriesWon = (state->p1.totalWins >= winRequired || state->p2.totalWins >= winRequired); \\ \hline
+4 & \cppkw{if} (seriesWon) \{ \ldots \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Cách tính \texttt{winRequired} đảm bảo BO1 cần 1 ván, BO3 cần 2 ván, BO5 cần 3 ván. Với các thiết lập \texttt{targetScore} khác, hệ thống vẫn hoạt động nhất quán vì dùng \texttt{targetScore} làm mục tiêu trực tiếp.
+
+\subsection*{5.3.3. Timeout và đồng bộ TimeSystem}
+\addcontentsline{toc}{subsection}{\textcolor{black}{5.3.3. Timeout và đồng bộ TimeSystem}}
+
+\setlength{\parindent}{1.5em} Hệ thống thời gian được tách riêng trong TimeSystem, sử dụng cơ chế tích lũy \texttt{dt} để đếm giây chính xác và tránh sai số khi khung hình không đều. Mỗi khi đủ một giây, \texttt{timeRemaining} giảm đi một đơn vị. Khi về 0, hệ thống báo timeout để xử lý đổi lượt.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Đếm ngược theo giây bằng bộ tích lũy thời gian}\label{lst:ch5_update_countdown}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & timeAccumulator += dt; \\ \hline
+2 & \cppkw{if} (timeAccumulator >= 1.0) \{ \\ \hline
+3 & \ \ timeAccumulator -= 1.0; \\ \hline
+4 & \ \ state->timeRemaining--; \\ \hline
+5 & \ \ \cppkw{if} (state->timeRemaining <= 0) \{ state->timeRemaining = 0; \} \\ \hline
+6 & \ \ \cppkw{return} \cppkw{true}; \\ \hline
+7 & \} \\ \hline
+8 & \cppkw{return} \cppkw{false}; \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} PlayScreen đồng bộ timeout bằng cách lắng nghe cờ trả về từ \texttt{UpdateCountdown()}. Khi hết thời gian, hệ thống phát âm thanh timeout và đổi lượt ngay lập tức. Điều này biến thời gian thành một ràng buộc luật chơi trực tiếp, không chỉ là hiển thị giao diện.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Xử lý timeout và đổi lượt trong vòng lặp chơi}\label{lst:ch5_timeout_switch}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} (UpdateCountdown(state, dt)) \{ \\ \hline
+2 & \ \ \cppkw{if} (state->timeRemaining <= 0) \{ \\ \hline
+3 & \ \ \ \ PlaySFX("sfx\_timeout"); \\ \hline
+4 & \ \ \ \ switchTurn(state); \\ \hline
+5 & \ \ \} \\ \hline
+6 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Mỗi khi đổi lượt, \texttt{ResetTimer()} sẽ đọc \texttt{maxTurnTime} của người chơi hiện tại để thiết lập lại thời gian đếm ngược. Cách làm này hỗ trợ luật chơi bất đối xứng (hai người chơi có giới hạn thời gian khác nhau) và đảm bảo đồng bộ giữa luật chơi và hiển thị.

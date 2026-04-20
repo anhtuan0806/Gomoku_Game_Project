@@ -56,7 +56,7 @@ static inline void ttStore(uint64_t hash, int score, int depth, TTFlag flag) {
 }
 
 // ============================================================
-//  Line analysis  (FIX: phân biệt biên bàn vs quân địch)
+//  Line analysis 
 // ============================================================
 struct LineInfo {
     int count;
@@ -71,7 +71,7 @@ static inline bool isInBounds(int r, int c, int size) {
     return r >= 0 && r < size && c >= 0 && c < size;
 }
 
-// FIX: openEnds chỉ tính khi ô kế tiếp nằm trong bàn VÀ trống
+// openEnds chỉ tính khi ô kế tiếp nằm trong bàn VÀ trống
 static LineInfo analyzeDirection(
     const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE],
     int size, int row, int col, int dr, int dc, int player)
@@ -337,7 +337,7 @@ void calculateAIMove(const PlayState* state, int difficulty, int& outRow, int& o
     int depth = 5; // Tăng được thêm 1 depth nhờ TT + branching limit
 
     // Copy board sang virtualBoard
-    int virtualBoard[MAX_BOARD_SIZE][MAX_BOARD_SIZE];
+	int virtualBoard[MAX_BOARD_SIZE][MAX_BOARD_SIZE] = { 0 };
     for (int r = 0; r < MAX_BOARD_SIZE; r++)
         for (int c = 0; c < MAX_BOARD_SIZE; c++)
             virtualBoard[r][c] = state->board[r][c];

@@ -126,6 +126,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
 
     // Phát hiện nút giữ (Autorepeat) từ bit 0x20000 mà main.cpp đã encode
     bool isRepeat = (wParam & 0x20000) != 0;
+    bool isCharMsg = (wParam & 0x10000) != 0;
     WPARAM rawKey = wParam & 0xFFFF; // Lấy mã phím thực tế
 
     // Cơ chế Throttling: Giới hạn tốc độ di chuyển khi nhấn giữ
@@ -135,6 +136,11 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
     // Nếu là nhấn giữ, chỉ cho phép thực hiện 10 lần mỗi giây (100ms/vước di chuyển)
     // Nếu là nhấn lần đầu (isRepeat=false), cho phép chạy ngay lập tức
     bool canMove = (now - lastMoveTime > (ULONGLONG)(isRepeat ? 100 : 80));
+
+    if (isCharMsg && !(state->status == MATCH_PAUSED && g_CurrentSubMenu == SUB_SAVE_NAME_ENTRY))
+    {
+        return false; // Only handle WM_CHAR in save-name entry
+    }
 
     if (state->status == MATCH_PAUSED)
     {
@@ -146,8 +152,8 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
 
             if (isChar)
             {
-                // Giới hạn 15 ký tự, 0-9, a-z, A-Z, Space và Vietnamese (qua WM_CHAR)
-                if (g_SaveNameInput.length() < 15)
+                // Giới hạn số ký tự theo cấu hình, 0-9, a-z, A-Z, Space và Vietnamese (qua WM_CHAR)
+                if (g_SaveNameInput.length() < MAX_SAVE_NAME_LEN)
                 {
                     // Cho phép các ký tự in được và có nghĩa
                     if (ch >= 32)
@@ -207,17 +213,21 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             }
             if (wParam == 'W' || wParam == VK_UP)
             {
-                if (!canMove) return false;
+                if (!canMove)
+                    return false;
                 g_SaveSlotSelected = (g_SaveSlotSelected - 1 < 0) ? MAX_SAVE_SLOTS - 1 : g_SaveSlotSelected - 1;
-                if (!isRepeat) PlaySFX("sfx_move");
+                if (!isRepeat)
+                    PlaySFX("sfx_move");
                 lastMoveTime = now;
                 return true;
             }
             if (wParam == 'S' || wParam == VK_DOWN)
             {
-                if (!canMove) return false;
+                if (!canMove)
+                    return false;
                 g_SaveSlotSelected = (g_SaveSlotSelected + 1 >= MAX_SAVE_SLOTS) ? 0 : g_SaveSlotSelected + 1;
-                if (!isRepeat) PlaySFX("sfx_move");
+                if (!isRepeat)
+                    PlaySFX("sfx_move");
                 lastMoveTime = now;
                 return true;
             }
@@ -243,12 +253,13 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             if (!canMove)
                 return false;
             g_PauseSelected = (g_PauseSelected - 1 < 0) ? TOTAL_PAUSE_ITEMS - 1 : g_PauseSelected - 1;
-            // Bỏ qua mục Âm lượng (index 2) nếu Nhạc nền (index 1) đang OFF
-            if (g_PauseSelected == 2 && !config->isBgmEnabled)
+            // Bỏ qua mục Âm lượng (index 2) nếu SFX (index 1) đang OFF
+            if (g_PauseSelected == 2 && !config->isSfxEnabled)
             {
                 g_PauseSelected = (g_PauseSelected - 1 < 0) ? TOTAL_PAUSE_ITEMS - 1 : g_PauseSelected - 1;
             }
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -257,12 +268,13 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             if (!canMove)
                 return false;
             g_PauseSelected = (g_PauseSelected + 1 >= TOTAL_PAUSE_ITEMS) ? 0 : g_PauseSelected + 1;
-            // Bỏ qua mục Âm lượng (index 2) nếu Nhạc nền (index 1) đang OFF
-            if (g_PauseSelected == 2 && !config->isBgmEnabled)
+            // Bỏ qua mục Âm lượng (index 2) nếu SFX (index 1) đang OFF
+            if (g_PauseSelected == 2 && !config->isSfxEnabled)
             {
                 g_PauseSelected = (g_PauseSelected + 1 >= TOTAL_PAUSE_ITEMS) ? 0 : g_PauseSelected + 1;
             }
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -275,14 +287,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 state->status = g_PrePauseStatus;
                 break;
             case 1:
-                config->isBgmEnabled = !config->isBgmEnabled;
-                if (!config->isBgmEnabled)
-                {
-                    StopBGM();
-                }
-                else {
-                    PlayBGM("Asset/audio/c1.mp3");
-                }
+                config->isSfxEnabled = !config->isSfxEnabled;
                 break;
             case 2:
                 config->sfxVolume += dir * 10;
@@ -301,12 +306,18 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             case 4:
                 SaveConfig(config, "Asset/config.ini");
                 currentState = SCREEN_MENU;
-                if (config->isBgmEnabled) PlayBGM("Asset/audio/c1.mp3");
+                if (config->isBgmEnabled)
+                    PlayBGM("Asset/audio/c1.mp3");
                 ResetPlayScreenStatics();
                 break;
             }
-            if (g_PauseSelected != 3) { if (!isRepeat) PlaySFX("sfx_move"); }
-            else PlaySFX("sfx_select");
+            if (g_PauseSelected != 3)
+            {
+                if (!isRepeat)
+                    PlaySFX("sfx_move");
+            }
+            else
+                PlaySFX("sfx_select");
             hasChanged = true;
         }
         return hasChanged;
@@ -331,13 +342,15 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
         if (wParam == 'Q' || wParam == 'q')
         {
             undoMove(state);
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             return true;
         }
         if (wParam == 'E' || wParam == 'e')
         {
             redoMove(state);
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             return true;
         }
 
@@ -346,7 +359,8 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             if (!canMove)
                 return false;
             state->cursorRow--;
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -355,7 +369,8 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             if (!canMove)
                 return false;
             state->cursorRow++;
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -364,7 +379,8 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             if (!canMove)
                 return false;
             state->cursorCol--;
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -373,7 +389,8 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             if (!canMove)
                 return false;
             state->cursorCol++;
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -384,7 +401,8 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 PlaySFX("sfx_place");
                 return true;
             }
-            else {
+            else
+            {
                 PlaySFX("sfx_error");
             }
         }
@@ -424,17 +442,21 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
 
         if (wParam == 'W' || wParam == 'w' || wParam == VK_UP)
         {
-            if (!canMove) return false;
+            if (!canMove)
+                return false;
             g_SummarySelected = (g_SummarySelected - 1 < 0) ? 2 : g_SummarySelected - 1;
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
         else if (wParam == 'S' || wParam == 's' || wParam == VK_DOWN)
         {
-            if (!canMove) return false;
+            if (!canMove)
+                return false;
             g_SummarySelected = (g_SummarySelected + 1 > 2) ? 0 : g_SummarySelected + 1;
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -443,7 +465,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             StopSFX("sfx_crowd");
             StopSFX("sfx_whistle");
             StopSFX("sfx_siu");
-            
+
             if (g_SummarySelected == 0)
             {
                 int winRequired = state->targetScore / 2 + 1;
@@ -467,7 +489,8 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             {
                 PlaySFX("sfx_select");
                 currentState = SCREEN_MENU;
-                if (config->isBgmEnabled) PlayBGM("Asset/audio/c1.mp3");
+                if (config->isBgmEnabled)
+                    PlayBGM("Asset/audio/c1.mp3");
             }
             hasChanged = true;
         }
@@ -482,19 +505,28 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     Gdiplus::Graphics g(hdc);
 
     // Nền sân vận động Procedural
-    DrawProceduralStadium(g, screenWidth, screenHeight);
+    DrawProceduralStadium(g, screenWidth, screenHeight, false, false);
 
     // Lambda dịch chuỗi path sang hệ Avatar Matrix (hỗ trợ 6 avatar 0-5)
     auto decodeAvatar = [](const std::string &path) -> int
     {
         if (path.find("avatar_") != std::string::npos)
         {
-            try { return std::stoi(path.substr(7)); }
-            catch (...) { return 0; }
+            try
+            {
+                return std::stoi(path.substr(7));
+            }
+            catch (...)
+            {
+                return 0;
+            }
         }
-        if (path.find("bot_easy") != std::string::npos) return 0;
-        if (path.find("bot_medium") != std::string::npos) return 0;
-        if (path.find("bot_hard") != std::string::npos) return 0;
+        if (path.find("bot_easy") != std::string::npos)
+            return 0;
+        if (path.find("bot_medium") != std::string::npos)
+            return 0;
+        if (path.find("bot_hard") != std::string::npos)
+            return 0;
         return 0;
     };
 
@@ -549,7 +581,8 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
             pState.avatarType = decodeAvatar(p.avatarPath);
             pState.flipH = flipModel;
             pState.currentAction = isWinner ? "win" : "sad";
-            if (state->winner == 0) pState.currentAction = "idle";
+            if (state->winner == 0)
+                pState.currentAction = "idle";
             pState.currentFrame = (int)(g_GlobalAnimTime * 8.0f) % 4;
 
             int avaSize = UIScaler::S(140);
@@ -570,12 +603,14 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
             auto DrawStatRow = [&](const std::wstring &label, int val, Gdiplus::Color color, int iconType)
             {
-                if (iconType == 1) DrawPixelFootball(g, iconX, sY + sH / 2, UIScaler::S(24));
-                else if (iconType == 2) DrawPixelClock(g, iconX, sY + sH / 2, UIScaler::S(24), color);
+                if (iconType == 1)
+                    DrawPixelFootball(g, iconX, sY + sH / 2, UIScaler::S(24));
+                else if (iconType == 2)
+                    DrawPixelClock(g, iconX, sY + sH / 2, UIScaler::S(24), color);
 
                 SetTextColor(hdc, ToCOLORREF(SmartColor{color.GetA(), color.GetR(), color.GetG(), color.GetB()}));
                 RECT r = {textX, sY, x + panelW - UIScaler::SX(20), sY + sH};
-                
+
                 std::wstring fullStr = label + L": " + std::to_wstring(val);
                 if (iconType == 2)
                 {
@@ -608,7 +643,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         std::wstring totalTimeStr = GetText("play_time") + timeBuffer;
         DrawTextCentered(hdc, totalTimeStr, panelY + panelH + UIScaler::SY(30), screenWidth, ToCOLORREF(Palette::GrayDarkest), GlobalFont::Bold);
 
-        std::wstring options[] = { GetText("summary_continue"), GetText("summary_save"), GetText("summary_exit") };
+        std::wstring options[] = {GetText("summary_continue"), GetText("summary_save"), GetText("summary_exit")};
         int optY = panelY + panelH + UIScaler::SY(65);
         int btnW = UIScaler::SX(220);
         int btnH = UIScaler::SY(45);
@@ -637,7 +672,8 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     int availableWidth = screenWidth - UIScaler::SX(300);
     int maxBoardSize = availableWidth < availableHeight ? availableWidth : availableHeight;
     int minBoardSize = UIScaler::S(200);
-    if (maxBoardSize < minBoardSize) maxBoardSize = minBoardSize;
+    if (maxBoardSize < minBoardSize)
+        maxBoardSize = minBoardSize;
 
     int dynamicCellSize = maxBoardSize / state->boardSize;
     int boardPixelSize = state->boardSize * dynamicCellSize;
@@ -670,7 +706,8 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     static Gdiplus::Font s_waterFont(&s_fontFamily, 64, Gdiplus::FontStyleBold, Gdiplus::UnitPixel);
     static Gdiplus::StringFormat s_alignCenter;
     static bool s_formatInit = false;
-    if (!s_formatInit) {
+    if (!s_formatInit)
+    {
         s_alignCenter.SetAlignment(Gdiplus::StringAlignmentCenter);
         s_alignCenter.SetLineAlignment(Gdiplus::StringAlignmentCenter);
         s_formatInit = true;
@@ -817,16 +854,16 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     // --- Redesigned Match Format & Turn Indicator (Scoreboard Style) ---
     std::wstring s_fmt = GetText("play_format");
     std::wstring s_trn = GetText("play_turn");
-    
+
     std::wstring formatText = s_fmt + L" BO" + std::to_wstring(state->targetScore);
     std::wstring turnText = s_trn + L": " + (state->isP1Turn ? p1NameW : p2NameW);
     std::wstring fullScoreText = formatText + L"  |  " + turnText;
-    
+
     int scoreW = UIScaler::SX(600);
     int scoreH = UIScaler::SY(45);
     int scoreX = (screenWidth - scoreW) / 2;
     int scoreY = UIScaler::SY(10);
-    
+
     // Background Scoreboard Panel (Glassmorphism + Gradient)
     Gdiplus::LinearGradientBrush scoreBg(
         Gdiplus::Point(scoreX, scoreY),
@@ -834,14 +871,14 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         Gdiplus::Color(210, 10, 15, 25),
         Gdiplus::Color(210, 30, 45, 65));
     g.FillRectangle(&scoreBg, scoreX, scoreY, scoreW, scoreH);
-    
+
     // Glowing border pulses with turn color
     COLORREF turnColor = state->isP1Turn ? ToCOLORREF(Palette::OrangeNormal) : ToCOLORREF(Palette::CyanNormal);
     float pulseScore = 0.6f + sin(g_GlobalAnimTime * 6.0f) * 0.4f;
     BYTE scoreAlpha = (BYTE)(130 + pulseScore * 125);
     Gdiplus::Pen scoreBorder(Gdiplus::Color(scoreAlpha, GetRValue(turnColor), GetGValue(turnColor), GetBValue(turnColor)), 2.5f);
     g.DrawRectangle(&scoreBorder, scoreX, scoreY, scoreW, scoreH);
-    
+
     // Main Scoreboard Text
     SetTextColor(hdc, ToCOLORREF(Palette::White));
     HFONT oldF = (HFONT)SelectObject(hdc, GlobalFont::Bold);
@@ -886,17 +923,17 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     int clockH = UIScaler::SY(45);
     int clockX = (screenWidth - clockW) / 2 + shakeX;
     int clockY = UIScaler::SY(62) + shakeY;
-    
+
     // Timer Box Background (Deep Glass)
     Gdiplus::SolidBrush timerBg(Gdiplus::Color(200, 5, 10, 20));
     g.FillRectangle(&timerBg, clockX, clockY, clockW, clockH);
-    
+
     // Warning Pulse for border & Glow
     float pulseTime = isWarning ? (0.5f + sin(g_GlobalAnimTime * 20.0f) * 0.5f) : (0.7f + sin(g_GlobalAnimTime * 5.0f) * 0.3f);
     BYTE timerAlpha = (BYTE)(130 + pulseTime * 125);
     Gdiplus::Pen timerBorder(Gdiplus::Color(timerAlpha, GetRValue(timerColor), GetGValue(timerColor), GetBValue(timerColor)), 2.5f);
     g.DrawRectangle(&timerBorder, clockX, clockY, clockW, clockH);
-    
+
     // Internal Digital Plate
     Gdiplus::SolidBrush plateBrush(Gdiplus::Color(40, GetRValue(timerColor), GetGValue(timerColor), GetBValue(timerColor)));
     g.FillRectangle(&plateBrush, clockX + 4, clockY + 4, clockW - 8, clockH - 8);
@@ -960,22 +997,23 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
             std::wstring s_labels[TOTAL_PAUSE_ITEMS];
             std::wstring s_on, s_off, s_locked;
             s_labels[0] = GetText("pause_resume");
-            s_labels[1] = GetText("pause_bgm") + L":";
-            s_labels[2] = GetText("pause_vol");
+            s_labels[1] = GetText("pause_sfx") + L":";
+            s_labels[2] = GetText("pause_sfx_vol");
             s_labels[3] = GetText("pause_save");
             s_labels[4] = GetText("pause_exit");
-            s_on = GetText("btn_on"); s_off = GetText("btn_off"); s_locked = GetText("btn_locked");
-            
+            s_on = GetText("btn_on");
+            s_off = GetText("btn_off");
+            s_locked = GetText("btn_locked");
+
             for (int i = 0; i < TOTAL_PAUSE_ITEMS; i++)
             {
                 std::wstring itemText = s_labels[i];
                 COLORREF color = ToCOLORREF(Palette::GrayDarkest);
                 HFONT font = GlobalFont::Default;
-                bool isDisabled = (i == 2 && !config->isBgmEnabled);
-
+                bool isDisabled = (i == 2 && !config->isSfxEnabled);
                 if (i == 1)
                 {
-                    itemText += (config->isBgmEnabled ? L" [ " + s_on + L" ]" : L" [ " + s_off + L" ]");
+                    itemText += (config->isSfxEnabled ? L" [ " + s_on + L" ]" : L" [ " + s_off + L" ]");
                 }
 
                 if (i == g_PauseSelected && !isDisabled)
@@ -1035,25 +1073,29 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
             DrawPixelBanner(g, hdc, GetText("guide_title").c_str(), guideX + guideW / 2, menuY + UIScaler::SY(40),
                             guideW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(0, 160, 255), "Asset/models/bg/football.txt");
 
-            struct GuideItem { std::wstring key; std::wstring desc; };
-            std::vector<GuideItem> instructions = {
-                { GetText("guide_move"), GetText("guide_move_key") },
-                { GetText("guide_place"), GetText("guide_place_key") },
-                { GetText("guide_undo"), GetText("guide_undo_key") },
-                { GetText("guide_redo"), GetText("guide_redo_key") },
-                { GetText("guide_pause"), GetText("guide_pause_key") }
+            struct GuideItem
+            {
+                std::wstring key;
+                std::wstring desc;
             };
+            std::vector<GuideItem> instructions = {
+                {GetText("guide_move"), GetText("guide_move_key")},
+                {GetText("guide_place"), GetText("guide_place_key")},
+                {GetText("guide_undo"), GetText("guide_undo_key")},
+                {GetText("guide_redo"), GetText("guide_redo_key")},
+                {GetText("guide_pause"), GetText("guide_pause_key")}};
 
             int startGuideY = menuY + UIScaler::SY(110);
-            for (const auto& item : instructions) {
+            for (const auto &item : instructions)
+            {
                 SetTextColor(hdc, ToCOLORREF(Palette::BlueDarkest));
                 SelectObject(hdc, GlobalFont::Default);
-                RECT rKey = { guideX + UIScaler::SX(15), startGuideY, guideX + guideW - UIScaler::SX(15), startGuideY + UIScaler::SY(40) };
+                RECT rKey = {guideX + UIScaler::SX(15), startGuideY, guideX + guideW - UIScaler::SX(15), startGuideY + UIScaler::SY(40)};
                 DrawTextW(hdc, item.key.c_str(), -1, &rKey, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
                 SetTextColor(hdc, ToCOLORREF(Palette::GrayDarkest));
                 SelectObject(hdc, GlobalFont::Note);
-                RECT rDesc = { guideX + UIScaler::SX(25), startGuideY + UIScaler::SY(32), guideX + guideW - UIScaler::SX(15), startGuideY + UIScaler::SY(70) };
+                RECT rDesc = {guideX + UIScaler::SX(25), startGuideY + UIScaler::SY(32), guideX + guideW - UIScaler::SX(15), startGuideY + UIScaler::SY(70)};
                 DrawTextW(hdc, item.desc.c_str(), -1, &rDesc, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
                 startGuideY += UIScaler::SY(75);
@@ -1138,7 +1180,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
         if (state->winner == CELL_PLAYER1)
         {
-            winMsg = matchOver ? (p1NameW + GetText("play_win_cup") ) : (p1NameW + GetText("play_win_goal"));
+            winMsg = matchOver ? (p1NameW + GetText("play_win_cup")) : (p1NameW + GetText("play_win_goal"));
             winColor = ToCOLORREF(Palette::OrangeNormal);
             winGlow = RGB(255, 120, 0);
         }

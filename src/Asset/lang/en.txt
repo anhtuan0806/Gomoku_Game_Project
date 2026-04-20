@@ -75,8 +75,8 @@ val_goals= Goals
 
 pause_title=PAUSE
 pause_resume=RETURN TO PITCH
-pause_bgm=BGM
-pause_vol=MUSIC VOLUME
+pause_sfx=SFX
+pause_sfx_vol=SFX VOLUME
 pause_save=RECORD MATCH
 pause_exit=END MATCH
 

@@ -136,11 +136,12 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             selectedOption = (selectedOption - 1 + totalItems) % totalItems;
         } while (
             (currentPage == 0 && ((selectedOption == 2 && playState->matchType == MATCH_PVP) || // Bỏ qua Độ Khó nếu PVP
-                                   (selectedOption == 3 && playState->matchType == MATCH_PVE)    // Bỏ qua Thời gian nếu PVE
-                                   )) ||
+                                  (selectedOption == 3 && playState->matchType == MATCH_PVE)    // Bỏ qua Thời gian nếu PVE
+                                  )) ||
             (currentPage == 1 && playState->matchType == MATCH_PVE && (selectedOption == 2 || selectedOption == 3)) // Bỏ qua Avatar/Tên P2 nếu PvE
         );
-        if (!isRepeat) PlaySFX("sfx_move");
+        if (!isRepeat)
+            PlaySFX("sfx_move");
         lastMoveTime = now;
     }
     else if (rawKey == 'S' || rawKey == 's' || rawKey == VK_DOWN)
@@ -154,7 +155,8 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             (currentPage == 0 && ((selectedOption == 2 && playState->matchType == MATCH_PVP) ||
                                   (selectedOption == 3 && playState->matchType == MATCH_PVE))) ||
             (currentPage == 1 && playState->matchType == MATCH_PVE && (selectedOption == 2 || selectedOption == 3)));
-        if (!isRepeat) PlaySFX("sfx_move");
+        if (!isRepeat)
+            PlaySFX("sfx_move");
         lastMoveTime = now;
     }
 
@@ -169,42 +171,55 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
         switch (selectedOption)
         {
         case 0: // Chế độ
-            if (dir != 0) {
+            if (dir != 0)
+            {
                 playState->gameMode = (playState->gameMode == MODE_CARO) ? MODE_TIC_TAC_TOE : MODE_CARO;
-                if (!isRepeat) PlaySFX("sfx_move"); 
+                if (!isRepeat)
+                    PlaySFX("sfx_move");
             }
             break;
         case 1: // PvP / PvE
-            if (dir != 0) {
+            if (dir != 0)
+            {
                 playState->matchType = (playState->matchType == MATCH_PVP) ? MATCH_PVE : MATCH_PVP;
-                if (!isRepeat) PlaySFX("sfx_move");
+                if (!isRepeat)
+                    PlaySFX("sfx_move");
             }
             break;
         case 2: // Độ khó
             if (playState->matchType == MATCH_PVE && dir != 0)
             {
                 playState->difficulty += dir;
-                if (playState->difficulty < 1) playState->difficulty = 3;
-                if (playState->difficulty > 3) playState->difficulty = 1;
-                if (!isRepeat) PlaySFX("sfx_move"); 
+                if (playState->difficulty < 1)
+                    playState->difficulty = 3;
+                if (playState->difficulty > 3)
+                    playState->difficulty = 1;
+                if (!isRepeat)
+                    PlaySFX("sfx_move");
             }
             break;
         case 3: // Thời gian
             if (dir != 0)
             {
                 playState->countdownTime += dir * 5;
-                if (playState->countdownTime < 10) playState->countdownTime = 10;
-                if (playState->countdownTime > 60) playState->countdownTime = 60;
-                if (!isRepeat) PlaySFX("sfx_move");
+                if (playState->countdownTime < 10)
+                    playState->countdownTime = 10;
+                if (playState->countdownTime > 60)
+                    playState->countdownTime = 60;
+                if (!isRepeat)
+                    PlaySFX("sfx_move");
             }
             break;
         case 4: // Bo
             if (dir != 0)
             {
                 playState->targetScore += dir * 2;
-                if (playState->targetScore < 1) playState->targetScore = 5;
-                if (playState->targetScore > 5) playState->targetScore = 1;
-                if (!isRepeat) PlaySFX("sfx_move");
+                if (playState->targetScore < 1)
+                    playState->targetScore = 5;
+                if (playState->targetScore > 5)
+                    playState->targetScore = 1;
+                if (!isRepeat)
+                    PlaySFX("sfx_move");
             }
             break;
         case 5: // Tiếp Theo
@@ -226,7 +241,8 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             if (dir != 0)
             {
                 p1AvatarIdx = (p1AvatarIdx + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
-                if (!isRepeat) PlaySFX("sfx_move");
+                if (!isRepeat)
+                    PlaySFX("sfx_move");
             }
             break;
         case 1: // Sửa Tên P1 (Enter)
@@ -241,7 +257,8 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             if (!isPvE && dir != 0)
             {
                 p2AvatarIdx = (p2AvatarIdx + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
-                if (!isRepeat) PlaySFX("sfx_move");
+                if (!isRepeat)
+                    PlaySFX("sfx_move");
             }
             break;
         case 3: // Sửa Tên P2 (Enter)
@@ -257,13 +274,15 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             {
                 currentPage = 0;
                 selectedOption = 5;
-                if (!isRepeat) PlaySFX("sfx_move");
+                if (!isRepeat)
+                    PlaySFX("sfx_move");
             }
             break;
         case 5: // Bắt Đầu
             if (wParam == VK_RETURN || wParam == VK_SPACE)
             {
-                if (!ValidateNames(playState)) {
+                if (!ValidateNames(playState))
+                {
                     PlaySFX("sfx_error");
                     return;
                 }
@@ -284,7 +303,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
 
                 int bSize = (playState->gameMode == MODE_CARO) ? 15 : 3;
                 initNewMatch(playState, playState->gameMode, playState->matchType, bSize, playState->countdownTime, playState->difficulty, playState->targetScore, 15);
-                
+
                 StopBGM(); // Tắt nhạc menu
                 PlaySFX("sfx_whistle");
 
@@ -341,23 +360,23 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
 
         std::wstring labels[] = {
             GetText("config_size"), GetText("config_type"),
-            GetText("config_diff"), GetText("config_time"), GetText("config_bo")
-        };
+            GetText("config_diff"), GetText("config_time"), GetText("config_bo")};
 
         std::wstring values[] = {
             std::wstring(config->gameMode == MODE_CARO ? L"< " + GetText("config_val_caro") + L" >" : L"< " + GetText("config_val_ttt") + L" >"),
             std::wstring(config->matchType == MATCH_PVP ? L"< " + GetText("val_pvp") + L" >" : L"< " + GetText("val_pve") + L" >"),
             std::wstring(config->difficulty == 1 ? L"< " + GetText("val_bronze") + L" >" : (config->difficulty == 2 ? L"< " + GetText("val_gold") + L" >" : L"< " + GetText("val_challenger") + L" >")),
             L"< " + std::to_wstring(config->countdownTime) + L" " + GetText("val_sec") + L" >",
-            L"< " + GetText("val_first_to") + L" " + std::to_wstring(config->targetScore) + L" " + GetText("val_goals") + L" >"
-        };
+            L"< " + GetText("val_first_to") + L" " + std::to_wstring(config->targetScore) + L" " + GetText("val_goals") + L" >"};
 
         bool isPvE_p0 = (config->matchType == MATCH_PVE);
         int drawRow = 0; // Hàng thực tế được vẽ
         for (int i = 0; i < 5; i++)
         {
-            if (i == 3 && isPvE_p0) continue;
-            if (i == 2 && config->matchType == MATCH_PVP) continue;
+            if (i == 3 && isPvE_p0)
+                continue;
+            if (i == 2 && config->matchType == MATCH_PVP)
+                continue;
 
             int yPos = startY + drawRow * spacing;
             COLORREF valColor = ToCOLORREF(Palette::GrayDarkest);
@@ -436,9 +455,12 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
         std::wstring botName = L"";
         if (isPvE)
         {
-            if (config->difficulty == 1) botName = GetText("config_bot_easy");
-            else if (config->difficulty == 2) botName = GetText("config_bot_med");
-            else botName = GetText("config_bot_hard");
+            if (config->difficulty == 1)
+                botName = GetText("config_bot_easy");
+            else if (config->difficulty == 2)
+                botName = GetText("config_bot_med");
+            else
+                botName = GetText("config_bot_hard");
         }
 
         drawPlayerCard(panelX + UIScaler::SX(25), p1AvatarIdx, editName1, true, selectedOption == 0, selectedOption == 1, isEditingName1);

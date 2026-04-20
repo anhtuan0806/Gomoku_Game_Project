@@ -1,0 +1,96 @@
+\documentclass[14pt,a4paper]{extreport}
+
+% 1. Gọi file cấu hình
+\input{preamble}
+
+%------Cấu hình Header và Footer cho trang thường------
+\pagestyle{fancy}
+\fancyhf{}
+
+\lhead{\fontsize{13}{16}\selectfont \textcolor{fitblue}{CSC10012 - Cơ sở lập trình}}
+\rhead{\fontsize{13}{16}\selectfont \textcolor{fitblue}{Đồ án Caro}}
+\lfoot{\fontsize{13}{16}\selectfont Nhóm 3 - Lớp 25CTT7}
+\cfoot{\fontsize{13}{16}\selectfont Trang \thepage}
+
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+%------Định nghĩa lại Style plain để áp dụng cho trang đầu chương------
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \lhead{\fontsize{13}{16}\selectfont \textcolor{fitblue}{CSC10012 - Cơ sở lập trình}}
+  \rhead{\fontsize{13}{16}\selectfont \textcolor{fitblue}{Đồ án Caro}}
+  \lfoot{\fontsize{13}{16}\selectfont Nhóm 3 - Lớp 25CTT7}
+  \cfoot{\fontsize{13}{16}\selectfont Trang \thepage}
+  \renewcommand{\headrulewidth}{0.4pt}
+  \renewcommand{\footrulewidth}{0.4pt}
+}
+
+% Tùy chỉnh màu đường kẻ cho đồng bộ (tùy chọn)
+\makeatletter
+\def\headrule{{\if@fancyplain\let\headrulewidth\plainheadrulewidth\fi
+\textcolor{fitblue}{\hrule\@height\headrulewidth\@width\headwidth \vskip-\headrulewidth}}}
+\def\footrule{{\if@fancyplain\let\footrulewidth\plainfootrulewidth\fi
+\textcolor{fitblue}{\vskip-\footruleskip\hrule\@height\footrulewidth\@width\headwidth \vskip\footruleskip}}}
+\makeatother
+
+\begin{document}
+
+% 2. Trang bìa
+\input{sections/cover}
+
+% 3. Cấu hình số trang và Mục lục
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\renewcommand{\contentsname}{}        % Xóa "Mục lục"
+\renewcommand{\listtablename}{}       % Xóa "Danh mục các bảng"
+\renewcommand{\listfigurename}{}      % Xóa "Danh mục hình vẽ"
+
+% 4. Các nội dung chính
+\input{sections/assignment}
+
+\input{sections/preface}
+
+\chapter*{\centering{MỤC LỤC}}
+\addcontentsline{toc}{chapter}{\textcolor{fitblue}{MỤC LỤC}}
+{\setstretch{1.2}
+\tableofcontents
+}
+
+\chapter*{\centering{DANH SÁCH HÌNH ẢNH}}
+\addcontentsline{toc}{chapter}{\textcolor{fitblue}{DANH SÁCH HÌNH ẢNH}}
+{\setstretch{1.2}
+\listoffigures
+}
+
+\chapter*{\centering{DANH SÁCH BẢNG}}
+\addcontentsline{toc}{chapter}{\textcolor{fitblue}{DANH SÁCH BẢNG}}
+{\setstretch{1.2}
+\listoftables
+}
+
+\renewcommand{\lstlistlistingname}{
+    \centering{DANH SÁCH MÃ NGUỒN}
+}
+
+{\setstretch{1.2}
+\lstlistoflistings
+}
+\addcontentsline{toc}{chapter}{\textcolor{fitblue}{DANH SÁCH MÃ NGUỒN}}
+
+
+\input{sections/chapter1}
+\input{sections/chapter2}
+\input{sections/chapter3}
+\input{sections/chapter4}
+\input{sections/chapter5}
+\input{sections/chapter6}
+\input{sections/chapter7}
+\input{sections/chapter8}
+\input{sections/chapter9}
+
+\input{sections/references}
+
+\end{document}

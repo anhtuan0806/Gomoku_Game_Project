@@ -66,8 +66,8 @@ play_time_rem=Thời gian còn lại:
 
 pause_title=TẠM DỪNG
 pause_resume=TRỞ LẠI SÂN
-pause_bgm=NHẠC NỀN
-pause_vol=ÂM LƯỢNG NHẠC
+pause_sfx=TIẾNG ĐỘNG
+pause_sfx_vol=ÂM LƯỢNG SFX
 pause_save=GHI HÌNH TRẬN ĐẤU
 pause_exit=KẾT THÚC TRẬN ĐẤU
 

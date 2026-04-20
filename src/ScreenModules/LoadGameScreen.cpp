@@ -67,7 +67,8 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
                         g_LoadFeedbackTimer = 1.0f;
                         g_CurrentMode = MODE_SELECT_ACTION;
                     }
-                    else {
+                    else
+                    {
                         PlaySFX("sfx_error");
                     }
                 }
@@ -94,7 +95,8 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             if (!canMove)
                 return false;
             g_SelectedSlot = (g_SelectedSlot - 1 + (MAX_SLOTS + 1)) % (MAX_SLOTS + 1);
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             lastMoveTime = now;
         }
         else if (rawKey == 'S' || rawKey == VK_DOWN)
@@ -102,7 +104,8 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             if (!canMove)
                 return false;
             g_SelectedSlot = (g_SelectedSlot + 1) % (MAX_SLOTS + 1);
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             lastMoveTime = now;
         }
         else if (rawKey == VK_RETURN || rawKey == VK_SPACE)
@@ -143,7 +146,8 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             if (!canMove)
                 return false;
             g_SelectedAction = (g_SelectedAction - 1 + MAX_ACTIONS) % MAX_ACTIONS;
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             lastMoveTime = now;
         }
         else if (rawKey == 'S' || rawKey == VK_DOWN)
@@ -151,7 +155,8 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             if (!canMove)
                 return false;
             g_SelectedAction = (g_SelectedAction + 1) % MAX_ACTIONS;
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
             lastMoveTime = now;
         }
         else if (rawKey == VK_RETURN || rawKey == VK_SPACE)
@@ -182,13 +187,15 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
                     g_LoadFeedbackTimer = 1.0f;
                     g_CurrentMode = MODE_SELECT_SLOT;
                 }
-                else {
+                else
+                {
                     PlaySFX("sfx_error");
                 }
             }
             else if (g_SelectedAction == 3)
             { // Quay lại
-                if (!isRepeat) PlaySFX("sfx_move");
+                if (!isRepeat)
+                    PlaySFX("sfx_move");
                 g_CurrentMode = MODE_SELECT_SLOT;
             }
         }
@@ -331,8 +338,8 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring &statu
             std::wstring scoreStr = std::to_wstring(meta.p1Wins) + L" - " + std::to_wstring(meta.p2Wins);
             DrawMetaLine(GetText("save_score"), scoreStr, ToCOLORREF(Palette::RedNormal));
 
-            // 4. Các nút hành động (Dời xuống dưới khung thông tin mới)
-            std::wstring actions[] = { GetText("save_btn_load"), GetText("save_btn_rename"), GetText("save_btn_delete"), GetText("save_btn_deselect") };
+            // 4. Các nút hành động
+            std::wstring actions[] = {GetText("save_btn_load"), GetText("save_btn_rename"), GetText("save_btn_delete"), GetText("save_btn_deselect")};
             int actionStartY = startY + UIScaler::SY(205);
 
             for (int j = 0; j < MAX_ACTIONS; j++)
@@ -415,7 +422,7 @@ void UpdateLoadGameScreen(ScreenState &currentState, PlayState *playState, int &
     // Xử lý timer phản hồi
     extern float g_GlobalAnimTime;
     static double lastTime = 0;
-    double dt = 0.016; // Giả định 60fps nếu không có dt thực
+    double dt = 0.016;
 
     if (g_LoadFeedbackTimer > 0)
     {

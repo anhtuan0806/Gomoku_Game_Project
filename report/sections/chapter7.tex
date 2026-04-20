@@ -1,0 +1,432 @@
+\newpage
+\chapter*{\centering{\MakeUppercase{CHƯƠNG 7. TRÍ TUỆ NHÂN TẠO}}}
+\addcontentsline{toc}{chapter}{\textcolor{fitblue}{\MakeUppercase{CHƯƠNG 7. TRÍ TUỆ NHÂN TẠO}}}
+\setlength{\parindent}{1.5em}
+
+\section*{7.1. Tổng quan kiến trúc AI}
+\addcontentsline{toc}{section}{\textcolor{black}{7.1. Tổng quan kiến trúc AI}}
+
+\setlength{\parindent}{1.5em} Trí tuệ nhân tạo (AI) của trò chơi được hiện thực trong mô-đun BotAI. Hệ thống cung cấp 3 mức độ khó: dễ (ngẫu nhiên), trung bình (đánh giá heuristic cục bộ), và khó (tìm kiếm alpha-beta có bảng băm trạng thái). Mỗi mức độ đều dùng chung cấu trúc dữ liệu bàn cờ nhưng khác chiến lược ra quyết định.
+
+\setlength{\parindent}{1.5em} Về mặt nguyên lý, AI được thiết kế theo ba tầng: (1) tầng chọn nước đi nhanh để đảm bảo phản hồi tức thì, (2) tầng đánh giá cục bộ để có quyết định chiến thuật hợp lý, và (3) tầng tìm kiếm sâu để nhìn trước nhiều nước. Việc chia tầng giúp cân bằng giữa chất lượng và thời gian phản hồi, phù hợp đặc thù ván cờ Caro có không gian trạng thái rất lớn.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Điểm vào chính của AI theo mức độ khó}\label{lst:ch7_entry}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{void} calculateAIMove(\cppkw{const} PlayState* state, \cppkw{int} difficulty, \cppkw{int}\& outRow, \cppkw{int}\& outCol) \{ \\ \hline
+2 & \ \ initZobrist(); \\ \hline
+3 & \ \ \cppkw{if} (difficulty == 1) \{ randomMove(state, outRow, outCol); \cppkw{return}; \} \\ \hline
+4 & \ \ \cppkw{if} (difficulty == 2) \{ simpleMove(state, outRow, outCol); \cppkw{return}; \} \\ \hline
+5 & \ \ \cppkw{int} size = state->boardSize; \\ \hline
+6 & \ \ \cppkw{int} winLen = (state->gameMode == MODE\_CARO) ? 5 : 3; \\ \hline
+7 & \ \ \cppkw{int} depth = 5; \\ \hline
+8 & \ \ \textcolor{dkgreen}{// Sao chép bàn cờ sang virtualBoard để thử nước đi} \\ \hline
+9 & \ \ \cppkw{int} virtualBoard[MAX\_BOARD\_SIZE][MAX\_BOARD\_SIZE]; \\ \hline
+10 & \ \ \cppkw{for} (\cppkw{int} r = 0; r < MAX\_BOARD\_SIZE; r++) \\ \hline
+11 & \ \ \ \ \cppkw{for} (\cppkw{int} c = 0; c < MAX\_BOARD\_SIZE; c++) \{ virtualBoard[r][c] = state->board[r][c]; \} \\ \hline
+12 & \ \ \cppkw{uint64\_t} rootHash = buildHash(virtualBoard, size); \\ \hline
+13 & \ \ std::vector<MoveCandidate> moves; \\ \hline
+14 & \ \ moves.reserve(64); \\ \hline
+15 & \ \ \cppkw{for} (\cppkw{int} r = 0; r < size; r++) \{ \\ \hline
+16 & \ \ \ \ \cppkw{for} (\cppkw{int} c = 0; c < size; c++) \{ \\ \hline
+17 & \ \ \ \ \ \ \cppkw{if} (virtualBoard[r][c] != CELL\_EMPTY || !isCandidate(virtualBoard, size, r, c)) \cppkw{continue}; \\ \hline
+18 & \ \ \ \ \ \ \cppkw{int} atk = scoreMove(virtualBoard, size, winLen, r, c, CELL\_PLAYER2); \\ \hline
+19 & \ \ \ \ \ \ \cppkw{int} def = scoreMove(virtualBoard, size, winLen, r, c, CELL\_PLAYER1); \\ \hline
+20 & \ \ \ \ \ \ moves.push\_back(\{ r, c, atk + def * 2 \}); \\ \hline
+21 & \ \ \ \ \} \\ \hline
+22 & \ \ \} \\ \hline
+23 & \ \ \cppkw{if} (moves.empty()) \{ randomMove(state, outRow, outCol); \cppkw{return}; \} \\ \hline
+24 & \ \ sort(moves.begin(), moves.end(), [](\cppkw{const} MoveCandidate\& a, \cppkw{const} MoveCandidate\& b) \{ \cppkw{return} a.score > b.score; \}); \\ \hline
+25 & \ \ \textcolor{dkgreen}{// Ưu tiên nước thắng ngay hoặc chặn thua ngay} \\ \hline
+26 & \ \ \cppkw{for} (\cppkw{const} \cppkw{auto}\& m : moves) \{ \\ \hline
+27 & \ \ \ \ virtualBoard[m.r][m.c] = CELL\_PLAYER2; \\ \hline
+28 & \ \ \ \ \cppkw{if} (hasImmediateWin(virtualBoard, size, winLen, CELL\_PLAYER2)) \{ outRow = m.r; outCol = m.c; \cppkw{return}; \} \\ \hline
+29 & \ \ \ \ virtualBoard[m.r][m.c] = CELL\_EMPTY; \\ \hline
+30 & \ \ \} \\ \hline
+31 & \ \ \cppkw{for} (\cppkw{const} \cppkw{auto}\& m : moves) \{ \\ \hline
+32 & \ \ \ \ virtualBoard[m.r][m.c] = CELL\_PLAYER1; \\ \hline
+33 & \ \ \ \ \cppkw{if} (hasImmediateWin(virtualBoard, size, winLen, CELL\_PLAYER1)) \{ outRow = m.r; outCol = m.c; \cppkw{return}; \} \\ \hline
+34 & \ \ \ \ virtualBoard[m.r][m.c] = CELL\_EMPTY; \\ \hline
+35 & \ \ \} \\ \hline
+36 & \ \ \cppkw{int} bestScore = INT\_MIN; \\ \hline
+37 & \ \ outRow = moves[0].r; \\ \hline
+38 & \ \ outCol = moves[0].c; \\ \hline
+39 & \ \ \cppkw{for} (\cppkw{const} \cppkw{auto}\& m : moves) \{ \\ \hline
+40 & \ \ \ \ \cppkw{uint64\_t} newHash = rootHash \textasciicircum\ zobristFor(m.r, m.c, CELL\_PLAYER2); \\ \hline
+41 & \ \ \ \ virtualBoard[m.r][m.c] = CELL\_PLAYER2; \\ \hline
+42 & \ \ \ \ \cppkw{int} score = alphaBeta(virtualBoard, size, winLen, depth - 1, INT\_MIN, INT\_MAX, \cppkw{false}, newHash); \\ \hline
+43 & \ \ \ \ virtualBoard[m.r][m.c] = CELL\_EMPTY; \\ \hline
+44 & \ \ \ \ \cppkw{if} (score > bestScore) \{ bestScore = score; outRow = m.r; outCol = m.c; \} \\ \hline
+45 & \ \ \} \\ \hline
+46 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Ba chiến lược này được thiết kế để cân bằng giữa tốc độ phản hồi và chất lượng nước đi. Dễ đảm bảo phản hồi tức thì, trung bình có tính chiến thuật cục bộ, còn khó có khả năng nhìn trước nhiều nước nhờ cây tìm kiếm.
+
+\subsection*{7.1.2. Gọi AI bất đồng bộ để giữ mượt giao diện}
+\addcontentsline{toc}{subsection}{\textcolor{black}{7.1.2. Gọi AI bất đồng bộ để giữ mượt giao diện}}
+
+\setlength{\parindent}{1.5em} Ở chế độ PvE, việc tìm nước đi có thể tốn thời gian (alpha-beta + bảng băm). Để tránh block luồng render, PlayScreen chạy AI bằng \texttt{std::async} và chỉ áp dụng kết quả khi \texttt{future} báo sẵn sàng. Cách này giúp UI tiếp tục cập nhật animation và đồng hồ trong lúc bot đang tính.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Chạy AI bất đồng bộ và nhận kết quả an toàn}\label{lst:ch7_async_ai}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} (state->status == MATCH\_PLAYING \&\& state->matchType == MATCH\_PVE \&\& !state->isP1Turn) \{ \\ \hline
+2 & \ \ \cppkw{if} (!g\_AIsCalculating) \{ \\ \hline
+3 & \ \ \ \ g\_AIsCalculating = \cppkw{true}; \\ \hline
+4 & \ \ \ \ PlayState localState = *state; \\ \hline
+5 & \ \ \ \ g\_AIFuture = std::async(std::launch::async, [localState]() \{ \\ \hline
+6 & \ \ \ \ \ \ \cppkw{int} r, c; \\ \hline
+7 & \ \ \ \ \ \ calculateAIMove(\&localState, localState.difficulty, r, c); \\ \hline
+8 & \ \ \ \ \ \ \cppkw{return} std::make\_pair(r, c); \}); \\ \hline
+9 & \ \ \} \cppkw{else if} (g\_AIFuture.valid() \&\& g\_AIFuture.wait\_for(std::chrono::seconds(0)) == std::future\_status::ready) \{ \\ \hline
+10 & \ \ \ \ \cppkw{auto} bestMove = g\_AIFuture.get(); \\ \hline
+11 & \ \ \ \ g\_AIsCalculating = \cppkw{false}; \\ \hline
+12 & \ \ \ \ \cppkw{if} (processMove(state, bestMove.first, bestMove.second)) \{ \\ \hline
+13 & \ \ \ \ \ \ PlaySFX("sfx\_place"); \\ \hline
+14 & \ \ \ \ \} \\ \hline
+15 & \ \ \} \\ \hline
+16 & \} \\ \hline
+\end{longtable}
+
+\section*{7.2. Đánh giá heuristic (đánh giá cục bộ)}
+\addcontentsline{toc}{section}{\textcolor{black}{7.2. Đánh giá heuristic (đánh giá cục bộ)}}
+
+\subsection*{7.2.1. Nhận dạng mẫu công/thủ theo 4 hướng}
+\addcontentsline{toc}{subsection}{\textcolor{black}{7.2.1. Nhận dạng mẫu công/thủ theo 4 hướng}}
+
+\setlength{\parindent}{1.5em} Hệ thống đánh giá một vị trí dựa trên việc phân tích chuỗi quân liên tiếp theo 4 hướng: ngang, dọc, chéo chính, chéo phụ. Hàm \texttt{analyzeDirection()} đếm số quân liên tiếp và số đầu hở thực sự. Đầu hở chỉ được tính khi ô kế tiếp nằm trong bàn và trống, không tính biên hoặc quân địch.
+
+\setlength{\parindent}{1.5em} Các bước của thuật toán phân tích hướng như sau:
+\begin{itemize}
+	\item Bước 1: lấy ô đang xét làm trung tâm, khởi tạo \texttt{count = 1}, \texttt{openEnds = 0}.
+	\item Bước 2: quét tiến theo (dr, dc) để đếm chuỗi liên tiếp cùng quân, dừng khi gặp biên hoặc ô khác quân.
+	\item Bước 3: nếu ô dừng lại vẫn nằm trong bàn và trống, tăng \texttt{openEnds}.
+	\item Bước 4: quét lùi theo (-dr, -dc) tương tự bước 2.
+	\item Bước 5: kiểm tra đầu hở phía lùi và tăng \texttt{openEnds} nếu hợp lệ.
+\end{itemize}
+\setlength{\parindent}{1.5em} Thiết kế này phản ánh đúng bản chất chiến thuật Caro: chuỗi dài và hai đầu hở là nguy hiểm nhất; chuỗi bị chặn ở biên hoặc bởi quân đối thủ có giá trị thấp hơn.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Phân tích chuỗi và đầu hở theo một hướng}\label{lst:ch7_analyze_dir}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cpptype{LineInfo} analyzeDirection( \\ \hline
+2 & \ \ \cppkw{const} \cppkw{int} board[MAX\_BOARD\_SIZE][MAX\_BOARD\_SIZE], \\ \hline
+3 & \ \ \cppkw{int} size, \cppkw{int} row, \cppkw{int} col, \cppkw{int} dr, \cppkw{int} dc, \cppkw{int} player) \{ \\ \hline
+4 & \ \ LineInfo res = \{ 1, 0 \}; \\ \hline
+5 & \ \ \textcolor{dkgreen}{// Hướng tiến} \\ \hline
+6 & \ \ \cppkw{int} r = row + dr, c = col + dc; \\ \hline
+7 & \ \ \cppkw{while} (isInBounds(r, c, size) \&\& board[r][c] == player) \{ \\ \hline
+8 & \ \ \ \ res.count++; r += dr; c += dc; \\ \hline
+9 & \ \ \} \\ \hline
+10 & \ \ \cppkw{if} (isInBounds(r, c, size) \&\& board[r][c] == CELL\_EMPTY) res.openEnds++; \\ \hline
+11 & \ \ \textcolor{dkgreen}{// Hướng lùi} \\ \hline
+12 & \ \ r = row - dr; c = col - dc; \\ \hline
+13 & \ \ \cppkw{while} (isInBounds(r, c, size) \&\& board[r][c] == player) \{ \\ \hline
+14 & \ \ \ \ res.count++; r -= dr; c -= dc; \\ \hline
+15 & \ \ \} \\ \hline
+16 & \ \ \cppkw{if} (isInBounds(r, c, size) \&\& board[r][c] == CELL\_EMPTY) res.openEnds++; \\ \hline
+17 & \ \ \cppkw{return} res; \\ \hline
+18 & \} \\ \hline
+\end{longtable}
+
+\setlength{\parindent}{1.5em} Cách làm này đảm bảo phân biệt rõ chuỗi bị chặn bởi biên bàn và chuỗi bị chặn bởi quân đối phương, giúp AI đánh giá chính xác mức độ nguy hiểm của một thế cờ.
+
+\subsection*{7.2.2. Trọng số chuỗi mở và chuỗi bị chặn}
+\addcontentsline{toc}{subsection}{\textcolor{black}{7.2.2. Trọng số chuỗi mở và chuỗi bị chặn}}
+
+\setlength{\parindent}{1.5em} Hàm \texttt{evaluateLine()} ánh xạ (count, openEnds) sang điểm số. Chuỗi có hai đầu hở được ưu tiên cao vì khả năng mở rộng lớn, chuỗi bị chặn cả hai đầu có điểm 0 vì không còn giá trị tấn công. Với chuỗi đạt độ dài thắng, điểm số được đẩy lên mức cực lớn để ưu tiên tuyệt đối.
+
+\setlength{\parindent}{1.5em} Lý do dùng bảng trọng số cố định là để AI phản ứng nhanh, không cần đánh giá toàn bộ bàn cờ theo cách tốn kém. Trong thực tế, chỉ một vài mẫu cơ bản (2, 3, 4 quân liên tiếp với số đầu hở khác nhau) đã đủ mô tả mức độ nguy hiểm của thế cờ.
+
+\setlength{\parindent}{1.5em} Các bước tính điểm cho một chuỗi cụ thể:
+\begin{itemize}
+	\item Bước 1: nếu \texttt{count} đạt hoặc vượt \texttt{winLen}, trả về điểm cực lớn để ưu tiên thắng.
+	\item Bước 2: nếu \texttt{openEnds = 0}, trả về 0 vì chuỗi bị chặn hoàn toàn.
+	\item Bước 3: xác định chuỗi có hai đầu hở hay một đầu hở.
+	\item Bước 4: ánh xạ (\texttt{count}, \texttt{openEnds}) vào trọng số tương ứng.
+\end{itemize}
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Bảng trọng số đánh giá một chuỗi}\label{lst:ch7_eval_line}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} (line.count >= winLen) \cppkw{return} 1000000; \\ \hline
+2 & \cppkw{if} (line.openEnds == 0) \cppkw{return} 0; \\ \hline
+3 & \cppkw{bool} open2 = (line.openEnds == 2); \\ \hline
+4 & \cppkw{switch} (line.count) \{ \\ \hline
+5 & \ \ \cppkw{case} 4: \cppkw{return} open2 ? 50000 : 10000; \\ \hline
+6 & \ \ \cppkw{case} 3: \cppkw{return} open2 ? 5000 : 1000; \\ \hline
+7 & \ \ \cppkw{case} 2: \cppkw{return} open2 ? 500 : 100; \\ \hline
+8 & \ \ \cppkw{case} 1: \cppkw{return} open2 ? 50 : 10; \\ \hline
+9 & \ \ \cppkw{default}: \cppkw{return} 0; \\ \hline
+10 & \} \\ \hline
+\end{longtable}
+
+\subsection*{7.2.3. Tính điểm một nước đi theo công/thủ}
+\addcontentsline{toc}{subsection}{\textcolor{black}{7.2.3. Tính điểm một nước đi theo công/thủ}}
+
+\setlength{\parindent}{1.5em} Điểm của một ô ứng cử viên được tính bằng tổng điểm bốn hướng. Ở chế độ trung bình và khó, AI chấm điểm cả tấn công (đặt cho mình) và phòng thủ (đặt để chặn đối phương), sau đó cộng theo trọng số để xếp hạng nước đi.
+
+\setlength{\parindent}{1.5em} Cơ chế này có vai trò như một bộ lọc chiến thuật: nếu điểm phòng thủ cao, AI sẽ ưu tiên chặn đối thủ; nếu điểm tấn công cao, AI sẽ ưu tiên mở rộng chuỗi của mình. Đây là nền tảng cho cả \texttt{simpleMove} và danh sách ứng cử viên trong alpha-beta.
+
+\setlength{\parindent}{1.5em} Quy trình chấm điểm một ô ứng cử viên:
+\begin{itemize}
+	\item Bước 1: với 4 hướng cơ bản, gọi \texttt{analyzeDirection} để lấy \texttt{count} và \texttt{openEnds}.
+	\item Bước 2: chuyển từng hướng sang điểm bằng \texttt{evaluateLine}.
+	\item Bước 3: cộng điểm 4 hướng để ra tổng điểm tấn công hoặc phòng thủ.
+	\item Bước 4: kết hợp điểm công/thủ để xếp hạng nước đi.
+\end{itemize}
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Tính điểm một ô theo 4 hướng}\label{lst:ch7_score_move}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{int} scoreMove( \\ \hline
+2 & \ \ \cppkw{const} \cppkw{int} board[MAX\_BOARD\_SIZE][MAX\_BOARD\_SIZE], \\ \hline
+3 & \ \ \cppkw{int} size, \cppkw{int} winLen, \cppkw{int} row, \cppkw{int} col, \cppkw{int} player) \{ \\ \hline
+4 & \ \ \cppkw{static} \cppkw{const} \cppkw{int} dirs[4][2] = \{ \{0,1\}, \{1,0\}, \{1,1\}, \{1,-1\} \}; \\ \hline
+5 & \ \ \cppkw{int} total = 0; \\ \hline
+6 & \ \ \cppkw{for} (\cppkw{int} d = 0; d < 4; d++) \{ \\ \hline
+7 & \ \ \ \ LineInfo line = analyzeDirection(board, size, row, col, dirs[d][0], dirs[d][1], player); \\ \hline
+8 & \ \ \ \ total += evaluateLine(line, winLen); \\ \hline
+9 & \ \ \} \\ \hline
+10 & \ \ \cppkw{return} total; \\ \hline
+11 & \} \\ \hline
+\end{longtable}
+
+\section*{7.3. Tìm kiếm cây quyết định}
+\addcontentsline{toc}{section}{\textcolor{black}{7.3. Tìm kiếm cây quyết định}}
+
+\subsection*{7.3.1. Minimax và cắt tỉa alpha-beta}
+\addcontentsline{toc}{subsection}{\textcolor{black}{7.3.1. Minimax và cắt tỉa alpha-beta}}
+
+\setlength{\parindent}{1.5em} Ở mức khó, AI dùng thuật toán alpha-beta trên cây nước đi. Hàm \texttt{alphaBeta()} nhận bàn cờ, độ sâu, và khoảng giá trị \texttt{[alpha, beta]}. Nếu \texttt{beta} không thể vượt qua \texttt{alpha}, nhánh được cắt bỏ để tiết kiệm thời gian.
+
+\setlength{\parindent}{1.5em} Quy trình alpha-beta trong dự án gồm các bước chính:
+\begin{itemize}
+	\item Bước 1: tra cứu Transposition Table (TT) để lấy kết quả đã tính ở độ sâu tương đương; nếu đủ tin cậy thì trả về ngay.
+	\item Bước 2: nếu đạt độ sâu 0, trả về điểm đánh giá cục bộ bằng \texttt{computeIncrementalScore}.
+	\item Bước 3: kiểm tra thắng ngay (quiescence nhẹ) để ưu tiên trạng thái kết thúc rõ ràng.
+	\item Bước 4: sinh danh sách ứng cử viên, sắp xếp theo điểm, giới hạn nhánh.
+	\item Bước 5: thử từng nước đi, gọi đệ quy alpha-beta, cập nhật \texttt{alpha} hoặc \texttt{beta}.
+	\item Bước 6: nếu \texttt{beta <= alpha} thì cắt tỉa nhánh còn lại.
+	\item Bước 7: lưu kết quả vào TT với cờ biên phù hợp (EXACT/LOWER/UPPER).
+\end{itemize}
+\setlength{\parindent}{1.5em} Thuật toán này giúp giảm số lượng node phải duyệt, từ đó đạt độ sâu lớn hơn trong cùng thời gian, phù hợp với nhịp độ chơi thời gian thực.
+\setlength{\parindent}{1.5em} Nhờ các bước này, AI có thể đạt độ sâu 5 trong thời gian thực tế mà không làm gián đoạn trải nghiệm người chơi.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Hàm alpha-beta đầy đủ (có TT và cắt tỉa)}\label{lst:ch7_alpha_beta}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{int} alphaBeta(\cppkw{int} board[MAX\_BOARD\_SIZE][MAX\_BOARD\_SIZE], \cppkw{int} size, \cppkw{int} winLen, \cppkw{int} depth, \cppkw{int} alpha, \cppkw{int} beta, \cppkw{bool} isMax, \cppkw{uint64\_t} hash) \{ \\ \hline
+2 & \ \ TTEntry* tte = ttLookup(hash); \\ \hline
+3 & \ \ \cppkw{if} (tte->hash == hash \&\& tte->depth >= depth) \{ \\ \hline
+4 & \ \ \ \ \cppkw{if} (tte->flag == TT\_EXACT) \cppkw{return} tte->score; \\ \hline
+5 & \ \ \ \ \cppkw{if} (tte->flag == TT\_LOWER \&\& tte->score > alpha) alpha = tte->score; \\ \hline
+6 & \ \ \ \ \cppkw{if} (tte->flag == TT\_UPPER \&\& tte->score < beta) beta = tte->score; \\ \hline
+7 & \ \ \ \ \cppkw{if} (alpha >= beta) \cppkw{return} tte->score; \\ \hline
+8 & \ \ \} \\ \hline
+9 & \ \ \cppkw{if} (depth == 0) \cppkw{return} computeIncrementalScore(board, size, winLen); \\ \hline
+10 & \ \ \cppkw{if} (hasImmediateWin(board, size, winLen, CELL\_PLAYER2)) \cppkw{return} 900000 + depth; \\ \hline
+11 & \ \ \cppkw{if} (hasImmediateWin(board, size, winLen, CELL\_PLAYER1)) \cppkw{return} -900000 - depth; \\ \hline
+12 & \ \ std::vector<MoveCandidate> moves; moves.reserve(64); \\ \hline
+13 & \ \ \cppkw{int} curPlayer = isMax ? CELL\_PLAYER2 : CELL\_PLAYER1; \\ \hline
+14 & \ \ \cppkw{int} oppPlayer = isMax ? CELL\_PLAYER1 : CELL\_PLAYER2; \\ \hline
+15 & \ \ \cppkw{for} (\cppkw{int} r = 0; r < size; r++) \{ \\ \hline
+16 & \ \ \ \ \cppkw{for} (\cppkw{int} c = 0; c < size; c++) \{ \\ \hline
+17 & \ \ \ \ \ \ \cppkw{if} (board[r][c] != CELL\_EMPTY || !isCandidate(board, size, r, c)) \cppkw{continue}; \\ \hline
+18 & \ \ \ \ \ \ \cppkw{int} atk = scoreMove(board, size, winLen, r, c, curPlayer); \\ \hline
+19 & \ \ \ \ \ \ \cppkw{int} def = scoreMove(board, size, winLen, r, c, oppPlayer); \\ \hline
+20 & \ \ \ \ \ \ moves.push\_back(\{ r, c, atk + def \}); \\ \hline
+21 & \ \ \ \ \} \\ \hline
+22 & \ \ \} \\ \hline
+23 & \ \ \cppkw{if} (moves.empty()) \cppkw{return} computeIncrementalScore(board, size, winLen); \\ \hline
+24 & \ \ sort(moves.begin(), moves.end(), [](\cppkw{const} MoveCandidate\& a, \cppkw{const} MoveCandidate\& b) \{ \cppkw{return} a.score > b.score; \}); \\ \hline
+25 & \ \ \cppkw{static} \cppkw{constexpr} \cppkw{int} MAX\_BRANCHES = 12; \\ \hline
+26 & \ \ \cppkw{if} ((\cppkw{int})moves.size() > MAX\_BRANCHES) moves.resize(MAX\_BRANCHES); \\ \hline
+27 & \ \ \cppkw{int} originalAlpha = alpha; \\ \hline
+28 & \ \ \cppkw{int} best = isMax ? INT\_MIN : INT\_MAX; \\ \hline
+29 & \ \ \cppkw{for} (\cppkw{const} \cppkw{auto}\& m : moves) \{ \\ \hline
+30 & \ \ \ \ \cppkw{uint64\_t} newHash = hash \textasciicircum\ zobristFor(m.r, m.c, isMax ? CELL\_PLAYER2 : CELL\_PLAYER1); \\ \hline
+31 & \ \ \ \ board[m.r][m.c] = isMax ? CELL\_PLAYER2 : CELL\_PLAYER1; \\ \hline
+32 & \ \ \ \ \cppkw{int} val = alphaBeta(board, size, winLen, depth - 1, alpha, beta, !isMax, newHash); \\ \hline
+33 & \ \ \ \ board[m.r][m.c] = CELL\_EMPTY; \\ \hline
+34 & \ \ \ \ \cppkw{if} (isMax) \{ \cppkw{if} (val > best) best = val; \cppkw{if} (best > alpha) alpha = best; \} \\ \hline
+35 & \ \ \ \ \cppkw{else} \{ \cppkw{if} (val < best) best = val; \cppkw{if} (best < beta) beta = best; \} \\ \hline
+36 & \ \ \ \ \cppkw{if} (beta <= alpha) \cppkw{break}; \\ \hline
+37 & \ \ \} \\ \hline
+38 & \ \ TTFlag flag; \\ \hline
+39 & \ \ \cppkw{if} (best <= originalAlpha) flag = TT\_UPPER; \\ \hline
+40 & \ \ \cppkw{else if} (best >= beta) flag = TT\_LOWER; \\ \hline
+41 & \ \ \cppkw{else} flag = TT\_EXACT; \\ \hline
+42 & \ \ ttStore(hash, best, depth, flag); \\ \hline
+43 & \ \ \cppkw{return} best; \\ \hline
+44 & \} \\ \hline
+\end{longtable}
+
+\subsection*{7.3.2. Sắp xếp nước đi}
+\addcontentsline{toc}{subsection}{\textcolor{black}{7.3.2. Sắp xếp nước đi}}
+
+\setlength{\parindent}{1.5em} Trước khi tìm kiếm, danh sách ứng cử viên được sắp xếp giảm dần theo điểm công + thủ. Nếu nước tốt được duyệt trước, alpha-beta sẽ cắt tỉa nhiều hơn, tăng hiệu suất.
+
+\setlength{\parindent}{1.5em} Đây là bước quan trọng để giảm thời gian tìm kiếm: khi nước mạnh được xét trước, \texttt{alpha} hoặc \texttt{beta} nhanh chóng thu hẹp khoảng giá trị, giúp cắt bỏ nhiều nhánh yếu.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Tạo và sắp xếp danh sách ứng cử viên}\label{lst:ch7_move_order}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & std::vector<MoveCandidate> moves; \\ \hline
+2 & moves.reserve(64); \\ \hline
+3 & \cppkw{for} (\cppkw{int} r = 0; r < size; r++) \{ \\ \hline
+4 & \ \ \cppkw{for} (\cppkw{int} c = 0; c < size; c++) \{ \\ \hline
+5 & \ \ \ \ \cppkw{if} (virtualBoard[r][c] != CELL\_EMPTY || !isCandidate(virtualBoard, size, r, c)) \cppkw{continue}; \\ \hline
+6 & \ \ \ \ \cppkw{int} atk = scoreMove(virtualBoard, size, winLen, r, c, CELL\_PLAYER2); \\ \hline
+7 & \ \ \ \ \cppkw{int} def = scoreMove(virtualBoard, size, winLen, r, c, CELL\_PLAYER1); \\ \hline
+8 & \ \ \ \ moves.push\_back(\{ r, c, atk + def * 2 \}); \\ \hline
+9 & \ \ \} \\ \hline
+10 & \} \\ \hline
+11 & sort(moves.begin(), moves.end(), [](\cppkw{const} MoveCandidate\& a, \cppkw{const} MoveCandidate\& b) \{ \cppkw{return} a.score > b.score; \}); \\ \hline
+\end{longtable}
+
+\subsection*{7.3.3. Ưu tiên thắng ngay và chặn thua}
+\addcontentsline{toc}{subsection}{\textcolor{black}{7.3.3. Ưu tiên thắng ngay và chặn thua}}
+
+\setlength{\parindent}{1.5em} Ở nút gốc, AI kiểm tra nước thắng ngay lập tức cho mình, sau đó kiểm tra nước chặn thắng của đối phương. Nếu phát hiện, trả về ngay mà không cần chạy alpha-beta, đảm bảo phản xạ chiến thuật chính xác.
+
+\setlength{\parindent}{1.5em} Mục tiêu của bước này là loại bỏ các trường hợp hiển nhiên: nếu có nước thắng tức thì, mọi tìm kiếm sâu hơn là không cần thiết; nếu đối thủ có nước thắng ngay, AI phải chặn lập tức để tránh thua.
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Ưu tiên nước thắng hoặc chặn thua tại gốc}\label{lst:ch7_immediate_win}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{for} (\cppkw{const} \cppkw{auto}\& m : moves) \{ \\ \hline
+2 & \ \ virtualBoard[m.r][m.c] = CELL\_PLAYER2; \\ \hline
+3 & \ \ \cppkw{if} (hasImmediateWin(virtualBoard, size, winLen, CELL\_PLAYER2)) \{ \\ \hline
+4 & \ \ \ \ outRow = m.r; outCol = m.c; \\ \hline
+5 & \ \ \ \ virtualBoard[m.r][m.c] = CELL\_EMPTY; \\ \hline
+6 & \ \ \ \ \cppkw{return}; \\ \hline
+7 & \ \ \} \\ \hline
+8 & \ \ virtualBoard[m.r][m.c] = CELL\_EMPTY; \\ \hline
+9 & \} \\ \hline
+10 & \cppkw{for} (\cppkw{const} \cppkw{auto}\& m : moves) \{ \\ \hline
+11 & \ \ virtualBoard[m.r][m.c] = CELL\_PLAYER1; \\ \hline
+12 & \ \ \cppkw{if} (hasImmediateWin(virtualBoard, size, winLen, CELL\_PLAYER1)) \{ \\ \hline
+13 & \ \ \ \ outRow = m.r; outCol = m.c; \\ \hline
+14 & \ \ \ \ virtualBoard[m.r][m.c] = CELL\_EMPTY; \\ \hline
+15 & \ \ \ \ \cppkw{return}; \\ \hline
+16 & \ \ \} \\ \hline
+17 & \ \ virtualBoard[m.r][m.c] = CELL\_EMPTY; \\ \hline
+18 & \} \\ \hline
+\end{longtable}
+
+\section*{7.4. Tối ưu và tăng tốc}
+\addcontentsline{toc}{section}{\textcolor{black}{7.4. Tối ưu và tăng tốc}}
+
+\subsection*{7.4.1. Zobrist hashing}
+\addcontentsline{toc}{subsection}{\textcolor{black}{7.4.1. Zobrist hashing}}
+
+\setlength{\parindent}{1.5em} Zobrist hashing mã hóa trạng thái bàn cờ thành một số 64-bit bằng phép XOR. Mỗi cặp (ô, quân) được gán một số ngẫu nhiên; khi đặt hoặc xóa quân, hash mới chỉ cần XOR thêm một giá trị, rất nhanh.
+
+\setlength{\parindent}{1.5em} Lý do dùng Zobrist là vì trạng thái bàn cờ thay đổi liên tục khi thử nước đi trong alpha-beta. Việc tính lại hash toàn bàn sẽ tốn $O(n^2)$, còn Zobrist cho phép cập nhật $O(1)$ bằng XOR.
+
+\setlength{\parindent}{1.5em} Trình tự hoạt động của Zobrist:
+\begin{itemize}
+	\item Bước 1: khởi tạo bảng số ngẫu nhiên cho từng cặp (ô, quân).
+	\item Bước 2: xây hash ban đầu bằng XOR các ô đang có quân.
+	\item Bước 3: khi thử một nước đi, chỉ cần XOR thêm (hoặc XOR lại) giá trị tương ứng.
+\end{itemize}
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Khởi tạo bảng Zobrist và sinh hash}\label{lst:ch7_zobrist}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & mt19937\_64 rng(0xDEADBEEFCAFEBABEULL); \\ \hline
+2 & \cppkw{for} (\cppkw{int} r = 0; r < MAX\_BOARD\_SIZE; r++) \\ \hline
+3 & \ \ \cppkw{for} (\cppkw{int} c = 0; c < MAX\_BOARD\_SIZE; c++) \\ \hline
+4 & \ \ \ \ \cppkw{for} (\cppkw{int} p = 0; p < 2; p++) \\ \hline
+5 & \ \ \ \ \ \ zobristTable[r][c][p] = rng(); \\ \hline
+6 & \cppkw{uint64\_t} h = 0; \\ \hline
+7 & \cppkw{if} (board[r][c] != CELL\_EMPTY) h \textasciicircum= zobristFor(r, c, board[r][c]); \\ \hline
+\end{longtable}
+
+\subsection*{7.4.2. Transposition Table}
+\addcontentsline{toc}{subsection}{\textcolor{black}{7.4.2. Transposition Table}}
+
+\setlength{\parindent}{1.5em} Transposition Table lưu lại kết quả đánh giá của các trạng thái đã duyệt, giúp tránh tính lại ở những nhánh trùng lặp. Bảng có kích thước $2^{20}$ entry. Mỗi entry lưu hash, điểm, độ sâu và cờ biên (exact/lower/upper).
+
+\setlength{\parindent}{1.5em} Trong cây tìm kiếm, cùng một trạng thái có thể xuất hiện qua nhiều thứ tự nước đi khác nhau. TT giúp tái sử dụng kết quả cũ, giảm đáng kể số node phải duyệt. Cờ biên được dùng để cập nhật \texttt{alpha/beta} đúng mức và đảm bảo tính an toàn của cắt tỉa.
+
+\setlength{\parindent}{1.5em} Các bước sử dụng TT:
+\begin{itemize}
+	\item Bước 1: tra bảng bằng hash, nếu có kết quả đủ độ sâu thì dùng ngay.
+	\item Bước 2: nếu không đủ, tiếp tục tìm kiếm và cập nhật kết quả mới.
+	\item Bước 3: lưu kết quả kèm cờ biên để lần sau sử dụng đúng ngữ cảnh.
+\end{itemize}
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Lưu và tra cứu bảng TT}\label{lst:ch7_tt}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & TTEntry* tte = ttLookup(hash); \\ \hline
+2 & \cppkw{if} (tte->hash == hash \&\& tte->depth >= depth) \{ \\ \hline
+3 & \ \ \cppkw{if} (tte->flag == TT\_EXACT) \cppkw{return} tte->score; \\ \hline
+4 & \ \ \cppkw{if} (tte->flag == TT\_LOWER \&\& tte->score > alpha) alpha = tte->score; \\ \hline
+5 & \ \ \cppkw{if} (tte->flag == TT\_UPPER \&\& tte->score < beta) beta = tte->score; \\ \hline
+6 & \ \ \cppkw{if} (alpha >= beta) \cppkw{return} tte->score; \\ \hline
+7 & \} \\ \hline
+8 & TTFlag flag; \\ \hline
+9 & \cppkw{if} (best <= originalAlpha) flag = TT\_UPPER; \\ \hline
+10 & \cppkw{else if} (best >= beta) flag = TT\_LOWER; \\ \hline
+11 & \cppkw{else} flag = TT\_EXACT; \\ \hline
+12 & ttStore(hash, best, depth, flag); \\ \hline
+\end{longtable}
+
+\subsection*{7.4.3. Lọc ứng cử viên và giới hạn nhánh}
+\addcontentsline{toc}{subsection}{\textcolor{black}{7.4.3. Lọc ứng cử viên và giới hạn nhánh}}
+
+\setlength{\parindent}{1.5em} Để giảm không gian tìm kiếm, AI chỉ xét các ô trống nằm trong bán kính 2 ô quanh những quân đã có. Đồng thời, số lượng nước đi mỗi tầng bị giới hạn ở \texttt{MAX\_BRANCHES = 12}. Nhờ đó, độ sâu 5 vẫn chạy được trong thời gian thực.
+
+\setlength{\parindent}{1.5em} Lọc ứng cử viên dựa trên quan sát thực tế: các nước đi xa vùng đang có quân hiếm khi mang lại lợi ích chiến thuật tức thời. Giới hạn nhánh giúp chi phí tìm kiếm tăng tuyến tính theo độ sâu thay vì bùng nổ theo số ô trống toàn bàn.
+
+\setlength{\parindent}{1.5em} Trình tự lọc và giới hạn:
+\begin{itemize}
+	\item Bước 1: bỏ qua các ô không nằm gần vùng đã có quân.
+	\item Bước 2: chấm điểm và sắp xếp các ô còn lại.
+	\item Bước 3: giữ lại tối đa \texttt{MAX\_BRANCHES} nước đi tốt nhất cho mỗi tầng.
+\end{itemize}
+
+\captionsetup{type=lstlisting}
+\renewcommand{\arraystretch}{0.8}
+\captionof{lstlisting}{Lọc ứng cử viên theo bán kính và giới hạn nhánh}\label{lst:ch7_candidate_limit}
+\begin{longtable}{|>{\ttfamily\small\color{black}\raggedleft\arraybackslash}p{0.8cm}|>{\ttfamily\small\color{black}\arraybackslash}p{0.85\linewidth}|}
+\hline
+\normalfont\bfseries STT & \normalfont\bfseries Mã nguồn \\ \hline
+1 & \cppkw{if} (board[r][c] != CELL\_EMPTY || !isCandidate(board, size, r, c)) \cppkw{continue}; \\ \hline
+2 & \cppkw{static} \cppkw{constexpr} \cppkw{int} MAX\_BRANCHES = 12; \\ \hline
+3 & \cppkw{if} ((\cppkw{int})moves.size() > MAX\_BRANCHES) moves.resize(MAX\_BRANCHES); \\ \hline
+\end{longtable}

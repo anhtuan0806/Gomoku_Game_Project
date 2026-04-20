@@ -14,7 +14,6 @@ struct SmartColor
     BYTE b;
 };
 
-// Các hàm bên ngoài tương tác với SmartColor (Đồng bộ phong cách lập trình hàm)
 COLORREF ToCOLORREF(const SmartColor &sc);
 Gdiplus::Color ToGdiColor(const SmartColor &sc);
 SmartColor WithAlpha(const SmartColor &sc, BYTE newAlpha);

@@ -2,7 +2,7 @@
 #include <chrono>
 #include <sstream>
 #include <string>
-#include <timeapi.h> // For timeBeginPeriod
+#include <timeapi.h>
 
 // --- Khai báo các Header hệ thống ---
 #include "ApplicationTypes/GameState.h"
@@ -44,8 +44,30 @@ int g_GuildPage = 0;
 ULONG_PTR g_GdiplusToken;
 DoubleBuffer g_BackBuffer = {0};
 double g_LastRenderMs = 0.0;
+double g_LastUpdateMs = 0.0;
+double g_LastBlitMs = 0.0;
+double g_LastSleepMs = 0.0;
+bool g_NeedsRedraw = true;
+HANDLE g_FrameTimer = NULL;
 
-// --- Khai báo hàm Win32 ---   
+static bool ShouldAnimateScreen(ScreenState screen)
+{
+    switch (screen)
+    {
+    case SCREEN_MENU:
+    case SCREEN_PLAY:
+    case SCREEN_SETTING:
+    case SCREEN_MATCH_CONFIG:
+    case SCREEN_LOAD_GAME:
+    case SCREEN_GUIDE:
+    case SCREEN_ABOUT:
+        return true;
+    default:
+        return false;
+    }
+}
+
+// --- Khai báo hàm Win32 ---
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
@@ -56,6 +78,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     {
         return 0;
     }
+
+    g_FrameTimer = CreateWaitableTimer(NULL, TRUE, NULL);
 
     // Thiết lập tỷ lệ màn hình ngay từ ban đầu
     UIScaler::Update(850, 750);
@@ -82,7 +106,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     RegisterClassW(&wc);
 
-    // 4. Tạo cửa sổ (Kích thước 1280x720 để trải nghiệm tốt hơn)
+    // 4. Tạo cửa sổ
     HWND hWnd = CreateWindowExW(
         0, CLASS_NAME, L"CARO: Champions League",
         WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 1280, 720,
@@ -132,7 +156,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
             DispatchMessage(&msg);
         }
 
-        if (!bRunning) break;
+        if (!bRunning)
+            break;
 
         // 2. Cập nhật Logic & Render (LUÔN CHẠY sau khi xử lý tin nhắn)
         auto frameStart = std::chrono::high_resolution_clock::now();
@@ -144,20 +169,26 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         double dt = elapsed.count();
 
         // Giới hạn dt tối đa để tránh "nhảy vọt" (v.d khi di chuyển cửa sổ)
-        if (dt > 0.1) dt = 0.1;
+        if (dt > 0.1)
+            dt = 0.1;
 
         g_GlobalAnimTime += (float)dt;
 
         // Cập nhật Logic
+        auto updateStart = std::chrono::high_resolution_clock::now();
+        bool needsLogicRedraw = false;
         if (g_CurrentScreen == SCREEN_PLAY)
         {
-            UpdatePlayLogic(&g_PlayState, dt);
+            needsLogicRedraw = UpdatePlayLogic(&g_PlayState, dt);
         }
         else if (g_CurrentScreen == SCREEN_EXIT)
         {
             ShowWindow(hWnd, SW_HIDE); // Hide window immediately to feel instant
             bRunning = false;
         }
+        auto updateEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> updateElapsed = updateEnd - updateStart;
+        g_LastUpdateMs = updateElapsed.count();
 
         // Cập nhật FPS và tiêu đề cửa sổ (mỗi 0.5s)
         fpsTimer += dt;
@@ -173,15 +204,26 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
             title.precision(1);
             title << L"CARO: Champions League";
             title << L" | FPS: " << (int)lastFps;
-            title << L" | Render: " << g_LastRenderMs << L" ms";
+            title << L" | Upd: " << g_LastUpdateMs << L" ms";
+            title << L" | Ren: " << g_LastRenderMs << L" ms";
+            title << L" | Blt: " << g_LastBlitMs << L" ms";
+            title << L" | Slp: " << g_LastSleepMs << L" ms";
             SetWindowTextW(hWnd, title.str().c_str());
         }
 
         // Ép vẽ lại toàn cục mỗi khung hình
         if (!IsIconic(hWnd))
         {
-            InvalidateRect(hWnd, NULL, FALSE);
-            UpdateWindow(hWnd); 
+            if (ShouldAnimateScreen(g_CurrentScreen) || needsLogicRedraw)
+            {
+                g_NeedsRedraw = true;
+            }
+
+            if (g_NeedsRedraw)
+            {
+                InvalidateRect(hWnd, NULL, FALSE);
+                UpdateWindow(hWnd);
+            }
         }
 
         // 3. Điều khiển tốc độ khung hình (Throttling)
@@ -191,30 +233,56 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         if (frameElapsed.count() < targetFrameSeconds)
         {
             double sleepTime = targetFrameSeconds - frameElapsed.count();
-            if (sleepTime > 0.001)
+            auto sleepStart = std::chrono::high_resolution_clock::now();
+            if (sleepTime > 0.0005)
             {
-                Sleep((DWORD)(sleepTime * 1000.0) - 1);
+                if (g_FrameTimer)
+                {
+                    LARGE_INTEGER dueTime;
+                    dueTime.QuadPart = -(LONGLONG)(sleepTime * 10000000.0);
+                    if (SetWaitableTimer(g_FrameTimer, &dueTime, 0, NULL, NULL, FALSE))
+                    {
+                        WaitForSingleObject(g_FrameTimer, INFINITE);
+                    }
+                    else
+                    {
+                        Sleep((DWORD)(sleepTime * 1000.0));
+                    }
+                }
+                else
+                {
+                    Sleep((DWORD)(sleepTime * 1000.0));
+                }
             }
-            while (std::chrono::high_resolution_clock::now() - frameStart < std::chrono::duration<double>(targetFrameSeconds))
-            {
-                YieldProcessor();
-            }
+            auto sleepEnd = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> sleepElapsed = sleepEnd - sleepStart;
+            g_LastSleepMs = sleepElapsed.count();
+        }
+        else
+        {
+            g_LastSleepMs = 0.0;
         }
     }
 
     // 7. Giải phóng tài nguyên
     ShowWindow(hWnd, SW_HIDE); // Safety: ensure window is hidden before slow cleanup
-    
+
     GlobalFont::Cleanup();
     ClearUICaches();
     DeleteBuffer(g_BackBuffer);
+
+    if (g_FrameTimer)
+    {
+        CloseHandle(g_FrameTimer);
+        g_FrameTimer = NULL;
+    }
 
     // Gỡ font khỏi bộ nhớ
     RemoveFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Regular.ttf", FR_PRIVATE, 0);
     RemoveFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Bold.ttf", FR_PRIVATE, 0);
     RemoveFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Black.ttf", FR_PRIVATE, 0);
     RemoveFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Italic.ttf", FR_PRIVATE, 0);
-    
+
     ShutdownAudioSystem();
     ShutdownGraphics(g_GdiplusToken);
 
@@ -241,6 +309,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         ReleaseDC(hWnd, hdc);
 
         InvalidateRect(hWnd, NULL, FALSE);
+        g_NeedsRedraw = true;
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
 
@@ -292,6 +361,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PostQuitMessage(0);
             break;
         }
+        g_NeedsRedraw = true;
         break;
     }
 
@@ -309,6 +379,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             UpdateLoadGameScreen(g_CurrentScreen, &g_PlayState, g_LoadSelected, g_LoadStatus, wParam | 0x10000);
             break;
         }
+        g_NeedsRedraw = true;
         break;
     }
 
@@ -367,11 +438,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         }
 
+        auto blitStart = std::chrono::high_resolution_clock::now();
         BitBlt(hdc, 0, 0, w, h, g_BackBuffer.hdcMem, 0, 0, SRCCOPY);
+        auto blitEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> blitElapsed = blitEnd - blitStart;
+        g_LastBlitMs = blitElapsed.count();
 
         auto renderEnd = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> renderElapsed = renderEnd - renderStart;
         g_LastRenderMs = renderElapsed.count();
+
+        g_NeedsRedraw = false;
 
         EndPaint(hWnd, &ps);
         break;

@@ -10,49 +10,71 @@
 
 const int TOTAL_SETTING_ITEMS = 6;
 
-void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int selectedOption, int direction, bool isEnterPressed, bool isRepeat) {
-    if (direction == 0 && !isEnterPressed) return;
+void ProcessSettingInput(ScreenState &currentState, GameConfig *config, int selectedOption, int direction, bool isEnterPressed, bool isRepeat)
+{
+    if (direction == 0 && !isEnterPressed)
+        return;
 
-    switch (selectedOption) {
+    switch (selectedOption)
+    {
     case 0:
-        if (isEnterPressed) config->isBgmEnabled = !config->isBgmEnabled;
-        else config->isBgmEnabled = (direction == 1);
+        if (isEnterPressed)
+            config->isBgmEnabled = !config->isBgmEnabled;
+        else
+            config->isBgmEnabled = (direction == 1);
 
-        if (!config->isBgmEnabled) StopBGM();
-        else PlayBGM("Asset/audio/c1.mp3");
-        if (!isRepeat) PlaySFX("sfx_move");
+        if (!config->isBgmEnabled)
+            StopBGM();
+        else
+            PlayBGM("Asset/audio/c1.mp3");
+        if (!isRepeat)
+            PlaySFX("sfx_move");
         break;
     case 1:
-        if (direction != 0) {
+        if (direction != 0)
+        {
             config->bgmVolume += direction * 10;
-            if (config->bgmVolume > 100) config->bgmVolume = 100;
-            if (config->bgmVolume < 0) config->bgmVolume = 0;
+            if (config->bgmVolume > 100)
+                config->bgmVolume = 100;
+            if (config->bgmVolume < 0)
+                config->bgmVolume = 0;
             UpdateBGMVolume();
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
         }
         break;
     case 2:
-        if (isEnterPressed) config->isSfxEnabled = !config->isSfxEnabled;
-        else config->isSfxEnabled = (direction == 1);
-        if (!isRepeat) PlaySFX("sfx_move");
+        if (isEnterPressed)
+            config->isSfxEnabled = !config->isSfxEnabled;
+        else
+            config->isSfxEnabled = (direction == 1);
+        if (!isRepeat)
+            PlaySFX("sfx_move");
         break;
     case 3:
-        if (direction != 0) {
+        if (direction != 0)
+        {
             config->sfxVolume += direction * 10;
-            if (config->sfxVolume > 100) config->sfxVolume = 100;
-            if (config->sfxVolume < 0) config->sfxVolume = 0;
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (config->sfxVolume > 100)
+                config->sfxVolume = 100;
+            if (config->sfxVolume < 0)
+                config->sfxVolume = 0;
+            if (!isRepeat)
+                PlaySFX("sfx_move");
         }
         break;
     case 4:
-        if (direction != 0 || isEnterPressed) {
+        if (direction != 0 || isEnterPressed)
+        {
             config->currentLang = (config->currentLang == APP_LANG_VI) ? APP_LANG_EN : APP_LANG_VI;
             LoadLanguageFile(config->currentLang);
-            if (!isRepeat) PlaySFX("sfx_move");
+            if (!isRepeat)
+                PlaySFX("sfx_move");
         }
         break;
     case 5:
-        if (isEnterPressed) {
+        if (isEnterPressed)
+        {
             SaveConfig(config, "Asset/config.ini");
             PlaySFX("sfx_select");
             currentState = SCREEN_MENU;
@@ -61,9 +83,12 @@ void ProcessSettingInput(ScreenState& currentState, GameConfig* config, int sele
     }
 }
 
-void UpdateSettingScreen(ScreenState& currentState, GameConfig* config, int& selectedOption, WPARAM keyCode) {
-    if (keyCode == 0) return;
-    if (keyCode == VK_ESCAPE) {
+void UpdateSettingScreen(ScreenState &currentState, GameConfig *config, int &selectedOption, WPARAM keyCode)
+{
+    if (keyCode == 0)
+        return;
+    if (keyCode == VK_ESCAPE)
+    {
         SaveConfig(config, "Asset/config.ini");
         currentState = SCREEN_MENU;
         return;
@@ -76,33 +101,45 @@ void UpdateSettingScreen(ScreenState& currentState, GameConfig* config, int& sel
     ULONGLONG now = GetTickCount64();
     bool canMove = (now - lastMoveTime > (ULONGLONG)(isRepeat ? 150 : 80));
 
-    if (keyCode == 'W' || keyCode == VK_UP) {
-        if (!canMove) return;
-        do {
+    if (keyCode == 'W' || keyCode == VK_UP)
+    {
+        if (!canMove)
+            return;
+        do
+        {
             selectedOption = (selectedOption - 1 < 0) ? TOTAL_SETTING_ITEMS - 1 : selectedOption - 1;
         } while ((selectedOption == 1 && !config->isBgmEnabled) || (selectedOption == 3 && !config->isSfxEnabled));
-        if (!isRepeat) PlaySFX("sfx_move");
+        if (!isRepeat)
+            PlaySFX("sfx_move");
         lastMoveTime = now;
         return;
     }
-    else if (keyCode == 'S' || keyCode == VK_DOWN) {
-        if (!canMove) return;
-        do {
+    else if (keyCode == 'S' || keyCode == VK_DOWN)
+    {
+        if (!canMove)
+            return;
+        do
+        {
             selectedOption = (selectedOption + 1 >= TOTAL_SETTING_ITEMS) ? 0 : selectedOption + 1;
         } while ((selectedOption == 1 && !config->isBgmEnabled) || (selectedOption == 3 && !config->isSfxEnabled));
-        if (!isRepeat) PlaySFX("sfx_move");
+        if (!isRepeat)
+            PlaySFX("sfx_move");
         lastMoveTime = now;
         return;
     }
 
     int direction = 0;
-    if (keyCode == 'D' || keyCode == VK_RIGHT) {
-        if (!canMove) return;
+    if (keyCode == 'D' || keyCode == VK_RIGHT)
+    {
+        if (!canMove)
+            return;
         direction = 1;
         lastMoveTime = now;
     }
-    if (keyCode == 'A' || keyCode == VK_LEFT) {
-        if (!canMove) return;
+    if (keyCode == 'A' || keyCode == VK_LEFT)
+    {
+        if (!canMove)
+            return;
         direction = -1;
         lastMoveTime = now;
     }
@@ -111,16 +148,18 @@ void UpdateSettingScreen(ScreenState& currentState, GameConfig* config, int& sel
     ProcessSettingInput(currentState, config, selectedOption, direction, isEnterPressed, isRepeat);
 }
 
-void DrawColTextSetting(HDC hdc, const std::wstring& text, int x, int y, int width, COLORREF color, HFONT font, UINT format) {
+void DrawColTextSetting(HDC hdc, const std::wstring &text, int x, int y, int width, COLORREF color, HFONT font, UINT format)
+{
     SetTextColor(hdc, color);
     HFONT oldFont = (HFONT)SelectObject(hdc, font);
     SetBkMode(hdc, TRANSPARENT);
-    RECT rect = { x, y, x + width, y + UIScaler::SY(50) };
+    RECT rect = {x, y, x + width, y + UIScaler::SY(50)};
     DrawTextW(hdc, text.c_str(), -1, &rect, format | DT_VCENTER | DT_SINGLELINE);
     SelectObject(hdc, oldFont);
 }
 
-void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, int screenWidth, int screenHeight) {
+void RenderSettingScreen(HDC hdc, const GameConfig *config, int selectedOption, int screenWidth, int screenHeight)
+{
     Gdiplus::Graphics g(hdc);
     g.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
     DrawProceduralStadium(g, screenWidth, screenHeight);
@@ -136,7 +175,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
     g.DrawRectangle(&panelPen, panelX, panelY, panelW, panelH);
 
     DrawPixelBanner(g, hdc, GetText("setting_title").c_str(), screenWidth / 2, panelY + UIScaler::SY(40),
-        panelW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(50, 220, 80), "Asset/models/bg/gears.txt");
+                    panelW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(50, 220, 80), "Asset/models/bg/gears.txt");
 
     int startY = panelY + UIScaler::SY(105);
     int spacing = UIScaler::SY(52);
@@ -147,7 +186,8 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
 
     SetBkMode(hdc, TRANSPARENT);
 
-    for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
+    for (int i = 0; i < TOTAL_SETTING_ITEMS; i++)
+    {
         std::wstring label = L"";
         std::wstring value = L"";
         COLORREF labelColor = ToCOLORREF(Palette::GrayDarkest);
@@ -155,50 +195,76 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
         HFONT fontItem = (i == selectedOption) ? GlobalFont::Bold : GlobalFont::Default;
         bool isDisabled = (i == 1 && !config->isBgmEnabled) || (i == 3 && !config->isSfxEnabled);
 
-        if (i == selectedOption) {
+        if (i == selectedOption)
+        {
             int rCol = (int)(180 + sin(g_GlobalAnimTime * 12.0f) * 75);
             valColor = RGB(255, max(0, min(255, 255 - rCol)), 0);
         }
 
-        if (isDisabled) {
+        if (isDisabled)
+        {
             labelColor = RGB(150, 150, 150);
             valColor = RGB(150, 150, 150);
         }
 
-        switch (i) {
-        case 0: label = GetText("setting_bgm") + L":"; value = config->isBgmEnabled ? L" [ " + GetText("btn_on") + L" ]" : L" [ " + GetText("btn_off") + L" ]"; break;
-        case 1: label = GetText("setting_bgm_vol") + L":"; value = L""; break;
-        case 2: label = GetText("setting_sfx") + L":"; value = config->isSfxEnabled ? L" [ " + GetText("btn_on") + L" ]" : L" [ " + GetText("btn_off") + L" ]"; break;
-        case 3: label = GetText("setting_sfx_vol") + L":"; value = L""; break;
-        case 4: label = GetText("setting_lang") + L":"; value = (config->currentLang == APP_LANG_VI) ? L"< " + GetText("lang_vi") + L" >" : L"< " + GetText("lang_en") + L" >"; break;
-        case 5: label = L""; value = L""; break;
+        switch (i)
+        {
+        case 0:
+            label = GetText("setting_bgm") + L":";
+            value = config->isBgmEnabled ? L" [ " + GetText("btn_on") + L" ]" : L" [ " + GetText("btn_off") + L" ]";
+            break;
+        case 1:
+            label = GetText("setting_bgm_vol") + L":";
+            value = L"";
+            break;
+        case 2:
+            label = GetText("setting_sfx") + L":";
+            value = config->isSfxEnabled ? L" [ " + GetText("btn_on") + L" ]" : L" [ " + GetText("btn_off") + L" ]";
+            break;
+        case 3:
+            label = GetText("setting_sfx_vol") + L":";
+            value = L"";
+            break;
+        case 4:
+            label = GetText("setting_lang") + L":";
+            value = (config->currentLang == APP_LANG_VI) ? L"< " + GetText("lang_vi") + L" >" : L"< " + GetText("lang_en") + L" >";
+            break;
+        case 5:
+            label = L"";
+            value = L"";
+            break;
         }
 
         int yPos = startY + i * spacing;
 
-        if (i == 5) {
+        if (i == 5)
+        {
             COLORREF btnColor = ToCOLORREF(Palette::BlueDarkest);
-            if (i == selectedOption) {
+            if (i == selectedOption)
+            {
                 int gCol = (int)(150 + sin(g_GlobalAnimTime * 15.0f) * 105);
                 btnColor = RGB(max(0, min(255, 255 - gCol)), 100, 255);
                 Gdiplus::SolidBrush btnBg(Gdiplus::Color(80, 0, 120, 255));
                 g.FillRectangle(&btnBg, panelX + UIScaler::SX(60), yPos + UIScaler::SY(4), panelW - UIScaler::SX(120), spacing - UIScaler::SY(8));
             }
-            RECT btnRect = { panelX, yPos, panelX + panelW, yPos + spacing };
+            RECT btnRect = {panelX, yPos, panelX + panelW, yPos + spacing};
             SetTextColor(hdc, btnColor);
             HFONT oldF = (HFONT)SelectObject(hdc, (i == selectedOption ? GlobalFont::Title : GlobalFont::Bold));
             std::wstring btnTxt = L"== [ " + GetText("btn_back") + L" ] ==";
             DrawTextW(hdc, btnTxt.c_str(), -1, &btnRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
             SelectObject(hdc, oldF);
         }
-        else {
+        else
+        {
             DrawColTextSetting(hdc, label, col1X, yPos, col1W, labelColor, GlobalFont::Bold, DT_RIGHT);
-            if (i == 0 || i == 2) {
+            if (i == 0 || i == 2)
+            {
                 bool enabled = (i == 0) ? config->isBgmEnabled : config->isSfxEnabled;
                 COLORREF tColor = enabled ? RGB(0, 180, 50) : RGB(220, 50, 50);
                 DrawColTextSetting(hdc, value, col2X, yPos, col2W, tColor, (i == selectedOption ? GlobalFont::Bold : GlobalFont::Default), DT_LEFT);
             }
-            if (i == 1 || i == 3) {
+            if (i == 1 || i == 3)
+            {
                 int vol = (i == 1) ? config->bgmVolume : config->sfxVolume;
                 int barX = col2X + UIScaler::SX(4);
                 int barY = yPos + (spacing - UIScaler::SY(16)) / 2;
@@ -216,7 +282,8 @@ void RenderSettingScreen(HDC hdc, const GameConfig* config, int selectedOption, 
                 g.FillRectangle(&thumbBrush, thumbX, barY - UIScaler::SY(2), UIScaler::SX(10), barH + UIScaler::SY(4));
                 DrawColTextSetting(hdc, std::to_wstring(vol) + L"%", barX + barW + UIScaler::SX(15), yPos, col2W - barW - UIScaler::SX(15), valColor, fontItem, DT_LEFT);
             }
-            else if (i == 4) {
+            else if (i == 4)
+            {
                 DrawColTextSetting(hdc, value, col2X, yPos, col2W, valColor, fontItem, DT_LEFT);
             }
         }
