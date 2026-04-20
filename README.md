@@ -13,14 +13,13 @@
 ## Mục lục
 
 - [Tính năng nổi bật](#tính-năng-nổi-bật)
-- [Yêu cầu hệ thống](#yêu-cầu-hệ-thống)
-- [Hướng dẫn build](#hướng-dẫn-build)
+- [Hệ thống đồ họa & Animation](#hệ-thống-đồ-họa--animation)
 - [Cấu trúc dự án](#cấu-trúc-dự-án)
 - [Luồng hoạt động](#luồng-hoạt-động)
-- [Hệ thống đồ họa & Animation](#hệ-thống-đồ-họa--animation)
 - [Cơ chế lưu trữ & Metadata](#cơ-chế-lưu-trữ--metadata)
 - [Hệ thống Bot AI](#hệ-thống-bot-ai)
 - [Điều khiển](#điều-khiển)
+- [Yêu cầu hệ thống & Build](#yêu-cầu-hệ-thống--build)
 
 ---
 
