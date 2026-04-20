@@ -64,8 +64,8 @@ play_dribble=Dribbles:
 play_bowins=BO Wins: 
 play_time_rem=Time Remaining:
 
-val_pvp=Classic Rivalry (PvP)
-val_pve=Machine Challenger (PvE)
+val_pvp=PvP
+val_pve=PvE
 val_bronze=Bronze Tier
 val_gold=Gold Tier
 val_challenger=Challenger Tier

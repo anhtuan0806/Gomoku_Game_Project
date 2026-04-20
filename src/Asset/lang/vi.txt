@@ -82,8 +82,8 @@ summary_concede=THỦNG LƯỚI:
 summary_bowin=TRẬN BO THẮNG: 
 summary_win= [THẮNG]
 
-val_pvp=Kinh Điển Cùng Lò (PvP)
-val_pve=Thách Đấu Máy (PvE)
+val_pvp=PvP
+val_pve=PvE
 val_bronze=Phân Hạng Đồng
 val_gold=Phân Hạng Vàng
 val_challenger=Thách Đấu
