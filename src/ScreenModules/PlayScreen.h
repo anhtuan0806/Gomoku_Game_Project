@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PLAY_SCREEN_H_
+#define _PLAY_SCREEN_H_
 #include <windows.h>
 #include <string>
 #include "../ApplicationTypes/GameState.h"
@@ -28,3 +29,5 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 void UpdatePlayScreen(PlayState *state, ScreenState &currentState, WPARAM wParam, GameConfig *config);
 
 void ResetPlayScreenStatics();
+
+#endif // _PLAY_SCREEN_H_

@@ -48,7 +48,7 @@
 
 \setlength{\parindent}{1.5em} Đối tượng người chơi \texttt{PlayerInfo2} chứa cả dữ liệu tĩnh (tên, avatar, ký hiệu quân) và dữ liệu động theo ván (wins, số nước đi, thời gian). Hệ thống ghi theo thứ tự cố định; khi đọc sẽ dựa vào \texttt{SAVE\_VERSION} để quyết định có tồn tại các trường mới hay không. Với các mảng động như \texttt{winningCells}, \texttt{matchHistory}, \texttt{redoStack}, hệ thống ghi số lượng phần tử rồi ghi mảng thô.
 
-\setlength{\parindent}{1.5em} Việc tuần tự hóa \texttt{PlayerInfo2} tách rõ phần "dữ liệu nhận diện" (name, avatar, piece) và phần "thống kê" (wins, moves, time). Nhờ đó, khi bổ sung trường mới ở phiên bản sau, hệ thống vẫn có thể gán giá trị mặc định trong quá trình đọc để tránh rác bộ nhớ. Các vector động được ghi bằng \texttt{WriteVec} với độ dài trước, giúp phục hồi chính xác số phần tử và tránh đọc sai biên.
+\setlength{\parindent}{1.5em} Việc tuần tự hóa \texttt{PlayerInfo2} tách rõ phần "dữ liệu nhận diện" (name, avatar, piece) và phần "thống kê" (wins, moves, time). Nhờ đó, khi bổ sung trường mới ở phiên bản sau, hệ thống vẫn có thể gán giá trị mặc định trong quá trình đọc để tránh rác bộ nhớ. Các vector động được ghi bằng \texttt{WriteVec} với độ dài trước, và khi đọc có giới hạn số phần tử (100000) để chặn file lỗi gây tràn bộ nhớ.
 
 \captionsetup{type=lstlisting}
 \renewcommand{\arraystretch}{0.8}
@@ -191,7 +191,7 @@
 
 \setlength{\parindent}{1.5em} Game hỗ trợ tối đa \texttt{MAX\_SAVE\_SLOTS} slot. Mỗi slot là một file \texttt{Asset/save/slot\_X.bin}. Ngoài việc lưu/đọc, hệ thống còn hỗ trợ kiểm tra tồn tại, xóa, đổi tên, và trích xuất metadata phục vụ giao diện danh sách bản lưu.
 
-\setlength{\parindent}{1.5em} Metadata được đọc nhanh từ phần đầu file (magic, version, name, timestamp, mode, type) nhằm giảm chi phí I/O khi hiển thị danh sách. Điều này tránh phải load toàn bộ \texttt{PlayState} cho mỗi slot. Với các bản lưu cũ, hệ thống gắn nhãn "Bản cũ" và cung cấp timestamp mặc định, giúp UI vẫn hiển thị ổn định.
+\setlength{\parindent}{1.5em} Metadata được đọc nhanh từ phần đầu file (magic, version, name, timestamp, mode, type) nhằm giảm chi phí I/O khi hiển thị danh sách. Điều này tránh phải load toàn bộ \texttt{PlayState} cho mỗi slot. Với các bản lưu cũ, hệ thống gắn nhãn "Bản cũ" và cung cấp timestamp mặc định; nếu đọc tên thất bại, trả về nhãn "File lỗi" để UI xử lý an toàn.
 
 \begin{table}[H]
 \caption*{Bảng 8.1: Cấu hình slot lưu game và metadata}
@@ -567,7 +567,7 @@ EN & \texttt{APP\_LANG\_EN} & \texttt{Asset/lang/en.txt} & UTF-8 \textrightarrow
 
 \setlength{\parindent}{1.5em} Các thiết lập cơ bản (BGM/SFX bật tắt, âm lượng, ngôn ngữ) được lưu trong \texttt{GameConfig} và được đọc/ghi bằng \texttt{ConfigLoader}. Nếu file cấu hình chưa tồn tại, hệ thống tự tạo giá trị mặc định nhằm đảm bảo game luôn khởi động được.
 
-\setlength{\parindent}{1.5em} Việc lưu cấu hình dạng binary giúp quá trình tải nhanh và cấu trúc dữ liệu gọn. Cấu hình được nạp ngay khi mở game để các mô-đun khác (Audio, Localization) có thể dựa vào giá trị thiết lập hiện hành. Thiết kế này cũng tránh trường hợp game chạy với trạng thái nửa cấu hình khi người dùng chưa vào phần Settings.
+\setlength{\parindent}{1.5em} Việc lưu cấu hình dạng binary giúp quá trình tải nhanh và cấu trúc dữ liệu gọn. Khi đọc, hệ thống kiểm tra kích thước file và validate giá trị (volume, ngôn ngữ); nếu sai sẽ khôi phục mặc định và ghi lại file để đảm bảo cấu hình hợp lệ. Cấu hình được nạp ngay khi mở game để các mô-đun khác (Audio, Localization) có thể dựa vào giá trị thiết lập hiện hành. Thiết kế này cũng tránh trường hợp game chạy với trạng thái nửa cấu hình khi người dùng chưa vào phần Settings.
 
 \captionsetup{type=lstlisting}
 \renewcommand{\arraystretch}{0.8}

@@ -45,6 +45,8 @@
 
 \setlength{\parindent}{1.5em} Pipeline này đảm bảo nguyên tắc “nguồn sự thật duy nhất”: trạng thái luôn được cập nhật tập trung ở GameEngine, tránh sai lệch do cập nhật phân tán. Ngoài ra, việc lưu \texttt{lastMoveRow/Col} ngay tại thời điểm đặt quân giúp các bước kiểm tra thắng và highlight luôn bám đúng nước đi cuối.
 
+\setlength{\parindent}{1.5em} Trường hợp hòa được xử lý ngay trong \texttt{processMove}: nếu \texttt{checkWinCondition} trả về \texttt{CELL\_EMPTY}, ván được kết thúc với \texttt{winner = CELL\_EMPTY} để UI hiển thị kết quả hòa.
+
 \subsection*{6.1.2. Đồng bộ lượt và biến isP1Turn}
 \addcontentsline{toc}{subsection}{\textcolor{black}{6.1.2. Đồng bộ lượt và biến isP1Turn}}
 
@@ -215,7 +217,7 @@
 \subsection*{6.4.1. Đếm ngược lượt và thời gian giữ bóng}
 \addcontentsline{toc}{subsection}{\textcolor{black}{6.4.1. Đếm ngược lượt và thời gian giữ bóng}}
 
-\setlength{\parindent}{1.5em} Hệ thống thời gian quản lý hai trục độc lập: đếm ngược cho từng lượt (\texttt{timeRemaining}) và tổng thời gian giữ bóng (\texttt{totalTimePossessed}). Tại vòng lặp PlayScreen, mỗi khung hình cộng dồn thời gian cho người đang tới lượt, đồng thời cập nhật đếm ngược để kiểm soát timeout. Nhờ vậy, luật chơi vẫn chuẩn xác ngay cả khi tốc độ khung hình dao động.
+\setlength{\parindent}{1.5em} Hệ thống thời gian quản lý hai trục độc lập: đếm ngược cho từng lượt (\texttt{timeRemaining}) và tổng thời gian giữ bóng (\texttt{totalTimePossessed}). Tại vòng lặp PlayScreen, mỗi khung hình cộng dồn thời gian cho người đang tới lượt; phần đếm ngược và xử lý timeout chỉ áp dụng cho PvP (\texttt{MATCH\_PVE} bỏ qua \texttt{UpdateCountdown}). Nhờ vậy, luật chơi vẫn chuẩn xác ngay cả khi tốc độ khung hình dao động.
 
 \captionsetup{type=lstlisting}
 \renewcommand{\arraystretch}{0.8}
@@ -265,7 +267,7 @@
 \subsection*{6.3.3. Phục hồi redo và phán xét lại trạng thái}
 \addcontentsline{toc}{subsection}{\textcolor{black}{6.3.3. Phục hồi redo và phán xét lại trạng thái}}
 
-\setlength{\parindent}{1.5em} Redo thực hiện ngược với Undo: lấy nước đi từ \texttt{redoStack}, đặt lại lên bàn, cập nhật lịch sử, rồi kiểm tra thắng. Nếu phát hiện kết thúc ván, hệ thống cập nhật trạng thái và người thắng; nếu chưa kết thúc thì đổi lượt bình thường.
+\setlength{\parindent}{1.5em} Redo thực hiện ngược với Undo: lấy nước đi từ \texttt{redoStack}, đặt lại lên bàn, cập nhật lịch sử, rồi kiểm tra thắng. Nếu phát hiện kết thúc ván, hệ thống cập nhật trạng thái và người thắng, đồng thời tăng \texttt{totalWins} tương ứng; nếu chưa kết thúc thì đổi lượt bình thường. Ở chế độ PvE, redo cũng tiến 2 nước để trả lượt về người chơi.
 
 \captionsetup{type=lstlisting}
 \renewcommand{\arraystretch}{0.8}

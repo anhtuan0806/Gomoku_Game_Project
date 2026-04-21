@@ -1,22 +1,24 @@
-#pragma once
+#ifndef _SAVELOADSYSTEM_H_
+#define _SAVELOADSYSTEM_H_
 #include "../ApplicationTypes/PlayState.h"
 #include <string>
 
 // Lưu toàn bộ trạng thái ván đấu hiện tại xuống file
-bool SaveMatchData(const PlayState* state, const std::wstring& filename);
+bool SaveMatchData(const PlayState *state, const std::wstring &filename);
 
 // Tải dữ liệu ván đấu từ file lên bộ nhớ
-bool LoadMatchData(PlayState* state, const std::wstring& filename);
+bool LoadMatchData(PlayState *state, const std::wstring &filename);
 
 std::wstring GetSavePath(int slot);
 
 bool CheckSaveExists(int slot);
 
-struct SaveMetadata {
+struct SaveMetadata
+{
     std::wstring name;
     std::wstring timestamp;
-    int mode;       // 0: Caro, 1: TTT
-    int type;       // 0: PvP, 1: PvE
+    int mode; // 0: Caro, 1: TTT
+    int type; // 0: PvP, 1: PvE
     int p1Wins;
     int p2Wins;
     int difficulty;
@@ -27,6 +29,8 @@ struct SaveMetadata {
 
 // Các hàm bổ sung cho hệ thống quản lý slot mới
 bool DeleteSave(int slot);
-bool RenameSave(int slot, const std::wstring& newName);
+bool RenameSave(int slot, const std::wstring &newName);
 std::wstring GetSaveDisplayName(int slot);
 SaveMetadata GetSaveMetadata(int slot);
+
+#endif // _SAVELOADSYSTEM_H_

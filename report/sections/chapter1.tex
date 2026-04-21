@@ -95,7 +95,7 @@
     \item \textbf{Xử lý đa luồng và phản hồi:}
     \begin{itemize}
         \item Các tác vụ nặng như tính toán nước đi của máy hoặc tái tạo âm thanh phải được xử lý trên các luồng độc lập, không được phép gây nghẽn luồng xử lý giao diện chính.
-        \item Thời gian phản hồi của máy ở cấp độ khó nhất không được vượt quá 2 giây cho mỗi nước đi nhằm duy trì nhịp độ trận đấu.
+        \item Thời gian phản hồi của máy ở cấp độ khó nhất được đặt mục tiêu giữ ở mức thấp để duy trì nhịp độ trận đấu.
     \end{itemize}
 
     \item \textbf{Quản lý tài nguyên:}
@@ -145,7 +145,7 @@
     \item \textbf{Môi trường phát triển tích hợp (IDE):} Dự án sử dụng Microsoft Visual Studio 2022. Đây là công cụ hỗ trợ mạnh mẽ nhất cho lập trình Win32 với các tính năng gỡ lỗi trực quan, phân tích hiệu năng và quản lý tài nguyên hệ thống đồng bộ.
     \item \textbf{Cấu hình Build:}
     \begin{itemize}
-        \item \textit{Bộ biên dịch:} Tối ưu hóa cho kiến trúc 64-bit nhằm khai thác tối đa sức mạnh của các bộ vi xử lý hiện đại.
+        \item \textit{Bộ biên dịch:} Hỗ trợ cả Win32 và x64; cấu hình phát hành ưu tiên tối ưu hiệu năng trên máy mục tiêu.
         \item \textit{Chế độ tối ưu hóa:} Sử dụng cấu hình phát hành để nén mã nguồn, loại bỏ các chỉ thị gỡ lỗi thừa, giúp ứng dụng có dung lượng nhỏ gọn và tốc độ khởi chạy tức thì.
     \end{itemize}
     \item \textbf{Quản lý phiên bản:} Toàn bộ quá trình phát triển được kiểm soát thông qua hệ thống quản lý phiên bản Git. Điều này giúp nhóm lưu trữ lịch sử thay đổi, phối hợp làm việc trên các nhánh chức năng khác nhau và đảm bảo mã nguồn luôn ở trạng thái ổn định trước khi tích hợp các tính năng mới.

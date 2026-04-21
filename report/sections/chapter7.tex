@@ -179,6 +179,8 @@
 
 \setlength{\parindent}{1.5em} Điểm của một ô ứng cử viên được tính bằng tổng điểm bốn hướng. Ở chế độ trung bình và khó, AI chấm điểm cả tấn công (đặt cho mình) và phòng thủ (đặt để chặn đối phương), sau đó cộng theo trọng số để xếp hạng nước đi.
 
+\setlength{\parindent}{1.5em} Ở mức trung bình và tại nút gốc của mức khó, điểm phòng thủ được nhân hệ số lớn hơn (\texttt{def * 2}) để ưu tiên chặn thua sớm; trong các tầng alpha-beta sâu hơn, trọng số công/thủ cân bằng hơn (\texttt{atk + def}).
+
 \setlength{\parindent}{1.5em} Cơ chế này có vai trò như một bộ lọc chiến thuật: nếu điểm phòng thủ cao, AI sẽ ưu tiên chặn đối thủ; nếu điểm tấn công cao, AI sẽ ưu tiên mở rộng chuỗi của mình. Đây là nền tảng cho cả \texttt{simpleMove} và danh sách ứng cử viên trong alpha-beta.
 
 \setlength{\parindent}{1.5em} Quy trình chấm điểm một ô ứng cử viên:
@@ -409,7 +411,7 @@
 \subsection*{7.4.3. Lọc ứng cử viên và giới hạn nhánh}
 \addcontentsline{toc}{subsection}{\textcolor{black}{7.4.3. Lọc ứng cử viên và giới hạn nhánh}}
 
-\setlength{\parindent}{1.5em} Để giảm không gian tìm kiếm, AI chỉ xét các ô trống nằm trong bán kính 2 ô quanh những quân đã có. Đồng thời, số lượng nước đi mỗi tầng bị giới hạn ở \texttt{MAX\_BRANCHES = 12}. Nhờ đó, độ sâu 5 vẫn chạy được trong thời gian thực.
+\setlength{\parindent}{1.5em} Để giảm không gian tìm kiếm, AI chỉ xét các ô trống nằm trong bán kính 2 ô quanh những quân đã có. Trong cây alpha-beta, số lượng nước đi mỗi tầng bị giới hạn ở \texttt{MAX\_BRANCHES = 12}; riêng nút gốc vẫn duyệt đầy đủ danh sách ứng cử viên đã sắp xếp. Nhờ đó, độ sâu 5 vẫn chạy được trong thời gian thực.
 
 \setlength{\parindent}{1.5em} Lọc ứng cử viên dựa trên quan sát thực tế: các nước đi xa vùng đang có quân hiếm khi mang lại lợi ích chiến thuật tức thời. Giới hạn nhánh giúp chi phí tìm kiếm tăng tuyến tính theo độ sâu thay vì bùng nổ theo số ô trống toàn bàn.
 
@@ -417,7 +419,7 @@
 \begin{itemize}
 	\item Bước 1: bỏ qua các ô không nằm gần vùng đã có quân.
 	\item Bước 2: chấm điểm và sắp xếp các ô còn lại.
-	\item Bước 3: giữ lại tối đa \texttt{MAX\_BRANCHES} nước đi tốt nhất cho mỗi tầng.
+	\item Bước 3: tại các tầng alpha-beta, giữ lại tối đa \texttt{MAX\_BRANCHES} nước đi tốt nhất.
 \end{itemize}
 
 \captionsetup{type=lstlisting}

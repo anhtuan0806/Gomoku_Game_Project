@@ -42,7 +42,7 @@
 
     \item \textbf{Hệ thống cấu hình (ConfigLoader):}
     \begin{itemize}
-        \item Sử dụng tệp \texttt{config.ini} để lưu trữ các tùy chỉnh của người dùng như âm lượng, ngôn ngữ, trạng thái bật/tắt nhạc nền. Cơ chế này giúp trò chơi "ghi nhớ" được trạng thái của người chơi qua các lần khởi động khác nhau.
+        \item Sử dụng tệp \texttt{config.ini} dạng nhị phân để lưu trữ tùy chỉnh âm lượng, ngôn ngữ, trạng thái bật/tắt nhạc nền. Cơ chế này giúp trò chơi "ghi nhớ" được trạng thái của người chơi qua các lần khởi động khác nhau.
     \end{itemize}
 
     \item \textbf{Hệ thống Âm thanh (AudioSystem):}
@@ -52,7 +52,7 @@
 
     \item \textbf{Quản lý Thời gian (TimeSystem):}
     \begin{itemize}
-        \item Sử dụng thư viện \texttt{chrono} để tính toán chính xác thời gian đếm ngược và tổng thời lượng trận đấu. Hệ thống đảm bảo sự công bằng tuyệt đối trong thi đấu, đặc biệt là khi áp dụng các ràng buộc về thời gian suy nghĩ cho mỗi tuyển thủ.
+        \item Nhận \texttt{dt} từ vòng lặp chính để cập nhật bộ đếm thời gian theo lượt; phần đo FPS/độ trễ khung hình được ghi nhận ở \texttt{main.cpp}.
     \end{itemize}
 \end{itemize}
 
@@ -214,7 +214,7 @@ src/
     \item \textbf{Phân hệ ApplicationTypes (Nền tảng dữ liệu):}
     Đây là nơi định nghĩa các kiểu dữ liệu và hằng số dùng chung cho toàn bộ dự án, làm "hợp đồng dữ liệu" giữa các tầng. Các tệp tiêu biểu gồm:
     \begin{itemize}
-        \item \texttt{GameConfig.h}: lưu cấu hình trận đấu (chế độ chơi, kích thước bàn cờ, thời gian, âm lượng) để các phân hệ khác đọc thống nhất.
+        \item \texttt{GameConfig.h}: lưu cấu hình âm thanh và ngôn ngữ để các phân hệ khác đọc thống nhất.
         \item \texttt{GameConstants.h}: tập hợp các hằng số hệ thống (kích thước ô, giới hạn mảng, mã trạng thái) nhằm tránh rải rác magic number.
         \item \texttt{GameState.h}: định nghĩa trạng thái tổng quát của ứng dụng và trận đấu (ví dụ: đang ở menu, đang chơi, đang tổng kết).
         \item \texttt{PlayState.h}: cấu trúc trung tâm lưu trạng thái bàn cờ, lượt chơi, lịch sử nước đi, thông số người chơi/AI.
@@ -237,7 +237,7 @@ src/
         \item \texttt{GameEngine}: điều phối vòng đời trận đấu, xử lý đặt quân, chuyển lượt, kiểm soát trạng thái và lịch sử nước đi.
         \item \texttt{GameRules}: kiểm tra điều kiện thắng, hòa, hợp lệ nước đi theo hàng ngang, dọc, chéo.
         \item \texttt{BotAI}: tính toán nước đi tối ưu cho chế độ PvE, tách biệt khỏi phần đồ họa.
-        \item \texttt{PlayerEngineer}: xử lý thao tác người chơi và chuyển dữ liệu đầu vào thành nước đi trước khi chuyển sang \texttt{GameEngine}.
+        \item \texttt{PlayerEngineer}: khởi tạo và reset thông tin người chơi trước mỗi trận/round.
     \end{itemize}
     Mọi xử lý trong phân hệ này chỉ làm việc với dữ liệu thuần (ma trận bàn cờ, trạng thái), không phụ thuộc GDI+.
 
@@ -260,7 +260,7 @@ src/
         \item \texttt{ConfigLoader}: tải và lưu cấu hình người dùng từ \texttt{config.ini}.
         \item \texttt{Localization}: nạp và ánh xạ chuỗi đa ngôn ngữ từ tệp tài nguyên.
         \item \texttt{SaveLoadSystem}: lưu/khôi phục \texttt{PlayState} xuống ổ đĩa.
-        \item \texttt{TimeSystem}: cung cấp bộ đếm thời gian và đo độ trễ khung hình.
+        \item \texttt{TimeSystem}: cung cấp bộ đếm thời gian theo lượt; đo độ trễ khung hình do vòng lặp chính ghi nhận.
     \end{itemize}
     Các dịch vụ này độc lập với logic trận đấu và được gọi theo nhu cầu của các màn hình.
 
@@ -289,7 +289,7 @@ src/
     \item \textbf{Tổ chức Cấu trúc và Kiểu liệt kê (Struct/Enum):}
     \begin{itemize}
         \item Enum được dùng để mô tả trạng thái màn hình, chế độ chơi và trạng thái trận đấu, giúp logic điều phối rõ ràng và tránh dùng số "ẩn".
-        \item Struct được thiết kế theo hướng dữ liệu thuần (POD), bao gồm các trường cần thiết cho hiển thị và xử lý (bàn cờ, lượt chơi, điểm, thời gian), không nhúng thuật toán bên trong.
+        \item Struct được thiết kế theo hướng dữ liệu, kết hợp trường nguyên thủy và container chuẩn (\texttt{std::vector}, \texttt{std::wstring}) để phục vụ hiển thị và xử lý.
         \item Các struct trong \texttt{ApplicationTypes} là nguồn dữ liệu chuẩn cho cả \texttt{GameLogic} và \texttt{RenderAPI}, tránh trùng lặp định nghĩa.
     \end{itemize}
 
@@ -304,5 +304,5 @@ src/
     Các tệp \texttt{.h} chỉ khai báo lớp/hàm cần thiết, còn phần triển khai đặt trong \texttt{.cpp}. Điều này giúp giảm phụ thuộc chéo, rút ngắn thời gian biên dịch và tạo giao diện lập trình rõ ràng giữa các phân hệ.
 
     \item \textbf{Quy ước lưu trữ và tuần tự hóa dữ liệu:}
-    Dữ liệu trận đấu được lưu dưới dạng nhị phân thông qua \texttt{SaveLoadSystem}, đảm bảo tốc độ đọc/ghi cao và khôi phục đúng trạng thái. Cấu hình người dùng được lưu trong \texttt{config.ini} để dễ chỉnh sửa và tương thích lâu dài.
+    Dữ liệu trận đấu được lưu dưới dạng nhị phân thông qua \texttt{SaveLoadSystem}, đảm bảo tốc độ đọc/ghi cao và khôi phục đúng trạng thái. Cấu hình người dùng được lưu trong \texttt{config.ini} dạng nhị phân để đảm bảo tính nhất quán dữ liệu.
 \end{itemize}
