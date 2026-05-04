@@ -1,16 +1,16 @@
 #include "Colours.h"
 
-COLORREF ToCOLORREF(const SmartColor &sc)
+COLORREF ToCOLORREF(const SmartColor &color)
 {
-    return RGB(sc.r, sc.g, sc.b);
+    return RGB(color.r, color.g, color.b);
 }
 
-Gdiplus::Color ToGdiColor(const SmartColor &sc)
+Gdiplus::Color ToGdiColor(const SmartColor &color)
 {
-    return Gdiplus::Color(sc.a, sc.r, sc.g, sc.b);
+    return Gdiplus::Color(color.a, color.r, color.g, color.b);
 }
 
-SmartColor WithAlpha(const SmartColor &sc, BYTE newAlpha)
+SmartColor WithAlpha(const SmartColor &color, BYTE newAlpha)
 {
-    return {newAlpha, sc.r, sc.g, sc.b};
+    return {newAlpha, color.r, color.g, color.b};
 }

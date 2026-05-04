@@ -21,10 +21,10 @@ static void initializeZobrist()
     if (sIsZobristInitialized)
         return;
     mt19937_64 rng(0xDEADBEEFCAFEBABEULL);
-        for (int row = 0; row < MAX_BOARD_SIZE; row++)
-            for (int col = 0; col < MAX_BOARD_SIZE; col++)
-                for (int pieceIdx = 0; pieceIdx < 2; pieceIdx++)
-                    sZobristTable[row][col][pieceIdx] = rng();
+    for (int row = 0; row < MAX_BOARD_SIZE; row++)
+        for (int col = 0; col < MAX_BOARD_SIZE; col++)
+            for (int pieceIdx = 0; pieceIdx < 2; pieceIdx++)
+                sZobristTable[row][col][pieceIdx] = rng();
     sIsZobristInitialized = true;
 }
 

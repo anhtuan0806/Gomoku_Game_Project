@@ -66,16 +66,16 @@ PixelModel LoadPixelModel(const std::string &filePath)
     }
 
     model.data.resize(model.height, std::vector<int>(model.width, 0));
-    for (int r = 0; r < model.height; ++r)
+    for (int row = 0; row < model.height; ++row)
     {
         if (!std::getline(file, line))
             break;
         std::stringstream ss(line);
-        for (int c = 0; c < model.width; ++c)
+        for (int col = 0; col < model.width; ++col)
         {
             int val = 0;
             if (ss >> val)
-                model.data[r][c] = val;
+                model.data[row][col] = val;
         }
     }
     model.isLoaded = true;
@@ -83,7 +83,7 @@ PixelModel LoadPixelModel(const std::string &filePath)
     return model;
 }
 
-void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int cx, int cy, int totalSize, const std::map<int, Gdiplus::Color> &palette, size_t manualPaletteHash)
+void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int centerX, int centerY, int totalSize, const std::map<int, Gdiplus::Color> &palette, size_t manualPaletteHash)
 {
     if (!model.isLoaded || model.width == 0 || model.height == 0 || totalSize <= 0)
     {
@@ -91,9 +91,9 @@ void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int cx, int c
     }
 
     // Tự động tính toán kích thước mỗi điểm ảnh dựa trên diện tích mục tiêu
-    int pSize = totalSize / max(model.width, model.height);
-    if (pSize < 1)
-        pSize = 1;
+    int pixelSize = totalSize / max(model.width, model.height);
+    if (pixelSize < 1)
+        pixelSize = 1;
 
     // --- Hashing Key Optimization (No string concatenation in hot loop) ---
     size_t key = (size_t)&model;
@@ -114,46 +114,45 @@ void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int cx, int c
 
     if (g_ModelCache.find(key) == g_ModelCache.end())
     {
-        int totalW = model.width * pSize;
-        int totalH = model.height * pSize;
+        int totalW = model.width * pixelSize;
+        int totalH = model.height * pixelSize;
 
         // Tạo bitmap đệm với khoảng trống nhỏ để tránh răng cưa viền
-        Gdiplus::Bitmap *bmp = new Gdiplus::Bitmap(totalW + 2, totalH + 2, PixelFormat32bppARGB);
-        Gdiplus::Graphics gBmp(bmp);
-        gBmp.SetSmoothingMode(Gdiplus::SmoothingModeNone); // Giữ pixel sắc nét
+        Gdiplus::Bitmap *bitmap = new Gdiplus::Bitmap(totalW + 2, totalH + 2, PixelFormat32bppARGB);
+        Gdiplus::Graphics bitmapGraphics(bitmap);
+        bitmapGraphics.SetSmoothingMode(Gdiplus::SmoothingModeNone); // Giữ pixel sắc nét
 
         Gdiplus::Pen gridPen(Gdiplus::Color(60, 0, 0, 0), 1.0f);
-        for (int r = 0; r < model.height; ++r)
+        for (int row = 0; row < model.height; ++row)
         {
-            for (int c = 0; c < model.width; ++c)
+            for (int col = 0; col < model.width; ++col)
             {
-                int val = model.data[r][c];
+                int val = model.data[row][col];
                 if (val != 0)
                 {
                     auto it = palette.find(val);
                     if (it != palette.end())
                     {
-                        Gdiplus::SolidBrush *b = GetCachedBrush(it->second);
-                        gBmp.FillRectangle(b, c * pSize, r * pSize, pSize, pSize);
+                        Gdiplus::SolidBrush *brushLocal = GetCachedBrush(it->second);
+                        bitmapGraphics.FillRectangle(brushLocal, col * pixelSize, row * pixelSize, pixelSize, pixelSize);
 
                         // Vẽ lưới pixel mờ để giữ phong cách Retro
-                        gBmp.DrawRectangle(&gridPen, c * pSize, r * pSize, pSize, pSize);
+                        bitmapGraphics.DrawRectangle(&gridPen, col * pixelSize, row * pixelSize, pixelSize, pixelSize);
                     }
                 }
             }
         }
-        g_ModelCache[key] = bmp;
+        g_ModelCache[key] = bitmap;
     }
-
-    Gdiplus::Bitmap *cachedBmp = g_ModelCache[key];
-    if (cachedBmp)
+    Gdiplus::Bitmap *cachedBitmap = g_ModelCache[key];
+    if (cachedBitmap)
     {
         // --- High Performance Rendering Settings ---
         g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
         g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf);
 
-        // Vẽ bitmap đã cache ra tâm cx, cy
-        g.DrawImage(cachedBmp, cx - (int)cachedBmp->GetWidth() / 2, cy - (int)cachedBmp->GetHeight() / 2);
+        // Vẽ bitmap đã cache ra tâm centerX, centerY
+        g.DrawImage(cachedBitmap, centerX - (int)cachedBitmap->GetWidth() / 2, centerY - (int)cachedBitmap->GetHeight() / 2);
     }
 }
 // -------------------------------------------------------------
@@ -292,7 +291,7 @@ Gdiplus::Color GetPaletteColor(int type, int code)
     return ToGdiColor(LookupAvatarColor(type, code));
 }
 
-void DrawPixelAvatar(Gdiplus::Graphics &g, int x, int y, int size, int avatarType)
+void DrawPixelAvatar(Gdiplus::Graphics &g, int centerX, int centerY, int size, int avatarType)
 {
     if (avatarType < 0 || avatarType > 2)
     {
@@ -323,59 +322,59 @@ void DrawPixelAvatar(Gdiplus::Graphics &g, int x, int y, int size, int avatarTyp
         {
             int pixelSize = size / model.width;
             int shadowOffset = pixelSize / 3;
-            int bw = size + shadowOffset + 4;
-            int bh = size + shadowOffset + 4;
+            int bitmapWidth = size + shadowOffset + 4;
+            int bitmapHeight = size + shadowOffset + 4;
 
-            Gdiplus::Bitmap *bmp = new Gdiplus::Bitmap(bw, bh, PixelFormat32bppARGB);
-            Gdiplus::Graphics gBmp(bmp);
+            Gdiplus::Bitmap *bitmap = new Gdiplus::Bitmap(bitmapWidth, bitmapHeight, PixelFormat32bppARGB);
+            Gdiplus::Graphics bitmapGraphics(bitmap);
 
             // Vẽ bóng (Shadow)
             Gdiplus::SolidBrush *shadowBrush = GetCachedBrush(ToGdiColor(Theme::ShadowMed));
-            for (int r = 0; r < model.height; r++)
+            for (int row = 0; row < model.height; row++)
             {
-                for (int c = 0; c < model.width; c++)
+                for (int col = 0; col < model.width; col++)
                 {
-                    if (model.data[r][c] != 0)
+                    if (model.data[row][col] != 0)
                     {
-                        gBmp.FillRectangle(shadowBrush, c * pixelSize + shadowOffset, r * pixelSize + shadowOffset, pixelSize, pixelSize);
+                        bitmapGraphics.FillRectangle(shadowBrush, col * pixelSize + shadowOffset, row * pixelSize + shadowOffset, pixelSize, pixelSize);
                     }
                 }
             }
 
             // Vẽ nhân vật chính
             Gdiplus::Pen pixelPen(ToGdiColor(Theme::ShadowLight), 1.0f);
-            for (int r = 0; r < model.height; r++)
+            for (int row = 0; row < model.height; row++)
             {
-                for (int c = 0; c < model.width; c++)
+                for (int col = 0; col < model.width; col++)
                 {
-                    int code = model.data[r][c];
+                    int code = model.data[row][col];
                     if (code != 0)
                     {
                         Gdiplus::Color color = GetPaletteColor(avatarType, code);
-                        Gdiplus::SolidBrush *brush = GetCachedBrush(color);
-                        gBmp.FillRectangle(brush, c * pixelSize, r * pixelSize, pixelSize, pixelSize);
+                        Gdiplus::SolidBrush *brushLocal = GetCachedBrush(color);
+                        bitmapGraphics.FillRectangle(brushLocal, col * pixelSize, row * pixelSize, pixelSize, pixelSize);
 
                         // 2. Chỉ vẽ viền lưới cho các nhân vật ít chi tiết
                         if (avatarType < 6)
                         {
-                            gBmp.DrawRectangle(&pixelPen, c * pixelSize, r * pixelSize, pixelSize, pixelSize);
+                            bitmapGraphics.DrawRectangle(&pixelPen, col * pixelSize, row * pixelSize, pixelSize, pixelSize);
                         }
                     }
                 }
             }
-            g_AvatarCache[cacheKey] = bmp;
+            g_AvatarCache[cacheKey] = bitmap;
         }
     }
 
-    Gdiplus::Bitmap *cachedBmp = g_AvatarCache[cacheKey];
-    if (cachedBmp)
+    Gdiplus::Bitmap *cachedBitmap = g_AvatarCache[cacheKey];
+    if (cachedBitmap)
     {
         g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
-        g.DrawImage(cachedBmp, (float)x, (float)y);
+        g.DrawImage(cachedBitmap, (float)centerX, (float)centerY);
     }
 }
 
-void DrawPixelFootball(Gdiplus::Graphics &g, int cx, int cy, int size)
+void DrawPixelFootball(Gdiplus::Graphics &g, int centerX, int centerY, int size)
 {
     if (size <= 0)
     {
@@ -390,37 +389,37 @@ void DrawPixelFootball(Gdiplus::Graphics &g, int cx, int cy, int size)
         }
         else
         {
-            int pSize = size / model.width;
-            if (pSize < 1)
-                pSize = 1;
-            Gdiplus::Bitmap *bmp = new Gdiplus::Bitmap(size + 2, size + 2, PixelFormat32bppARGB);
-            Gdiplus::Graphics gBmp(bmp);
-            for (int r = 0; r < model.height; r++)
+            int pixelSize = size / model.width;
+            if (pixelSize < 1)
+                pixelSize = 1;
+            Gdiplus::Bitmap *bitmap = new Gdiplus::Bitmap(size + 2, size + 2, PixelFormat32bppARGB);
+            Gdiplus::Graphics bitmapGraphics(bitmap);
+            for (int row = 0; row < model.height; row++)
             {
-                for (int c = 0; c < model.width; c++)
+                for (int col = 0; col < model.width; col++)
                 {
-                    int val = model.data[r][c];
+                    int val = model.data[row][col];
                     if (val == 0)
                         continue;
                     Gdiplus::Color color = (val == 1) ? ToGdiColor(Theme::FootballDark) : ToGdiColor(Theme::FootballLight);
-                    Gdiplus::SolidBrush b(color);
-                    gBmp.FillRectangle(&b, c * pSize, r * pSize, pSize, pSize);
+                    Gdiplus::SolidBrush brushLocal(color);
+                    bitmapGraphics.FillRectangle(&brushLocal, col * pixelSize, row * pixelSize, pixelSize, pixelSize);
                 }
             }
-            g_FootballCache[size] = bmp;
+            g_FootballCache[size] = bitmap;
         }
     }
-    Gdiplus::Bitmap *cachedBmp = g_FootballCache[size];
-    if (cachedBmp)
+    Gdiplus::Bitmap *cachedBitmap = g_FootballCache[size];
+    if (cachedBitmap)
     {
         float pulse = 1.0f + sin(g_GlobalAnimTime * 15.0f) * 0.05f;
-        int ds = (int)(size * pulse);
+        int scaledSize = (int)(size * pulse);
         g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
-        g.DrawImage(cachedBmp, cx - ds / 2, cy - ds / 2, ds, ds);
+        g.DrawImage(cachedBitmap, centerX - scaledSize / 2, centerY - scaledSize / 2, scaledSize, scaledSize);
     }
 }
 
-void DrawPixelTrophy(Gdiplus::Graphics &g, int cx, int cy, int size)
+void DrawPixelTrophy(Gdiplus::Graphics &g, int centerX, int centerY, int size)
 {
     if (size <= 0)
     {
@@ -435,37 +434,37 @@ void DrawPixelTrophy(Gdiplus::Graphics &g, int cx, int cy, int size)
         }
         else
         {
-            int pScale = size / model.width;
-            if (pScale < 1)
-                pScale = 1;
-            Gdiplus::Bitmap *bmp = new Gdiplus::Bitmap(size + 2, size + 2, PixelFormat32bppARGB);
-            Gdiplus::Graphics gBmp(bmp);
-            for (int r = 0; r < model.height; r++)
+            int pixelScale = size / model.width;
+            if (pixelScale < 1)
+                pixelScale = 1;
+            Gdiplus::Bitmap *bitmap = new Gdiplus::Bitmap(size + 2, size + 2, PixelFormat32bppARGB);
+            Gdiplus::Graphics bitmapGraphics(bitmap);
+            for (int row = 0; row < model.height; row++)
             {
-                for (int c = 0; c < model.width; c++)
+                for (int col = 0; col < model.width; col++)
                 {
-                    int val = model.data[r][c];
+                    int val = model.data[row][col];
                     if (val == 0)
                         continue;
                     Gdiplus::Color color = (val == 1) ? ToGdiColor(Theme::TrophyRim) : (val == 2 ? ToGdiColor(Theme::TrophyBody) : ToGdiColor(Theme::TrophyShine));
-                    Gdiplus::SolidBrush b(color);
-                    gBmp.FillRectangle(&b, c * pScale, r * pScale, pScale, pScale);
-                    Gdiplus::Pen pen(ToGdiColor(Theme::ShadowLight), 1.0f);
-                    gBmp.DrawRectangle(&pen, c * pScale, r * pScale, pScale, pScale);
+                    Gdiplus::SolidBrush brushLocal(color);
+                    bitmapGraphics.FillRectangle(&brushLocal, col * pixelScale, row * pixelScale, pixelScale, pixelScale);
+                    Gdiplus::Pen localPen(ToGdiColor(Theme::ShadowLight), 1.0f);
+                    bitmapGraphics.DrawRectangle(&localPen, col * pixelScale, row * pixelScale, pixelScale, pixelScale);
                 }
             }
-            g_TrophyCache[size] = bmp;
+            g_TrophyCache[size] = bitmap;
         }
     }
-    Gdiplus::Bitmap *cachedBmp = g_TrophyCache[size];
-    if (cachedBmp)
+    Gdiplus::Bitmap *cachedBitmap = g_TrophyCache[size];
+    if (cachedBitmap)
     {
         g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
-        g.DrawImage(cachedBmp, cx - size / 2, cy - size / 2, size, size);
+        g.DrawImage(cachedBitmap, centerX - size / 2, centerY - size / 2, size, size);
     }
 }
 
-void DrawPixelClock(Gdiplus::Graphics &g, int cx, int cy, int size, Gdiplus::Color color)
+void DrawPixelClock(Gdiplus::Graphics &g, int centerX, int centerY, int size, Gdiplus::Color color)
 {
     if (size <= 0)
     {
@@ -483,41 +482,41 @@ void DrawPixelClock(Gdiplus::Graphics &g, int cx, int cy, int size, Gdiplus::Col
         }
         else
         {
-            int pSize = size / model.width;
-            if (pSize < 1)
-                pSize = 1;
-            Gdiplus::Bitmap *bmp = new Gdiplus::Bitmap(size + 2, size + 2, PixelFormat32bppARGB);
-            Gdiplus::Graphics gBmp(bmp);
+            int pixelSize = size / model.width;
+            if (pixelSize < 1)
+                pixelSize = 1;
+            Gdiplus::Bitmap *bitmap = new Gdiplus::Bitmap(size + 2, size + 2, PixelFormat32bppARGB);
+            Gdiplus::Graphics bitmapGraphics(bitmap);
             Gdiplus::SolidBrush darkBrush(Gdiplus::Color(180, 20, 20, 30));
             Gdiplus::SolidBrush shineBrush(Gdiplus::Color(255, 255, 255, 255));
             Gdiplus::SolidBrush mainBrush(color);
-            for (int r = 0; r < model.height; r++)
+            for (int row = 0; row < model.height; row++)
             {
-                for (int c = 0; c < model.width; c++)
+                for (int col = 0; col < model.width; col++)
                 {
-                    int val = model.data[r][c];
+                    int val = model.data[row][col];
                     if (val == 0)
                         continue;
-                    Gdiplus::SolidBrush *b = &mainBrush;
+                    Gdiplus::SolidBrush *brushLocal = &mainBrush;
                     if (val == 1)
-                        b = &darkBrush;
+                        brushLocal = &darkBrush;
                     if (val == 3)
-                        b = &shineBrush;
-                    gBmp.FillRectangle(b, c * pSize, r * pSize, pSize, pSize);
-                    Gdiplus::Pen p(Gdiplus::Color(60, 0, 0, 0), 1.0f);
-                    gBmp.DrawRectangle(&p, c * pSize, r * pSize, pSize, pSize);
+                        brushLocal = &shineBrush;
+                    bitmapGraphics.FillRectangle(brushLocal, col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+                    Gdiplus::Pen localPen(Gdiplus::Color(60, 0, 0, 0), 1.0f);
+                    bitmapGraphics.DrawRectangle(&localPen, col * pixelSize, row * pixelSize, pixelSize, pixelSize);
                 }
             }
-            g_ClockCache[key] = bmp;
+            g_ClockCache[key] = bitmap;
         }
     }
-    Gdiplus::Bitmap *cachedBmp = g_ClockCache[key];
-    if (cachedBmp)
+    Gdiplus::Bitmap *cachedBitmap = g_ClockCache[key];
+    if (cachedBitmap)
     {
         float pulse = 0.8f + sin(g_GlobalAnimTime * 8.0f) * 0.2f;
-        int ds = (int)(size * (0.95f + pulse * 0.05f));
+        int scaledSize = (int)(size * (0.95f + pulse * 0.05f));
         g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
-        g.DrawImage(cachedBmp, cx - ds / 2, cy - ds / 2, ds, ds);
+        g.DrawImage(cachedBitmap, centerX - scaledSize / 2, centerY - scaledSize / 2, scaledSize, scaledSize);
     }
 }
 
@@ -526,18 +525,18 @@ void DrawPixelClock(Gdiplus::Graphics &g, int cx, int cy, int size, Gdiplus::Col
 // Nền gradient tối + viền sáng pulse + 2 icon bóng 2 bên + chữ GDI
 // =============================================================
 void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
-                     int cx, int cy, int panelW, COLORREF textColor, COLORREF glowColor)
+                     int centerX, int centerY, int panelWidth, COLORREF textColor, COLORREF glowColor)
 {
-    DrawPixelBanner(g, hdc, text, cx, cy, panelW, textColor, glowColor, "");
+    DrawPixelBanner(g, hdc, text, centerX, centerY, panelWidth, textColor, glowColor, "");
 }
 
 void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
-                     int cx, int cy, int panelW, COLORREF textColor, COLORREF glowColor, const std::string &iconModelPath)
+                     int centerX, int centerY, int panelWidth, COLORREF textColor, COLORREF glowColor, const std::string &iconModelPath)
 {
-    int bannerW = panelW - UIScaler::SX(24);
+    int bannerW = panelWidth - UIScaler::SX(24);
     int bannerH = UIScaler::SY(50);
-    int bannerX = cx - bannerW / 2;
-    int bannerY = cy - bannerH / 2;
+    int bannerX = centerX - bannerW / 2;
+    int bannerY = centerY - bannerH / 2;
 
     // 1. Nền gradient tối
     Gdiplus::LinearGradientBrush gradBrush(
@@ -550,7 +549,9 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
     // 2. Đường viền sáng pulse
     float pulse = 0.6f + sin(g_GlobalAnimTime * 6.0f) * 0.4f;
     BYTE lineA = (BYTE)(180 + pulse * 75);
-    BYTE gr = GetRValue(glowColor), gg = GetGValue(glowColor), gb = GetBValue(glowColor);
+    BYTE gr = GetRValue(glowColor);
+    BYTE gg = GetGValue(glowColor);
+    BYTE gb = GetBValue(glowColor);
     Gdiplus::Pen topLine(Gdiplus::Color(lineA, gr, gg, gb), 2.5f);
     Gdiplus::Pen botLine(Gdiplus::Color((BYTE)(lineA * 0.6f), gr, gg, gb), 1.5f);
     g.DrawLine(&topLine, bannerX, bannerY, bannerX + bannerW, bannerY);
@@ -561,7 +562,7 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
     g.FillRectangle(&cornerBrush, bannerX + bannerW - 4, bannerY, 4, bannerH);
 
     // 3. Icon trang trí (Football mặc định hoặc Tùy chỉnh)
-    int iconY = cy;
+    int iconY = centerY;
     int iconSize = UIScaler::S(32);
 
     if (iconModelPath.empty())
@@ -594,7 +595,7 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
     SelectObject(hdc, oldF);
 }
 
-void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeight, bool showFlashes, bool animate)
+void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeight, bool shouldShowFlashes, bool shouldAnimate)
 {
     // --- CACHE TẦNG TĨNH (Pitch & Lines) ---
     static Gdiplus::Bitmap *pitchCache = nullptr;
@@ -650,10 +651,10 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
     // Vẽ nền tĩnh từ Cache
     g.DrawImage(pitchCache, 0, 0);
 
-    if (animate)
+    if (shouldAnimate)
     {
-        // 2. Hiệu ứng Camera Flash (CHỈ vẽ ở MenuScreen khi showFlashes = true)
-        if (showFlashes)
+        // 2. Hiệu ứng Camera Flash (CHỈ vẽ ở MenuScreen khi shouldShowFlashes = true)
+        if (shouldShowFlashes)
         {
             const int flashCount = 15;
             for (int i = 0; i < flashCount; i++)
@@ -711,9 +712,9 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
                 for (int i = 0; i < 3; i++)
                 {
                     int cSize = (int)(screenWidth * clouds[i][2]);
-                    int cx = (int)fmod(clouds[i][0] * g_GlobalAnimTime + i * (screenWidth / 3.0f), (float)(screenWidth + UIScaler::SX(200)));
-                    int cy = (int)(clouds[i][1] * screenHeight) + (int)(sin(g_GlobalAnimTime * 0.8f + i) * UIScaler::SY(4));
-                    DrawPixelModel(g, cloudModel, cx, cy, cSize, cloudPalette, 9991); // 9991 is clouds fixed palette hash
+                    int cloudCenterX = (int)fmod(clouds[i][0] * g_GlobalAnimTime + i * (screenWidth / 3.0f), (float)(screenWidth + UIScaler::SX(200)));
+                    int cloudCenterY = (int)(clouds[i][1] * screenHeight) + (int)(sin(g_GlobalAnimTime * 0.8f + i) * UIScaler::SY(4));
+                    DrawPixelModel(g, cloudModel, cloudCenterX, cloudCenterY, cSize, cloudPalette, 9991); // 9991 is clouds fixed palette hash
                 }
             }
         }
@@ -769,20 +770,20 @@ void DrawTextCentered(HDC hdc, const std::wstring &text, int y, int rightX, COLO
 void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int cellSize, int offsetX, int offsetY)
 {
     int size = state->boardSize;
-    int boardLength = size * cellSize;
+    int boardPixelLength = size * cellSize;
 
     // 1. Vẽ lưới (Grid) - GDI thuần
     HPEN hPen = CreatePen(PS_SOLID, max(1, UIScaler::S(2)), ToCOLORREF(Palette::White));
     HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
 
-    for (int i = 0; i <= size; ++i)
+    for (int index = 0; index <= size; ++index)
     {
-        int currX = offsetX + i * cellSize;
-        int currY = offsetY + i * cellSize;
+        int currX = offsetX + index * cellSize;
+        int currY = offsetY + index * cellSize;
         MoveToEx(hdc, offsetX, currY, NULL);
-        LineTo(hdc, offsetX + boardLength, currY);
+        LineTo(hdc, offsetX + boardPixelLength, currY);
         MoveToEx(hdc, currX, offsetY, NULL);
-        LineTo(hdc, currX, offsetY + boardLength);
+        LineTo(hdc, currX, offsetY + boardPixelLength);
     }
     SelectObject(hdc, hOldPen);
     DeleteObject(hPen);
@@ -802,24 +803,21 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
         for (const auto &wCell : state->winningCells)
         {
             int drawX = offsetX + wCell.second * cellSize;
-            int drawY = offsetX + wCell.first * cellSize;
-            // Kiểm tra lại logic tọa độ: state->board[r][c] -> r là Row (Y), c là Col (X)
-            drawX = offsetX + wCell.second * cellSize;
-            drawY = offsetY + wCell.first * cellSize;
+            int drawY = offsetY + wCell.first * cellSize;
             g.FillRectangle(winBrush, drawX + 1, drawY + 1, cellSize - 2, cellSize - 2);
             g.DrawRectangle(&winPen, drawX + 2, drawY + 2, cellSize - 4, cellSize - 4);
         }
     }
 
     // Highlight nước đi cuối & Con trỏ
-    for (int r = 0; r < size; r++)
+    for (int row = 0; row < size; row++)
     {
-        for (int c = 0; c < size; c++)
+        for (int col = 0; col < size; col++)
         {
-            int drawX = offsetX + c * cellSize;
-            int drawY = offsetY + r * cellSize;
+            int drawX = offsetX + col * cellSize;
+            int drawY = offsetY + row * cellSize;
 
-            if (r == state->lastMoveRow && c == state->lastMoveCol)
+            if (row == state->lastMoveRow && col == state->lastMoveCol)
             {
                 int alpha = (int)(150 + sin(g_GlobalAnimTime * 8.0f) * 100);
                 Gdiplus::SolidBrush *lastMoveBrush = GetCachedBrush(ToGdiColor(WithAlpha(Theme::LastMoveHighlight, (BYTE)max(0, min(255, alpha)))));
@@ -862,23 +860,23 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
     HFONT oldFont = (HFONT)SelectObject(hdc, pieceFont);
     SetBkMode(hdc, TRANSPARENT);
 
-    for (int r = 0; r < size; r++)
+    for (int row = 0; row < size; row++)
     {
-        for (int c = 0; c < size; c++)
+        for (int col = 0; col < size; col++)
         {
-            if (state->board[r][c] == CELL_EMPTY)
+            if (state->board[row][col] == CELL_EMPTY)
                 continue;
 
-            int drawX = offsetX + c * cellSize;
-            int drawY = offsetY + r * cellSize;
+            int drawX = offsetX + col * cellSize;
+            int drawY = offsetY + row * cellSize;
             RECT cellRect = {drawX, drawY, drawX + cellSize, drawY + cellSize};
 
-            if (state->board[r][c] == CELL_PLAYER1)
+            if (state->board[row][col] == CELL_PLAYER1)
             {
                 SetTextColor(hdc, ToCOLORREF(Palette::OrangeNormal));
                 DrawTextW(hdc, L"X", -1, &cellRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
             }
-            else if (state->board[r][c] == CELL_PLAYER2)
+            else if (state->board[row][col] == CELL_PLAYER2)
             {
                 SetTextColor(hdc, ToCOLORREF(Palette::CyanNormal));
                 DrawTextW(hdc, L"O", -1, &cellRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
@@ -895,7 +893,7 @@ void SetTextColour(HDC hdc, COLORREF colour)
     SetBkMode(hdc, TRANSPARENT); // Đảm bảo chữ không có nền màu bao quanh
 }
 
-void DrawPixelAction(Gdiplus::Graphics &g, int cx, int cy, int size, PlayerState &state)
+void DrawPixelAction(Gdiplus::Graphics &g, int centerX, int centerY, int size, PlayerState &state)
 {
     if (size <= 0)
     {
@@ -941,7 +939,7 @@ void DrawPixelAction(Gdiplus::Graphics &g, int cx, int cy, int size, PlayerState
             if (g_ActionCache.find(cacheKey) != g_ActionCache.end() && g_ActionCache[cacheKey] != nullptr)
             {
                 g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
-                g.DrawImage(g_ActionCache[cacheKey], cx - (int)g_ActionCache[cacheKey]->GetWidth() / 2, cy - (int)g_ActionCache[cacheKey]->GetHeight() / 2);
+                g.DrawImage(g_ActionCache[cacheKey], centerX - (int)g_ActionCache[cacheKey]->GetWidth() / 2, centerY - (int)g_ActionCache[cacheKey]->GetHeight() / 2);
                 return;
             }
         }
@@ -964,55 +962,55 @@ void DrawPixelAction(Gdiplus::Graphics &g, int cx, int cy, int size, PlayerState
         // Nếu load thành công (hoặc qua fallback)
         if (model.isLoaded && model.width > 0)
         {
-            int pSize = size / model.width;
-            if (pSize < 1)
-                pSize = 1;
-            int bw = model.width * pSize + 4;
-            int bh = model.height * pSize + 4;
+            int pixelSize = size / model.width;
+            if (pixelSize < 1)
+                pixelSize = 1;
+            int bitmapWidth = model.width * pixelSize + 4;
+            int bitmapHeight = model.height * pixelSize + 4;
 
-            Gdiplus::Bitmap *bmp = new Gdiplus::Bitmap(bw, bh, PixelFormat32bppARGB);
-            Gdiplus::Graphics gBmp(bmp);
-            gBmp.SetSmoothingMode(Gdiplus::SmoothingModeNone);
+            Gdiplus::Bitmap *bitmap = new Gdiplus::Bitmap(bitmapWidth, bitmapHeight, PixelFormat32bppARGB);
+            Gdiplus::Graphics bitmapGraphics(bitmap);
+            bitmapGraphics.SetSmoothingMode(Gdiplus::SmoothingModeNone);
 
             // Vẽ bóng
             Gdiplus::SolidBrush *shadowBrush = GetCachedBrush(ToGdiColor(Theme::ShadowMed));
-            for (int r = 0; r < model.height; r++)
+            for (int row = 0; row < model.height; row++)
             {
-                for (int c = 0; c < model.width; c++)
+                for (int col = 0; col < model.width; col++)
                 {
-                    if (model.data[r][c] == 0)
+                    if (model.data[row][col] == 0)
                         continue;
-                    int dc = state.flipH ? (model.width - 1 - c) : c;
-                    gBmp.FillRectangle(shadowBrush, dc * pSize + 2, r * pSize + 2, pSize, pSize);
+                    int drawColIndex = state.flipH ? (model.width - 1 - col) : col;
+                    bitmapGraphics.FillRectangle(shadowBrush, drawColIndex * pixelSize + 2, row * pixelSize + 2, pixelSize, pixelSize);
                 }
             }
 
             // Vẽ thân
             Gdiplus::Pen pixelPen(ToGdiColor(Theme::ShadowLight), 1.0f);
-            for (int r = 0; r < model.height; r++)
+            for (int row = 0; row < model.height; row++)
             {
-                for (int c = 0; c < model.width; c++)
+                for (int col = 0; col < model.width; col++)
                 {
-                    int val = model.data[r][c];
+                    int val = model.data[row][col];
                     if (val == 0)
                         continue;
                     Gdiplus::Color color = (val == 7) ? ToGdiColor(Theme::AnimBoot) : (val == 6 ? ToGdiColor(Theme::AnimBall) : GetPaletteColor(state.avatarType, val));
-                    Gdiplus::SolidBrush *b = GetCachedBrush(color);
-                    int dc = state.flipH ? (model.width - 1 - c) : c;
-                    gBmp.FillRectangle(b, dc * pSize, r * pSize, pSize, pSize);
+                    Gdiplus::SolidBrush *brushLocal = GetCachedBrush(color);
+                    int drawColIndex = state.flipH ? (model.width - 1 - col) : col;
+                    bitmapGraphics.FillRectangle(brushLocal, drawColIndex * pixelSize, row * pixelSize, pixelSize, pixelSize);
 
-                    gBmp.DrawRectangle(&pixelPen, dc * pSize, r * pSize, pSize, pSize);
+                    bitmapGraphics.DrawRectangle(&pixelPen, drawColIndex * pixelSize, row * pixelSize, pixelSize, pixelSize);
                 }
             }
-            g_ActionCache[cacheKey] = bmp;
+            g_ActionCache[cacheKey] = bitmap;
         }
     }
 
-    Gdiplus::Bitmap *cachedBmp = g_ActionCache[cacheKey];
-    if (cachedBmp)
+    Gdiplus::Bitmap *cachedBitmap = g_ActionCache[cacheKey];
+    if (cachedBitmap)
     {
         g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
-        g.DrawImage(cachedBmp, cx - (int)cachedBmp->GetWidth() / 2, cy - (int)cachedBmp->GetHeight() / 2);
+        g.DrawImage(cachedBitmap, centerX - (int)cachedBitmap->GetWidth() / 2, centerY - (int)cachedBitmap->GetHeight() / 2);
     }
 }
 

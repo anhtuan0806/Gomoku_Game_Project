@@ -80,30 +80,30 @@ void CreateBuffer(HWND hwnd, HDC hdc, DoubleBuffer &buffer)
 {
     RECT rect;
     GetClientRect(hwnd, &rect);
-    int w = rect.right - rect.left;
-    int h = rect.bottom - rect.top;
+    int width = rect.right - rect.left;
+    int height = rect.bottom - rect.top;
 
     // Đảm bảo kích thước tối thiểu là 1x1 để CreateCompatibleBitmap không thất bại (NULL)
-    if (w <= 0)
+    if (width <= 0)
     {
-        w = 1;
+        width = 1;
     }
-    if (h <= 0)
+    if (height <= 0)
     {
-        h = 1;
+        height = 1;
     }
-    buffer.width = w;
-    buffer.height = h;
+    buffer.width = width;
+    buffer.height = height;
 
     buffer.hdcMem = CreateCompatibleDC(hdc);
-    buffer.hBitmap = CreateCompatibleBitmap(hdc, w, h);
+    buffer.hBitmap = CreateCompatibleBitmap(hdc, width, height);
     buffer.hOldBitmap = (HBITMAP)SelectObject(buffer.hdcMem, buffer.hBitmap);
 
     // Xóa nền buffer trắng
-    RECT fillRect = {0, 0, w, h};
-    HBRUSH hBrush = CreateSolidBrush(RGB(255, 255, 255));
-    FillRect(buffer.hdcMem, &fillRect, hBrush);
-    DeleteObject(hBrush);
+    RECT fillRect = {0, 0, width, height};
+    HBRUSH fillBrushLocal = CreateSolidBrush(RGB(255, 255, 255));
+    FillRect(buffer.hdcMem, &fillRect, fillBrushLocal);
+    DeleteObject(fillBrushLocal);
 }
 
 void DeleteBuffer(DoubleBuffer &buffer)
