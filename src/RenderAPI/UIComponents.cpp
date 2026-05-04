@@ -834,7 +834,7 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
         int cursorX = offsetX + state->cursorCol * cellSize;
         int cursorY = offsetY + state->cursorRow * cellSize;
         float pulse = 0.5f + sin(g_GlobalAnimTime * 8.0f) * 0.5f;
-        Gdiplus::Color cursorColor = state->isP1Turn ? ToGdiColor(Palette::OrangeNormal) : ToGdiColor(Palette::CyanNormal);
+        Gdiplus::Color cursorColor = state->isPlayer1Turn ? ToGdiColor(Palette::OrangeNormal) : ToGdiColor(Palette::CyanNormal);
 
         int glowAlpha = (int)(40 + pulse * 60);
         Gdiplus::SolidBrush *glowBrush = GetCachedBrush(Gdiplus::Color((BYTE)glowAlpha, cursorColor.GetR(), cursorColor.GetG(), cursorColor.GetB()));

@@ -31,15 +31,15 @@ bool updateCountdown(PlayState *state, double dt)
 void resetTimer(PlayState *state)
 {
     // Áp dụng: Ép thời gian đếm ngược bằng chính thời gian của Người chơi hiện tại!
-    // Tuỳ vào tới lượt ai (isP1Turn), lấy maxTurnTime tương ứng.
-    float maxFloatTime = state->isP1Turn ? state->player1.maxTurnTime : state->player2.maxTurnTime;
+    // Tuỳ vào tới lượt ai (isPlayer1Turn), lấy maxTurnTime tương ứng.
+    float maxFloatTime = state->isPlayer1Turn ? state->player1.maxTurnTime : state->player2.maxTurnTime;
 
     // Failsafe: Tránh lỗi load game cũ hoặc uninitialized memory khiến maxFloatTime <= 0
     if (maxFloatTime <= 0.0f)
     {
         maxFloatTime = (state->countdownTime > 0) ? static_cast<float>(state->countdownTime) : 30.0f;
         // Tự động gán lại nếu bộ nhớ trước đó chứa rác
-        if (state->isP1Turn)
+        if (state->isPlayer1Turn)
         {
             state->player1.maxTurnTime = maxFloatTime;
         }

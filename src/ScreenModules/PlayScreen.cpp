@@ -47,7 +47,7 @@ bool UpdatePlayLogic(PlayState *state, double dt)
         state->matchDuration += (float)dt; // Cập nhật cho mọi chế độ chơi
 
         // Cộng dồn thời gian giữ bóng theo lượt
-        if (state->isP1Turn)
+        if (state->isPlayer1Turn)
         {
             state->player1.totalTimePossessed += (float)dt;
         }
@@ -77,7 +77,7 @@ bool UpdatePlayLogic(PlayState *state, double dt)
         }
     }
 
-    if (state->status == MATCH_PLAYING && state->matchType == MATCH_PVE && !state->isP1Turn)
+    if (state->status == MATCH_PLAYING && state->matchType == MATCH_PVE && !state->isPlayer1Turn)
     {
         if (!g_AIsCalculating)
         {
@@ -86,7 +86,7 @@ bool UpdatePlayLogic(PlayState *state, double dt)
             g_AIFuture = std::async(std::launch::async, [localState]()
                                     {
                 int r, c;
-                calculateAIMove(&localState, localState.difficulty, r, c);
+                    calculateComputerMove(&localState, localState.difficulty, r, c);
                 return std::make_pair(r, c); });
         }
         else if (g_AIFuture.valid() && g_AIFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
@@ -689,7 +689,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     int tabMarginX = UIScaler::SX(10);
     g.FillRectangle(&shadowBrush, tabMarginX, startY, leftTabW, boardPixelSize);
 
-    if (state->status == MATCH_PLAYING && state->isP1Turn)
+    if (state->status == MATCH_PLAYING && state->isPlayer1Turn)
     {
         int alpha = (int)(30 + sin(g_GlobalAnimTime * 8.0f) * 30.0f);
         Gdiplus::SolidBrush *p1TurnPulse = GetCachedBrush(ToGdiColor(WithAlpha(Theme::P1TurnPulse, (BYTE)alpha)));
@@ -754,7 +754,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         {
             nextAction = (state->winner == CELL_PLAYER1) ? "win" : "sad";
         }
-        else if (state->status == MATCH_PLAYING && state->isP1Turn)
+        else if (state->status == MATCH_PLAYING && state->isPlayer1Turn)
         {
             nextAction = "run";
         }
@@ -775,7 +775,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     int rightTabW = screenWidth - rightTabStartX - tabMarginX;
     g.FillRectangle(&shadowBrush, rightTabStartX, startY, rightTabW, boardPixelSize);
 
-    if (state->status == MATCH_PLAYING && !state->isP1Turn)
+    if (state->status == MATCH_PLAYING && !state->isPlayer1Turn)
     {
         int alpha = (int)(30 + sin(g_GlobalAnimTime * 8.0f) * 30.0f);
         Gdiplus::SolidBrush *p2TurnPulse = GetCachedBrush(ToGdiColor(WithAlpha(Theme::P2TurnPulse, (BYTE)alpha)));
@@ -827,7 +827,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         {
             nextAction = (state->winner == CELL_PLAYER2) ? "win" : "sad";
         }
-        else if (state->status == MATCH_PLAYING && !state->isP1Turn)
+        else if (state->status == MATCH_PLAYING && !state->isPlayer1Turn)
         {
             nextAction = "run";
         }
@@ -856,7 +856,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     std::wstring s_trn = GetText("play_turn");
 
     std::wstring formatText = s_fmt + L" BO" + std::to_wstring(state->targetScore);
-    std::wstring turnText = s_trn + L": " + (state->isP1Turn ? player1NameW : player2NameW);
+    std::wstring turnText = s_trn + L": " + (state->isPlayer1Turn ? player1NameW : player2NameW);
     std::wstring fullScoreText = formatText + L"  |  " + turnText;
 
     int scoreW = UIScaler::SX(600);
@@ -873,7 +873,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     g.FillRectangle(&scoreBg, scoreX, scoreY, scoreW, scoreH);
 
     // Glowing border pulses with turn color
-    COLORREF turnColor = state->isP1Turn ? ToCOLORREF(Palette::OrangeNormal) : ToCOLORREF(Palette::CyanNormal);
+    COLORREF turnColor = state->isPlayer1Turn ? ToCOLORREF(Palette::OrangeNormal) : ToCOLORREF(Palette::CyanNormal);
     float pulseScore = 0.6f + sin(g_GlobalAnimTime * 6.0f) * 0.4f;
     BYTE scoreAlpha = (BYTE)(130 + pulseScore * 125);
     Gdiplus::Pen scoreBorder(Gdiplus::Color(scoreAlpha, GetRValue(turnColor), GetGValue(turnColor), GetBValue(turnColor)), 2.5f);

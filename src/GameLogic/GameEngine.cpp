@@ -6,9 +6,9 @@
 #include "../SystemModules/AudioSystem.h"
 
 // ============================================================
-//  initNewMatch
+//  initializeNewMatch
 // ============================================================
-void initNewMatch(PlayState *state, PlayMode mode, MatchType type, int boardSize,
+void initializeNewMatch(PlayState *state, PlayMode mode, MatchType type, int boardSize,
                   int countdownTime, int difficulty, int targetScore, int totalTime)
 {
     state->gameMode = mode;
@@ -24,8 +24,8 @@ void initNewMatch(PlayState *state, PlayMode mode, MatchType type, int boardSize
     state->player2TotalTimeLeft = totalTime * 60;
 
     // Khởi tạo cầu thủ qua PlayerEngineer (Nguồn sự thật duy nhất)
-    initPlayer(state->player1, state->player1.name, state->player1.avatarPath, 'X', (float)countdownTime);
-    initPlayer(state->player2, state->player2.name, state->player2.avatarPath, 'O', (float)countdownTime);
+    initializePlayer(state->player1, state->player1.name, state->player1.avatarPath, 'X', (float)countdownTime);
+    initializePlayer(state->player2, state->player2.name, state->player2.avatarPath, 'O', (float)countdownTime);
 
     // Xóa transposition table khi bắt đầu match mới
     clearTranspositionTable();
@@ -39,7 +39,7 @@ void initNewMatch(PlayState *state, PlayMode mode, MatchType type, int boardSize
 void startNextRound(PlayState *state)
 {
     state->timeRemaining = state->countdownTime;
-    state->isP1Turn = true;
+    state->isPlayer1Turn = true;
     state->status = MATCH_PLAYING;
     state->winner = -1;
 
@@ -72,7 +72,7 @@ void startNextRound(PlayState *state)
 // ============================================================
 void switchTurn(PlayState *state)
 {
-    state->isP1Turn = !state->isP1Turn;
+    state->isPlayer1Turn = !state->isPlayer1Turn;
     state->timeRemaining = state->countdownTime;
     resetTimer(state);
 }
@@ -100,8 +100,8 @@ void undoMove(PlayState *state)
         state->board[last.first][last.second] = CELL_EMPTY;
 
         // Chuyển lại lượt và cập nhật movesCount đúng người
-        state->isP1Turn = !state->isP1Turn;
-        if (state->isP1Turn)
+        state->isPlayer1Turn = !state->isPlayer1Turn;
+        if (state->isPlayer1Turn)
             state->player1.movesCount--;
         else
             state->player2.movesCount--;
@@ -153,13 +153,13 @@ void redoMove(PlayState *state)
         state->redoStack.pop_back();
 
         state->board[nextMove.first][nextMove.second] =
-            state->isP1Turn ? CELL_PLAYER1 : CELL_PLAYER2;
+            state->isPlayer1Turn ? CELL_PLAYER1 : CELL_PLAYER2;
 
         state->lastMoveRow = nextMove.first;
         state->lastMoveCol = nextMove.second;
         state->matchHistory.push_back(nextMove);
 
-        if (state->isP1Turn)
+        if (state->isPlayer1Turn)
             state->player1.movesCount++;
         else
             state->player2.movesCount++;
@@ -177,7 +177,7 @@ void redoMove(PlayState *state)
         }
         else
         {
-            state->isP1Turn = !state->isP1Turn;
+            state->isPlayer1Turn = !state->isPlayer1Turn;
         }
     }
     resetTimer(state);
@@ -191,13 +191,13 @@ bool processMove(PlayState *state, int row, int col)
     if (state->status != MATCH_PLAYING || !isValidMove(state, row, col))
         return false;
 
-    state->board[row][col] = state->isP1Turn ? CELL_PLAYER1 : CELL_PLAYER2;
+    state->board[row][col] = state->isPlayer1Turn ? CELL_PLAYER1 : CELL_PLAYER2;
     state->lastMoveRow = row;
     state->lastMoveCol = col;
     state->matchHistory.push_back({row, col});
     state->redoStack.clear(); // Hủy nhánh redo sau khi đặt nước mới
 
-    if (state->isP1Turn)
+    if (state->isPlayer1Turn)
         state->player1.movesCount++;
     else
         state->player2.movesCount++;
@@ -217,8 +217,8 @@ bool processMove(PlayState *state, int row, int col)
             // Dùng targetScore trực tiếp làm mục tiêu bàn thắng
             winRequired = state->targetScore;
         }
-        bool seriesWon = (state->player1.totalWins >= winRequired || state->player2.totalWins >= winRequired);
-        if (seriesWon)
+        bool isSeriesWon = (state->player1.totalWins >= winRequired || state->player2.totalWins >= winRequired);
+        if (isSeriesWon)
         {
             if (state->player1.totalWins >= winRequired)
                 state->player1.matchWins++;

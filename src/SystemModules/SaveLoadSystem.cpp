@@ -204,7 +204,7 @@ bool SaveMatchData(const PlayState *state, const std::wstring &filename)
     // POD fields
     file.write(reinterpret_cast<const char *>(&state->gameMode), sizeof(state->gameMode));
     file.write(reinterpret_cast<const char *>(&state->matchType), sizeof(state->matchType));
-    file.write(reinterpret_cast<const char *>(&state->isP1Turn), sizeof(state->isP1Turn));
+    file.write(reinterpret_cast<const char *>(&state->isPlayer1Turn), sizeof(state->isPlayer1Turn));
     file.write(reinterpret_cast<const char *>(&state->countdownTime), sizeof(state->countdownTime));
     file.write(reinterpret_cast<const char *>(&state->timeRemaining), sizeof(state->timeRemaining));
     file.write(reinterpret_cast<const char *>(&state->boardSize), sizeof(state->boardSize));
@@ -274,7 +274,7 @@ bool LoadMatchData(PlayState *state, const std::wstring &filename)
         return false;
     if (!file.read(reinterpret_cast<char *>(&state->matchType), sizeof(state->matchType)))
         return false;
-    if (!file.read(reinterpret_cast<char *>(&state->isP1Turn), sizeof(state->isP1Turn)))
+    if (!file.read(reinterpret_cast<char *>(&state->isPlayer1Turn), sizeof(state->isPlayer1Turn)))
         return false;
     if (!file.read(reinterpret_cast<char *>(&state->countdownTime), sizeof(state->countdownTime)))
         return false;

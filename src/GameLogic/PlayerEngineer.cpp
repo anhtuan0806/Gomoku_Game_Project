@@ -1,13 +1,13 @@
 #include "PlayerEngineer.h"
 
 // ============================================================
-//  initPlayer
+//  initializePlayer
 //  Khởi tạo toàn bộ thông tin người chơi.
 //  movesCount và totalWins đều về 0 — GameEngine chịu trách nhiệm
 //  tăng/giảm trong suốt ván đấu.
 // ============================================================
-void initPlayer(PlayerMatchInfo &player, const wstring &name,
-                const string &avatar, char piece, float maxTime)
+void initializePlayer(PlayerMatchInfo &player, const wstring &name,
+                      const string &avatar, char piece, float maxTime)
 {
     player.name = name;
     player.avatarPath = avatar;

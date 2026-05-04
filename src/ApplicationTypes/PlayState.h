@@ -38,7 +38,7 @@ struct PlayState
     PlayerMatchInfo player1;
     PlayerMatchInfo player2;
 
-    bool isP1Turn = true;
+    bool isPlayer1Turn = true;
 
     int countdownTime = 30;
     int timeRemaining = 30;

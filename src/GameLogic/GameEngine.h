@@ -4,7 +4,7 @@
 #include "../ApplicationTypes/PlayState.h"
 
 // Khởi tạo ván đấu mới (reset điểm, bàn cờ, timer)
-void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize,
+void initializeNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize,
     int countdownTime, int difficulty, int targetScore, int totalTime = 0);
 
 // Reset bàn cờ cho round mới (giữ nguyên điểm số, dùng trong Bo3/Bo5)

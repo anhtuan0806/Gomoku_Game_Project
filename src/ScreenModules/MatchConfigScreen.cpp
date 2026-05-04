@@ -289,20 +289,20 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
 
                 // Nếu hợp lệ thì tiến hành vào trận thông qua PlayerEngineer
                 static const char *SLOT_PATHS[3] = {"avatar_0", "avatar_1", "avatar_2"};
-                initPlayer(playState->player1, editName1, SLOT_PATHS[sPlayer1AvatarIndex], 'X', (float)playState->countdownTime);
+                initializePlayer(playState->player1, editName1, SLOT_PATHS[sPlayer1AvatarIndex], 'X', (float)playState->countdownTime);
 
                 if (isPvE)
                 {
                     std::wstring botName = (playState->difficulty == 1) ? GetText("config_bot_easy") : (playState->difficulty == 2 ? GetText("config_bot_med") : GetText("config_bot_hard"));
-                    initPlayer(playState->player2, botName, "avatar_0", 'O', (float)playState->countdownTime);
+                    initializePlayer(playState->player2, botName, "avatar_0", 'O', (float)playState->countdownTime);
                 }
                 else
                 {
-                    initPlayer(playState->player2, editName2, SLOT_PATHS[sPlayer2AvatarIndex], 'O', (float)playState->countdownTime);
+                    initializePlayer(playState->player2, editName2, SLOT_PATHS[sPlayer2AvatarIndex], 'O', (float)playState->countdownTime);
                 }
 
                 int bSize = (playState->gameMode == MODE_CARO) ? 15 : 3;
-                initNewMatch(playState, playState->gameMode, playState->matchType, bSize, playState->countdownTime, playState->difficulty, playState->targetScore, 15);
+                initializeNewMatch(playState, playState->gameMode, playState->matchType, bSize, playState->countdownTime, playState->difficulty, playState->targetScore, 15);
 
                 StopBGM(); // Tắt nhạc menu
                 PlaySFX("sfx_whistle");
