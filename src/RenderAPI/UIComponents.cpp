@@ -615,11 +615,11 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
 
         // 1. Nền Cỏ sọc ngang
         int stripeHeight = UIScaler::SY(60);
-        for (int y = 0; y < screenHeight; y += stripeHeight)
+        for (int stripeY = 0; stripeY < screenHeight; stripeY += stripeHeight)
         {
-            bool isDark = (y / stripeHeight) % 2 == 0;
+            bool isDark = (stripeY / stripeHeight) % 2 == 0;
             Gdiplus::SolidBrush stripeBrush(isDark ? ToGdiColor(Theme::PitchDark) : ToGdiColor(Theme::PitchLight));
-            gP.FillRectangle(&stripeBrush, 0, y, screenWidth, stripeHeight);
+            gP.FillRectangle(&stripeBrush, 0, stripeY, screenWidth, stripeHeight);
         }
 
         // 1.5. Hệ thống Line Sân Bóng (Pitch Markings)
@@ -657,13 +657,13 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
         if (shouldShowFlashes)
         {
             const int flashCount = 15;
-            for (int i = 0; i < flashCount; i++)
+            for (int flashIndex = 0; flashIndex < flashCount; ++flashIndex)
             {
-                int fx = (i * 918273) % screenWidth;
-                int fy = (i * 374621) % (screenHeight / 3);
-                float phase = (i * 137) % 314 / 50.0f;
+                int flashX = (flashIndex * 918273) % screenWidth;
+                int flashY = (flashIndex * 374621) % (screenHeight / 3);
+                float flashPhase = (flashIndex * 137) % 314 / 50.0f;
 
-                float rawPulse = sin(g_GlobalAnimTime * 15.0f + phase);
+                float rawPulse = sin(g_GlobalAnimTime * 15.0f + flashPhase);
                 if (rawPulse > 0.92f)
                 { // Ngưỡng cao hơn để chớp dứt khoát hơn
                     int alpha = (int)((rawPulse - 0.92f) * 12.5f * 255);
@@ -671,8 +671,8 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
 
                     Gdiplus::SolidBrush flashBrush(Gdiplus::Color((BYTE)alpha, 255, 255, 255));
                     // Vẽ một hình chữ thập đơn giản thay vì 3 hình chữ nhật
-                    g.FillRectangle(&flashBrush, fx - 1, fy - 6, 2, 12);
-                    g.FillRectangle(&flashBrush, fx - 6, fy - 1, 12, 2);
+                    g.FillRectangle(&flashBrush, flashX - 1, flashY - 6, 2, 12);
+                    g.FillRectangle(&flashBrush, flashX - 6, flashY - 1, 12, 2);
                 }
             }
         }
@@ -682,19 +682,21 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
             const int WIND_COUNT = 8;
             static const struct WindLine
             {
-                float yFrac, speed;
-                int len, alpha;
+                float yFrac;
+                float speed;
+                int len;
+                int alpha;
             } WIND_LINES[] = {
                 {0.18f, 55.0f, 160, 45}, {0.31f, 40.0f, 220, 50}, {0.44f, 60.0f, 140, 40}, {0.60f, 50.0f, 180, 45}, {0.72f, 45.0f, 200, 50}, {0.85f, 62.0f, 150, 42}, {0.24f, 80.0f, 90, 30}, {0.52f, 75.0f, 110, 35}};
 
-            for (int i = 0; i < WIND_COUNT; i++)
+            for (int windIndex = 0; windIndex < WIND_COUNT; ++windIndex)
             {
-                const WindLine &wl = WIND_LINES[i];
-                int wy = (int)(wl.yFrac * screenHeight);
-                int wx = (int)fmod(wl.speed * g_GlobalAnimTime + i * (screenWidth / (float)WIND_COUNT), (float)(screenWidth + wl.len)) - wl.len;
+                const WindLine &windLine = WIND_LINES[windIndex];
+                int windY = (int)(windLine.yFrac * screenHeight);
+                int windX = (int)fmod(windLine.speed * g_GlobalAnimTime + windIndex * (screenWidth / (float)WIND_COUNT), (float)(screenWidth + windLine.len)) - windLine.len;
 
-                Gdiplus::SolidBrush windBrush(Gdiplus::Color((BYTE)wl.alpha, 255, 255, 255));
-                g.FillRectangle(&windBrush, wx, wy, wl.len, UIScaler::SY(2));
+                Gdiplus::SolidBrush windBrush(Gdiplus::Color((BYTE)windLine.alpha, 255, 255, 255));
+                g.FillRectangle(&windBrush, windX, windY, windLine.len, UIScaler::SY(2));
             }
         }
 
@@ -709,12 +711,12 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
             {
                 static std::map<int, Gdiplus::Color> cloudPalette = {{1, Gdiplus::Color(170, 245, 248, 255)}};
                 const float clouds[][3] = {{22.0f, 0.04f, 0.18f}, {14.0f, 0.10f, 0.12f}, {30.0f, 0.02f, 0.10f}};
-                for (int i = 0; i < 3; i++)
+                for (int cloudIndex = 0; cloudIndex < 3; ++cloudIndex)
                 {
-                    int cSize = (int)(screenWidth * clouds[i][2]);
-                    int cloudCenterX = (int)fmod(clouds[i][0] * g_GlobalAnimTime + i * (screenWidth / 3.0f), (float)(screenWidth + UIScaler::SX(200)));
-                    int cloudCenterY = (int)(clouds[i][1] * screenHeight) + (int)(sin(g_GlobalAnimTime * 0.8f + i) * UIScaler::SY(4));
-                    DrawPixelModel(g, cloudModel, cloudCenterX, cloudCenterY, cSize, cloudPalette, 9991); // 9991 is clouds fixed palette hash
+                    int cloudSize = (int)(screenWidth * clouds[cloudIndex][2]);
+                    int cloudCenterX = (int)fmod(clouds[cloudIndex][0] * g_GlobalAnimTime + cloudIndex * (screenWidth / 3.0f), (float)(screenWidth + UIScaler::SX(200)));
+                    int cloudCenterY = (int)(clouds[cloudIndex][1] * screenHeight) + (int)(sin(g_GlobalAnimTime * 0.8f + cloudIndex) * UIScaler::SY(4));
+                    DrawPixelModel(g, cloudModel, cloudCenterX, cloudCenterY, cloudSize, cloudPalette, 9991); // 9991 is clouds fixed palette hash
                 }
             }
         }
@@ -730,38 +732,37 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
             {
                 static const struct BalloonDef
                 {
-                    float s = 0.0f;
-                    float x = 0.0f;
-                    Gdiplus::Color c = Gdiplus::Color(0, 0, 0, 0);
-                    Gdiplus::Color sh = Gdiplus::Color(0, 0, 0, 0);
-                } bs[] = {
+                    float speed = 0.0f;
+                    float xFraction = 0.0f;
+                    Gdiplus::Color color = Gdiplus::Color(0, 0, 0, 0);
+                    Gdiplus::Color shadow = Gdiplus::Color(0, 0, 0, 0);
+                } balloonDefs[] = {
                     {28.0f, 0.10f, Gdiplus::Color(210, 230, 50, 50), Gdiplus::Color(255, 255, 180, 180)},
                     {20.0f, 0.35f, Gdiplus::Color(210, 50, 120, 220), Gdiplus::Color(255, 160, 200, 255)},
                     {35.0f, 0.60f, Gdiplus::Color(210, 50, 200, 80), Gdiplus::Color(255, 160, 255, 180)},
                     {24.0f, 0.82f, Gdiplus::Color(210, 220, 160, 30), Gdiplus::Color(255, 255, 230, 140)}};
-                for (int i = 0; i < 4; i++)
+                for (int balloonIndex = 0; balloonIndex < 4; ++balloonIndex)
                 {
-                    int bx = (int)(bs[i].x * screenWidth) + (int)(sin(g_GlobalAnimTime * 1.2f + i * 1.1f) * UIScaler::SX(18));
-                    int by = screenHeight - (int)fmod(bs[i].s * g_GlobalAnimTime + i * (screenHeight / 4.0f), (float)(screenHeight + UIScaler::SY(120)));
+                    int balloonCenterX = (int)(balloonDefs[balloonIndex].xFraction * screenWidth) + (int)(sin(g_GlobalAnimTime * 1.2f + balloonIndex * 1.1f) * UIScaler::SX(18));
+                    int balloonCenterY = screenHeight - (int)fmod(balloonDefs[balloonIndex].speed * g_GlobalAnimTime + balloonIndex * (screenHeight / 4.0f), (float)(screenHeight + UIScaler::SY(120)));
 
-                    std::map<int, Gdiplus::Color> bPalette = {{1, Gdiplus::Color(200, 30, 30, 30)}, {2, bs[i].c}, {3, bs[i].sh}};
+                    std::map<int, Gdiplus::Color> balloonPalette = {{1, Gdiplus::Color(200, 30, 30, 30)}, {2, balloonDefs[balloonIndex].color}, {3, balloonDefs[balloonIndex].shadow}};
                     // Balloons palette is unique per balloon but constant over time.
-                    // Use a key based on balloon index i
-                    DrawPixelModel(g, balloonModel, bx, by, UIScaler::S(48), bPalette, 8880 + i);
+                    // Use a key based on balloon index
+                    DrawPixelModel(g, balloonModel, balloonCenterX, balloonCenterY, UIScaler::S(48), balloonPalette, 8880 + balloonIndex);
                 }
             }
         }
     }
 }
 
-void DrawTextCentered(HDC hdc, const std::wstring &text, int y, int rightX, COLORREF color, HFONT hFont, int leftX)
+void DrawTextCentered(HDC hdc, const std::wstring &text, int posY, int rightX, COLORREF color, HFONT hFont, int leftX)
 {
     HFONT fontToUse = (hFont != nullptr) ? hFont : GlobalFont::Default;
     HFONT hOldFont = (HFONT)SelectObject(hdc, fontToUse);
     SetTextColor(hdc, color);
     SetBkMode(hdc, TRANSPARENT);
-
-    RECT rect = {leftX, y, rightX, y + 100};
+    RECT rect = {leftX, posY, rightX, posY + 100};
     DrawTextW(hdc, text.c_str(), -1, &rect, DT_CENTER | DT_SINGLELINE | DT_NOPREFIX);
 
     SelectObject(hdc, hOldFont);

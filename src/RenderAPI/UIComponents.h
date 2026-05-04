@@ -35,7 +35,7 @@ PixelModel LoadPixelModel(const std::string &filePath);
 void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int centerX, int centerY, int totalSize, const std::map<int, Gdiplus::Color> &palette, size_t manualPaletteHash = 0);
 
 // Vẽ văn bản căn giữa trong khoảng [leftX, rightX]
-void DrawTextCentered(HDC hdc, const std::wstring &text, int y, int rightX, COLORREF color, HFONT hFont = nullptr, int leftX = 0);
+void DrawTextCentered(HDC hdc, const std::wstring &text, int posY, int rightX, COLORREF color, HFONT hFont = nullptr, int leftX = 0);
 
 // Vẽ nền sân vận động bằng giải thuật
 // showFlashes: chỉ bật true ở MenuScreen để hiệu ứng khán đài nhấp nháy
