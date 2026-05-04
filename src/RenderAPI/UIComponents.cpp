@@ -552,12 +552,12 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
     BYTE gr = GetRValue(glowColor);
     BYTE gg = GetGValue(glowColor);
     BYTE gb = GetBValue(glowColor);
-    Gdiplus::Pen topLine(Gdiplus::Color(lineA, gr, gg, gb), 2.5f);
-    Gdiplus::Pen botLine(Gdiplus::Color((BYTE)(lineA * 0.6f), gr, gg, gb), 1.5f);
+    SmartColor accentColor = {255, gr, gg, gb};
+    Gdiplus::Pen topLine(ToGdiColor(WithAlpha(accentColor, lineA)), 2.5f);
+    Gdiplus::Pen botLine(ToGdiColor(WithAlpha(accentColor, (BYTE)(lineA * 0.6f))), 1.5f);
     g.DrawLine(&topLine, bannerX, bannerY, bannerX + bannerW, bannerY);
     g.DrawLine(&botLine, bannerX, bannerY + bannerH, bannerX + bannerW, bannerY + bannerH);
-
-    Gdiplus::SolidBrush cornerBrush(Gdiplus::Color(80, gr, gg, gb));
+    Gdiplus::SolidBrush cornerBrush(ToGdiColor(WithAlpha(accentColor, (BYTE)80)));
     g.FillRectangle(&cornerBrush, bannerX, bannerY, 4, bannerH);
     g.FillRectangle(&cornerBrush, bannerX + bannerW - 4, bannerY, 4, bannerH);
 
@@ -577,10 +577,10 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
 
         // Khởi tạo Palette động dựa trên màu nhấn của màn hình để vẽ icon chuẩn xác
         std::map<int, Gdiplus::Color> palette;
-        palette[1] = ToGdiColor(Theme::BannerAccentDark); // Viền tối mờ
-        palette[2] = Gdiplus::Color(255, gr, gg, gb);     // Màu chủ đạo (Accent)
-        palette[3] = ToGdiColor(Palette::White);          // Màu trắng (Shine)
-        palette[4] = Gdiplus::Color(160, gr, gg, gb);     // Màu phụ (Sub-accent)
+        palette[1] = ToGdiColor(WithAlpha(Theme::BannerAccentDark, (BYTE)200)); // Viền tối mờ
+        palette[2] = ToGdiColor(accentColor);                                    // Màu chủ đạo (Accent)
+        palette[3] = ToGdiColor(Palette::White);                                 // Màu trắng (Shine)
+        palette[4] = ToGdiColor(WithAlpha(accentColor, (BYTE)160));              // Màu phụ (Sub-accent)
 
         DrawPixelModel(g, model, bannerX + 25, iconY, iconSize, palette);
         DrawPixelModel(g, model, bannerX + bannerW - 25, iconY, iconSize, palette);
@@ -863,7 +863,8 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
         Gdiplus::Color cursorColor = state->isPlayer1Turn ? ToGdiColor(Palette::OrangeNormal) : ToGdiColor(Palette::CyanNormal);
 
         int glowAlpha = (int)(40 + pulse * 60);
-        Gdiplus::SolidBrush *glowBrush = GetCachedBrush(Gdiplus::Color((BYTE)glowAlpha, cursorColor.GetR(), cursorColor.GetG(), cursorColor.GetB()));
+        SmartColor cursorSmart = {255, cursorColor.GetR(), cursorColor.GetG(), cursorColor.GetB()};
+        Gdiplus::SolidBrush *glowBrush = GetCachedBrush(ToGdiColor(WithAlpha(cursorSmart, (BYTE)glowAlpha)));
         g.FillRectangle(glowBrush, cursorX + 1, cursorY + 1, cellSize - 1, cellSize - 1);
 
         Gdiplus::Pen cornerPen(cursorColor, (Gdiplus::REAL)UIScaler::S(3));
