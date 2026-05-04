@@ -578,9 +578,9 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
         // Khởi tạo Palette động dựa trên màu nhấn của màn hình để vẽ icon chuẩn xác
         std::map<int, Gdiplus::Color> palette;
         palette[1] = ToGdiColor(WithAlpha(Theme::BannerAccentDark, (BYTE)200)); // Viền tối mờ
-        palette[2] = ToGdiColor(accentColor);                                    // Màu chủ đạo (Accent)
-        palette[3] = ToGdiColor(Palette::White);                                 // Màu trắng (Shine)
-        palette[4] = ToGdiColor(WithAlpha(accentColor, (BYTE)160));              // Màu phụ (Sub-accent)
+        palette[2] = ToGdiColor(accentColor);                                   // Màu chủ đạo (Accent)
+        palette[3] = ToGdiColor(Palette::White);                                // Màu trắng (Shine)
+        palette[4] = ToGdiColor(WithAlpha(accentColor, (BYTE)160));             // Màu phụ (Sub-accent)
 
         DrawPixelModel(g, model, bannerX + 25, iconY, iconSize, palette);
         DrawPixelModel(g, model, bannerX + bannerW - 25, iconY, iconSize, palette);
@@ -609,17 +609,97 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
         std::map<int, Gdiplus::Color> pitchPalette = {
             {1, ToGdiColor(Theme::PitchDark)},
             {2, ToGdiColor(Theme::PitchLight)},
-            {3, ToGdiColor(Palette::GreenDark)},
-            {4, ToGdiColor(Theme::TitleFill)}
-        };
+            {3, ToGdiColor(Theme::PitchLine)},
+            {4, ToGdiColor(Palette::GrayDark)},
+            {5, ToGdiColor(Palette::BlueLight)},
+            {6, ToGdiColor(Palette::White)}};
 
-        // Choose pixel size so the model roughly spans the screen width
-        int targetPixelSize = screenWidth / max(1, pitchModel.width);
-        if (targetPixelSize < 1)
-            targetPixelSize = 1;
-        int totalSize = targetPixelSize * max(pitchModel.width, pitchModel.height);
+        // If the screen is FullHD, render a 192x108 pixel grid scaled to exact FullHD
+        if (screenWidth == 1920 && screenHeight == 1080)
+        {
+            const int GRID_W = 192;
+            const int GRID_H = 108;
+            int blockW = screenWidth / GRID_W;
+            int blockH = screenHeight / GRID_H;
+            int totalW = blockW * GRID_W;
+            int totalH = blockH * GRID_H;
+            int offsetX = (screenWidth - totalW) / 2;
+            int offsetY = (screenHeight - totalH) / 2;
 
-        DrawPixelModel(g, pitchModel, screenWidth / 2, screenHeight / 2, totalSize, pitchPalette);
+            const int SKY_ROWS = 12;     // small sky band at top
+            const int STANDS_ROWS = 6;   // small stands under the sky
+            const int PITCH_START = SKY_ROWS + STANDS_ROWS;
+            const int PITCH_ROWS = GRID_H - PITCH_START;
+            const int STRIPE_H = 6; // stripe height in grid rows
+
+            const int LEFT_NET_X0 = 8;
+            const int LEFT_NET_X1 = 19; // inclusive
+            const int RIGHT_NET_X1 = GRID_W - 1 - LEFT_NET_X0;
+            const int RIGHT_NET_X0 = GRID_W - 1 - LEFT_NET_X1;
+            const int NET_H = 26;
+            const int NET_TOP = PITCH_START + (PITCH_ROWS / 2) - (NET_H / 2);
+            const int NET_BOTTOM = NET_TOP + NET_H - 1;
+
+            int centerCol = GRID_W / 2;
+            int centerColLeft = centerCol - 1;
+            int centerColRight = centerCol;
+
+            for (int row = 0; row < GRID_H; ++row)
+            {
+                for (int col = 0; col < GRID_W; ++col)
+                {
+                    int idx = 0;
+                    if (row < SKY_ROWS)
+                    {
+                        idx = 5; // sky
+                    }
+                    else if (row < SKY_ROWS + STANDS_ROWS)
+                    {
+                        idx = 4; // stands
+                    }
+                    else
+                    {
+                        // pitch area
+                        if (row == PITCH_START || row == GRID_H - 1)
+                        {
+                            idx = 3; // top/bottom pitch border
+                        }
+                        else if (col == centerColLeft || col == centerColRight)
+                        {
+                            idx = 3; // center line
+                        }
+                        else if ((col >= LEFT_NET_X0 && col <= LEFT_NET_X1 || col >= RIGHT_NET_X0 && col <= RIGHT_NET_X1) && (row >= NET_TOP && row <= NET_BOTTOM))
+                        {
+                            idx = 6; // net
+                        }
+                        else
+                        {
+                            int pr = row - PITCH_START;
+                            int stripe = (pr / STRIPE_H) % 2;
+                            idx = (stripe == 0) ? 1 : 2;
+                        }
+                    }
+
+                    auto it = pitchPalette.find(idx);
+                    if (it == pitchPalette.end())
+                        continue;
+                    Gdiplus::SolidBrush *brushPtr = GetCachedBrush(it->second);
+                    int dx = offsetX + col * blockW;
+                    int dy = offsetY + row * blockH;
+                    g.FillRectangle(brushPtr, dx, dy, blockW, blockH);
+                }
+            }
+        }
+        else
+        {
+            // Choose pixel size so the model roughly spans the screen width
+            int targetPixelSize = screenWidth / max(1, pitchModel.width);
+            if (targetPixelSize < 1)
+                targetPixelSize = 1;
+            int totalSize = targetPixelSize * max(pitchModel.width, pitchModel.height);
+
+            DrawPixelModel(g, pitchModel, screenWidth / 2, screenHeight / 2, totalSize, pitchPalette);
+        }
     }
     else
     {
