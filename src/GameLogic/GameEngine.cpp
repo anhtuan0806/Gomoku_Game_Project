@@ -9,7 +9,7 @@
 //  initializeNewMatch
 // ============================================================
 void initializeNewMatch(PlayState *state, PlayMode mode, MatchType type, int boardSize,
-                  int countdownTime, int difficulty, int targetScore, int totalTime)
+                        int countdownTime, int difficulty, int targetScore, int totalTime)
 {
     state->gameMode = mode;
     state->matchType = type;
@@ -54,9 +54,9 @@ void startNextRound(PlayState *state)
     state->redoStack.clear();
     state->matchDuration = 0.0f;
 
-    for (int r = 0; r < MAX_BOARD_SIZE; r++)
-        for (int c = 0; c < MAX_BOARD_SIZE; c++)
-            state->board[r][c] = CELL_EMPTY;
+    for (int row = 0; row < MAX_BOARD_SIZE; row++)
+        for (int col = 0; col < MAX_BOARD_SIZE; col++)
+            state->board[row][col] = CELL_EMPTY;
 
     state->cursorRow = state->boardSize / 2;
     state->cursorCol = state->boardSize / 2;

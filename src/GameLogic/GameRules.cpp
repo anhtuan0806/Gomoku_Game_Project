@@ -27,8 +27,8 @@ int checkWinCondition(const PlayState *state, int lastRow, int lastCol,
         return -1;
 
     // 4 hướng: ngang, dọc, chéo chính, chéo phụ
-    static const int dr[] = {0, 1, 1, 1};
-    static const int dc[] = {1, 0, 1, -1};
+    static const int dirRow[] = {0, 1, 1, 1};
+    static const int dirCol[] = {1, 0, 1, -1};
 
     for (int dir = 0; dir < 4; dir++)
     {
@@ -38,20 +38,20 @@ int checkWinCondition(const PlayState *state, int lastRow, int lastCol,
         // Quét tiến
         for (int step = 1; step < size; step++)
         {
-            int nr = lastRow + dr[dir] * step;
-            int nc = lastCol + dc[dir] * step;
-            if (nr >= 0 && nr < size && nc >= 0 && nc < size && state->board[nr][nc] == currentPiece)
-                line.push_back({nr, nc});
+            int nextRow = lastRow + dirRow[dir] * step;
+            int nextCol = lastCol + dirCol[dir] * step;
+            if (nextRow >= 0 && nextRow < size && nextCol >= 0 && nextCol < size && state->board[nextRow][nextCol] == currentPiece)
+                line.push_back({nextRow, nextCol});
             else
                 break;
         }
         // Quét lùi
         for (int step = 1; step < size; step++)
         {
-            int nr = lastRow - dr[dir] * step;
-            int nc = lastCol - dc[dir] * step;
-            if (nr >= 0 && nr < size && nc >= 0 && nc < size && state->board[nr][nc] == currentPiece)
-                line.push_back({nr, nc});
+            int nextRow = lastRow - dirRow[dir] * step;
+            int nextCol = lastCol - dirCol[dir] * step;
+            if (nextRow >= 0 && nextRow < size && nextCol >= 0 && nextCol < size && state->board[nextRow][nextCol] == currentPiece)
+                line.push_back({nextRow, nextCol});
             else
                 break;
         }
