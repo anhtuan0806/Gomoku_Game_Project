@@ -16,8 +16,8 @@ const int PAGE_1_ITEMS = 6;
 
 static std::wstring editName1 = L"Player 1";
 static std::wstring editName2 = L"Player 2";
-static int p1AvatarIdx = 0;
-static int p2AvatarIdx = 1;
+static int sPlayer1AvatarIndex = 0;
+static int sPlayer2AvatarIndex = 1;
 
 // Avatar names are now localized via GetText("config_avatar_1/2/3")
 // Mapping: slot 0-2 -> avatarType (0,1,2)
@@ -240,7 +240,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
         case 0: // Đổi Avatar P1 (A/D)
             if (dir != 0)
             {
-                p1AvatarIdx = (p1AvatarIdx + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
+                sPlayer1AvatarIndex = (sPlayer1AvatarIndex + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
                 if (!isRepeat)
                     PlaySFX("sfx_move");
             }
@@ -256,7 +256,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
         case 2: // Đổi Avatar P2 (A/D)
             if (!isPvE && dir != 0)
             {
-                p2AvatarIdx = (p2AvatarIdx + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
+                sPlayer2AvatarIndex = (sPlayer2AvatarIndex + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
                 if (!isRepeat)
                     PlaySFX("sfx_move");
             }
@@ -289,16 +289,16 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
 
                 // Nếu hợp lệ thì tiến hành vào trận thông qua PlayerEngineer
                 static const char *SLOT_PATHS[3] = {"avatar_0", "avatar_1", "avatar_2"};
-                initPlayer(playState->p1, editName1, SLOT_PATHS[p1AvatarIdx], 'X', (float)playState->countdownTime);
+                initPlayer(playState->player1, editName1, SLOT_PATHS[sPlayer1AvatarIndex], 'X', (float)playState->countdownTime);
 
                 if (isPvE)
                 {
                     std::wstring botName = (playState->difficulty == 1) ? GetText("config_bot_easy") : (playState->difficulty == 2 ? GetText("config_bot_med") : GetText("config_bot_hard"));
-                    initPlayer(playState->p2, botName, "avatar_0", 'O', (float)playState->countdownTime);
+                    initPlayer(playState->player2, botName, "avatar_0", 'O', (float)playState->countdownTime);
                 }
                 else
                 {
-                    initPlayer(playState->p2, editName2, SLOT_PATHS[p2AvatarIdx], 'O', (float)playState->countdownTime);
+                    initPlayer(playState->player2, editName2, SLOT_PATHS[sPlayer2AvatarIndex], 'O', (float)playState->countdownTime);
                 }
 
                 int bSize = (playState->gameMode == MODE_CARO) ? 15 : 3;
@@ -463,8 +463,8 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
                 botName = GetText("config_bot_hard");
         }
 
-        drawPlayerCard(panelX + UIScaler::SX(25), p1AvatarIdx, editName1, true, selectedOption == 0, selectedOption == 1, isEditingName1);
-        drawPlayerCard(panelX + panelW / 2 + UIScaler::SX(15), p2AvatarIdx, isPvE ? botName : editName2, false, selectedOption == 2, selectedOption == 3, isEditingName2);
+        drawPlayerCard(panelX + UIScaler::SX(25), sPlayer1AvatarIndex, editName1, true, selectedOption == 0, selectedOption == 1, isEditingName1);
+        drawPlayerCard(panelX + panelW / 2 + UIScaler::SX(15), sPlayer2AvatarIndex, isPvE ? botName : editName2, false, selectedOption == 2, selectedOption == 3, isEditingName2);
 
         int botY = panelY + panelH - UIScaler::SY(80);
         int halfW = panelW / 2;

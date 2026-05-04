@@ -16,14 +16,14 @@ enum MatchStatus
     MATCH_SUMMARY
 };
 
-// Thông tin người chơi 
-struct PlayerInfo2
+// Thông tin người chơi (dùng cho từng ván / lưu thông tin cơ bản)
+struct PlayerMatchInfo
 {
     wstring name;
     string avatarPath;
-    char piece = ' ';        // 'X' hoặc 'O'
-    int totalWins = 0;       // Số Bàn Thắng (trong series BO hiện tại)
-    int matchWins = 0;       // Số Trận Thắng BO (đã thắng trọn 1 serie BO)
+    char piece = ' ';  // 'X' hoặc 'O'
+    int totalWins = 0; // Số Bàn Thắng (trong series BO hiện tại)
+    int matchWins = 0; // Số Trận Thắng BO (đã thắng trọn 1 serie BO)
     int movesCount = 0;
     float maxTurnTime = 0.0f;        // Thời gian tối đa cho 1 lượt
     float totalTimePossessed = 0.0f; // Tổng thời gian giữ bóng (giây), cộng dồn theo phiên
@@ -35,8 +35,8 @@ struct PlayState
     PlayMode gameMode = MODE_CARO;
     MatchType matchType = MATCH_PVP;
 
-    PlayerInfo2 p1;
-    PlayerInfo2 p2;
+    PlayerMatchInfo player1;
+    PlayerMatchInfo player2;
 
     bool isP1Turn = true;
 
@@ -68,8 +68,8 @@ struct PlayState
 
     // Quản lý thời gian
     float matchDuration = 0.0f; // Tổng thời gian PVE (giây)
-    int p1TotalTimeLeft = 0;
-    int p2TotalTimeLeft = 0;
+    int player1TotalTimeLeft = 0;
+    int player2TotalTimeLeft = 0;
     bool isMatchTimed = false; // Có bật giới hạn thời gian cả trận không
 
     std::wstring saveName;      // Tên hiển thị của bản lưu

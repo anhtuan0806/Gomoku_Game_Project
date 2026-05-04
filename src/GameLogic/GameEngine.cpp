@@ -1,6 +1,6 @@
 #include "GameEngine.h"
 #include "GameRules.h"
-#include "BotAI.h"                          // Để gọi clearTranspositionTable()
+#include "BotAI.h" // Để gọi clearTranspositionTable()
 #include "PlayerEngineer.h"
 #include "../SystemModules/TimeSystem.h"
 #include "../SystemModules/AudioSystem.h"
@@ -8,8 +8,8 @@
 // ============================================================
 //  initNewMatch
 // ============================================================
-void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize,
-    int countdownTime, int difficulty, int targetScore, int totalTime)
+void initNewMatch(PlayState *state, PlayMode mode, MatchType type, int boardSize,
+                  int countdownTime, int difficulty, int targetScore, int totalTime)
 {
     state->gameMode = mode;
     state->matchType = type;
@@ -20,12 +20,12 @@ void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize
 
     // Thời gian tổng cho cả trận
     state->isMatchTimed = (totalTime > 0);
-    state->p1TotalTimeLeft = totalTime * 60; // phút → giây
-    state->p2TotalTimeLeft = totalTime * 60;
+    state->player1TotalTimeLeft = totalTime * 60; // phút → giây
+    state->player2TotalTimeLeft = totalTime * 60;
 
     // Khởi tạo cầu thủ qua PlayerEngineer (Nguồn sự thật duy nhất)
-    initPlayer(state->p1, state->p1.name, state->p1.avatarPath, 'X', (float)countdownTime);
-    initPlayer(state->p2, state->p2.name, state->p2.avatarPath, 'O', (float)countdownTime);
+    initPlayer(state->player1, state->player1.name, state->player1.avatarPath, 'X', (float)countdownTime);
+    initPlayer(state->player2, state->player2.name, state->player2.avatarPath, 'O', (float)countdownTime);
 
     // Xóa transposition table khi bắt đầu match mới
     clearTranspositionTable();
@@ -36,15 +36,16 @@ void initNewMatch(PlayState* state, PlayMode mode, MatchType type, int boardSize
 // ============================================================
 //  startNextRound
 // ============================================================
-void startNextRound(PlayState* state) {
+void startNextRound(PlayState *state)
+{
     state->timeRemaining = state->countdownTime;
     state->isP1Turn = true;
     state->status = MATCH_PLAYING;
     state->winner = -1;
 
     // Reset chỉ số lượt đánh cho round mới
-    resetPlayerForRound(state->p1);
-    resetPlayerForRound(state->p2);
+    resetPlayerForRound(state->player1);
+    resetPlayerForRound(state->player2);
 
     state->lastMoveRow = -1;
     state->lastMoveCol = -1;
@@ -63,30 +64,34 @@ void startNextRound(PlayState* state) {
     // Xóa TT khi bắt đầu round mới (bàn cờ trống = hash mới)
     clearTranspositionTable();
 
-    ResetTimer(state);
+    resetTimer(state);
 }
 
 // ============================================================
 //  switchTurn
 // ============================================================
-void switchTurn(PlayState* state) {
+void switchTurn(PlayState *state)
+{
     state->isP1Turn = !state->isP1Turn;
     state->timeRemaining = state->countdownTime;
-    ResetTimer(state);
+    resetTimer(state);
 }
 
 // ============================================================
 //  undoMove
 // ============================================================
-void undoMove(PlayState* state) {
-    if (state->matchHistory.empty()) return;
+void undoMove(PlayState *state)
+{
+    if (state->matchHistory.empty())
+        return;
 
     // PVE: lùi 2 bước để trả lượt về người chơi
-    int popCount = (state->matchType == MATCH_PVE
-        && state->matchHistory.size() >= 2) ? 2 : 1;
+    int popCount = (state->matchType == MATCH_PVE && state->matchHistory.size() >= 2) ? 2 : 1;
 
-    for (int i = 0; i < popCount; i++) {
-        if (state->matchHistory.empty()) break;
+    for (int i = 0; i < popCount; i++)
+    {
+        if (state->matchHistory.empty())
+            break;
 
         auto last = state->matchHistory.back();
         state->matchHistory.pop_back();
@@ -97,44 +102,52 @@ void undoMove(PlayState* state) {
         // Chuyển lại lượt và cập nhật movesCount đúng người
         state->isP1Turn = !state->isP1Turn;
         if (state->isP1Turn)
-            state->p1.movesCount--;
+            state->player1.movesCount--;
         else
-            state->p2.movesCount--;
+            state->player2.movesCount--;
     }
 
     // Cập nhật lastMove
-    if (state->matchHistory.empty()) {
+    if (state->matchHistory.empty())
+    {
         state->lastMoveRow = -1;
         state->lastMoveCol = -1;
     }
-    else {
+    else
+    {
         auto last = state->matchHistory.back();
         state->lastMoveRow = last.first;
         state->lastMoveCol = last.second;
     }
 
     // Nếu ván đã kết thúc thì reopen
-    if (state->status == MATCH_FINISHED) {
+    if (state->status == MATCH_FINISHED)
+    {
         state->status = MATCH_PLAYING;
-        if (state->winner == CELL_PLAYER1)      state->p1.totalWins--;
-        else if (state->winner == CELL_PLAYER2) state->p2.totalWins--;
+        if (state->winner == CELL_PLAYER1)
+            state->player1.totalWins--;
+        else if (state->winner == CELL_PLAYER2)
+            state->player2.totalWins--;
         state->winner = -1;
     }
     state->winningCells.clear();
-    ResetTimer(state);
+    resetTimer(state);
 }
 
 // ============================================================
 //  redoMove
 // ============================================================
-void redoMove(PlayState* state) {
-    if (state->redoStack.empty()) return;
+void redoMove(PlayState *state)
+{
+    if (state->redoStack.empty())
+        return;
 
-    int popCount = (state->matchType == MATCH_PVE
-        && state->redoStack.size() >= 2) ? 2 : 1;
+    int popCount = (state->matchType == MATCH_PVE && state->redoStack.size() >= 2) ? 2 : 1;
 
-    for (int i = 0; i < popCount; i++) {
-        if (state->redoStack.empty()) break;
+    for (int i = 0; i < popCount; i++)
+    {
+        if (state->redoStack.empty())
+            break;
 
         auto nextMove = state->redoStack.back();
         state->redoStack.pop_back();
@@ -146,58 +159,74 @@ void redoMove(PlayState* state) {
         state->lastMoveCol = nextMove.second;
         state->matchHistory.push_back(nextMove);
 
-        if (state->isP1Turn) state->p1.movesCount++;
-        else                  state->p2.movesCount++;
+        if (state->isP1Turn)
+            state->player1.movesCount++;
+        else
+            state->player2.movesCount++;
 
         int winStatus = checkWinCondition(state, nextMove.first, nextMove.second,
-            &state->winningCells);
-        if (winStatus != -1) {
-            if (winStatus == CELL_PLAYER1) state->p1.totalWins++;
-            else if (winStatus == CELL_PLAYER2) state->p2.totalWins++;
+                                          &state->winningCells);
+        if (winStatus != -1)
+        {
+            if (winStatus == CELL_PLAYER1)
+                state->player1.totalWins++;
+            else if (winStatus == CELL_PLAYER2)
+                state->player2.totalWins++;
             state->status = MATCH_FINISHED;
             state->winner = winStatus;
         }
-        else {
+        else
+        {
             state->isP1Turn = !state->isP1Turn;
         }
     }
-    ResetTimer(state);
+    resetTimer(state);
 }
 
 // ============================================================
 //  processMove
 // ============================================================
-bool processMove(PlayState* state, int row, int col) {
+bool processMove(PlayState *state, int row, int col)
+{
     if (state->status != MATCH_PLAYING || !isValidMove(state, row, col))
         return false;
 
     state->board[row][col] = state->isP1Turn ? CELL_PLAYER1 : CELL_PLAYER2;
     state->lastMoveRow = row;
     state->lastMoveCol = col;
-    state->matchHistory.push_back({ row, col });
+    state->matchHistory.push_back({row, col});
     state->redoStack.clear(); // Hủy nhánh redo sau khi đặt nước mới
 
-    if (state->isP1Turn) state->p1.movesCount++;
-    else                  state->p2.movesCount++;
+    if (state->isP1Turn)
+        state->player1.movesCount++;
+    else
+        state->player2.movesCount++;
 
     int winStatus = checkWinCondition(state, row, col, &state->winningCells);
-    if (winStatus != -1) {
-        if (winStatus == CELL_PLAYER1)      state->p1.totalWins++;
-        else if (winStatus == CELL_PLAYER2) state->p2.totalWins++;
+    if (winStatus != -1)
+    {
+        if (winStatus == CELL_PLAYER1)
+            state->player1.totalWins++;
+        else if (winStatus == CELL_PLAYER2)
+            state->player2.totalWins++;
 
         // Kiểm tra xem đã thắng trọn series BO chưa
         int winRequired = (state->targetScore + 1) / 2; // BO1=1, BO3=2, BO5=3
-        if (state->targetScore > 1) {
+        if (state->targetScore > 1)
+        {
             // Dùng targetScore trực tiếp làm mục tiêu bàn thắng
             winRequired = state->targetScore;
         }
-        bool seriesWon = (state->p1.totalWins >= winRequired || state->p2.totalWins >= winRequired);
-        if (seriesWon) {
-            if (state->p1.totalWins >= winRequired) state->p1.matchWins++;
-            else state->p2.matchWins++;
+        bool seriesWon = (state->player1.totalWins >= winRequired || state->player2.totalWins >= winRequired);
+        if (seriesWon)
+        {
+            if (state->player1.totalWins >= winRequired)
+                state->player1.matchWins++;
+            else
+                state->player2.matchWins++;
             // Reset bàn thắng cho series BO tiếp theo (giữ nguyên matchWins)
-            state->p1.totalWins = 0;
-            state->p2.totalWins = 0;
+            state->player1.totalWins = 0;
+            state->player2.totalWins = 0;
         }
 
         // Luôn dừng ván đấu để người chơi xem kết quả
@@ -209,7 +238,8 @@ bool processMove(PlayState* state, int row, int col) {
         PlaySFX("sfx_crowd");
         PlaySFX("sfx_siu");
     }
-    else {
+    else
+    {
         switchTurn(state);
     }
 

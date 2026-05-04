@@ -17,7 +17,7 @@
 #include <fcntl.h>
 #include <io.h>
 
-extern bool UpdateCountdown(PlayState *state, double dt);
+extern bool updateCountdown(PlayState *state, double dt);
 
 static std::future<std::pair<int, int>> g_AIFuture;
 static bool g_AIsCalculating = false;
@@ -49,11 +49,11 @@ bool UpdatePlayLogic(PlayState *state, double dt)
         // Cộng dồn thời gian giữ bóng theo lượt
         if (state->isP1Turn)
         {
-            state->p1.totalTimePossessed += (float)dt;
+            state->player1.totalTimePossessed += (float)dt;
         }
         else
         {
-            state->p2.totalTimePossessed += (float)dt;
+            state->player2.totalTimePossessed += (float)dt;
         }
 
         if (state->matchType == MATCH_PVE)
@@ -62,8 +62,8 @@ bool UpdatePlayLogic(PlayState *state, double dt)
         }
         else
         {
-            // Nếu một giây trôi qua, UpdateCountdown trả về true
-            if (UpdateCountdown(state, dt))
+            // Nếu một giây trôi qua, updateCountdown trả về true
+            if (updateCountdown(state, dt))
             {
                 needsRedraw = true;
 
@@ -469,11 +469,11 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             if (g_SummarySelected == 0)
             {
                 int winRequired = state->targetScore / 2 + 1;
-                bool matchOver = (state->p1.totalWins >= winRequired || state->p2.totalWins >= winRequired);
+                bool matchOver = (state->player1.totalWins >= winRequired || state->player2.totalWins >= winRequired);
                 if (matchOver)
                 {
-                    state->p1.totalWins = 0;
-                    state->p2.totalWins = 0;
+                    state->player1.totalWins = 0;
+                    state->player2.totalWins = 0;
                 }
                 startNextRound(state);
                 PlaySFX("sfx_whistle");
@@ -543,7 +543,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         int p2X = screenWidth / 2 + UIScaler::SX(40);
         int panelY = UIScaler::SY(120);
 
-        auto drawSummaryPanel = [&](int x, const PlayerInfo2 &p, bool isWinner, bool flipModel)
+        auto drawSummaryPanel = [&](int x, const PlayerMatchInfo &playerInfo, bool isWinner, bool flipModel)
         {
             Gdiplus::SolidBrush bgBrush(isWinner ? ToGdiColor(WithAlpha(Palette::YellowLight, 235)) : ToGdiColor(WithAlpha(Palette::GrayLightest, 235)));
             Gdiplus::Pen border(isWinner ? ToGdiColor(Palette::OrangeNormal) : ToGdiColor(Palette::GrayNormal), 4.0f);
@@ -570,7 +570,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
             }
 
             // Ten nguoi choi
-            std::wstring title = p.name;
+            std::wstring title = playerInfo.name;
             SetTextColor(hdc, isWinner ? ToCOLORREF(Palette::RedDarkest) : ToCOLORREF(Palette::GrayDarkest));
             SelectObject(hdc, GlobalFont::Bold);
             RECT rTitle = {x, panelY + (isWinner ? UIScaler::SY(55) : UIScaler::SY(15)), x + panelW, panelY + (isWinner ? UIScaler::SY(95) : UIScaler::SY(55))};
@@ -578,7 +578,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
             // Avatar & Trophy
             PlayerState pState;
-            pState.avatarType = decodeAvatar(p.avatarPath);
+            pState.avatarType = decodeAvatar(playerInfo.avatarPath);
             pState.flipH = flipModel;
             pState.currentAction = isWinner ? "win" : "sad";
             if (state->winner == 0)
@@ -623,18 +623,18 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
                 sY += sH;
             };
 
-            DrawStatRow(GetText("summary_dribble"), p.movesCount, ToGdiColor(Palette::BlueDark), 1);
-            DrawStatRow(GetText("summary_poss"), (int)p.totalTimePossessed, ToGdiColor(Palette::GreenDark), 2);
-            DrawStatRow(GetText("summary_goal"), p.totalWins, ToGdiColor(Palette::OrangeDarkest), 0);
-            DrawStatRow(GetText("summary_concede"), (&p == &state->p1 ? state->p2.totalWins : state->p1.totalWins), ToGdiColor(Palette::RedNormal), 0);
-            DrawStatRow(GetText("summary_bowin"), p.matchWins, ToGdiColor(Palette::PurpleDark), 0);
+            DrawStatRow(GetText("summary_dribble"), playerInfo.movesCount, ToGdiColor(Palette::BlueDark), 1);
+            DrawStatRow(GetText("summary_poss"), (int)playerInfo.totalTimePossessed, ToGdiColor(Palette::GreenDark), 2);
+            DrawStatRow(GetText("summary_goal"), playerInfo.totalWins, ToGdiColor(Palette::OrangeDarkest), 0);
+            DrawStatRow(GetText("summary_concede"), (&playerInfo == &state->player1 ? state->player2.totalWins : state->player1.totalWins), ToGdiColor(Palette::RedNormal), 0);
+            DrawStatRow(GetText("summary_bowin"), playerInfo.matchWins, ToGdiColor(Palette::PurpleDark), 0);
         };
 
         bool p1Win = (state->winner == CELL_PLAYER1);
         bool p2Win = (state->winner == CELL_PLAYER2);
 
-        drawSummaryPanel(p1X, state->p1, p1Win, false);
-        drawSummaryPanel(p2X, state->p2, p2Win, true);
+        drawSummaryPanel(p1X, state->player1, p1Win, false);
+        drawSummaryPanel(p2X, state->player2, p2Win, true);
 
         int minutes = (int)state->matchDuration / 60;
         int seconds = (int)state->matchDuration % 60;
@@ -700,7 +700,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
     int avaSize = UIScaler::S(180);
     int avaX_L = tabMarginX + (leftTabW - avaSize) / 2;
-    std::wstring p1NameW = state->p1.name;
+    std::wstring player1NameW = state->player1.name;
 
     static Gdiplus::FontFamily s_fontFamily(L"Arial");
     static Gdiplus::Font s_waterFont(&s_fontFamily, 64, Gdiplus::FontStyleBold, Gdiplus::UnitPixel);
@@ -716,15 +716,15 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     Gdiplus::SolidBrush *waterBrushL = GetCachedBrush(ToGdiColor(Theme::P1Watermark));
     g.TranslateTransform((Gdiplus::REAL)(avaX_L + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(80)));
     g.RotateTransform(-30.0f);
-    g.DrawString(p1NameW.c_str(), -1, &s_waterFont, Gdiplus::PointF(0, 0), &s_alignCenter, waterBrushL);
+    g.DrawString(player1NameW.c_str(), -1, &s_waterFont, Gdiplus::PointF(0, 0), &s_alignCenter, waterBrushL);
     g.ResetTransform();
 
-    DrawPixelAvatar(g, avaX_L, startY + UIScaler::SY(20), avaSize, decodeAvatar(state->p1.avatarPath));
+    DrawPixelAvatar(g, avaX_L, startY + UIScaler::SY(20), avaSize, decodeAvatar(state->player1.avatarPath));
 
     SetTextColor(hdc, ToCOLORREF(Palette::OrangeNormal));
     SelectObject(hdc, GlobalFont::Bold);
     RECT textRectL1 = {tabMarginX, startY + avaSize + UIScaler::SY(30), tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(70)};
-    DrawTextW(hdc, p1NameW.c_str(), -1, &textRectL1, DT_CENTER | DT_SINGLELINE);
+    DrawTextW(hdc, player1NameW.c_str(), -1, &textRectL1, DT_CENTER | DT_SINGLELINE);
 
     SelectObject(hdc, GlobalFont::Default);
     SetTextColor(hdc, ToCOLORREF(Palette::White));
@@ -732,21 +732,21 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     RECT textRectL2 = {tabMarginX, startY + avaSize + UIScaler::SY(60), tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(100)};
     DrawTextW(hdc, p1Piece.c_str(), -1, &textRectL2, DT_CENTER | DT_SINGLELINE);
 
-    std::wstring p1Wins = GetText("play_goals") + std::to_wstring(state->p1.totalWins);
+    std::wstring p1Wins = GetText("play_goals") + std::to_wstring(state->player1.totalWins);
     RECT textRectL3 = {tabMarginX, startY + avaSize + UIScaler::SY(90), tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(130)};
     DrawTextW(hdc, p1Wins.c_str(), -1, &textRectL3, DT_CENTER | DT_SINGLELINE);
 
-    std::wstring p1Moves = GetText("play_dribble") + std::to_wstring(state->p1.movesCount);
+    std::wstring p1Moves = GetText("play_dribble") + std::to_wstring(state->player1.movesCount);
     RECT textRectL4 = {tabMarginX, startY + avaSize + UIScaler::SY(120), tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(160)};
     DrawTextW(hdc, p1Moves.c_str(), -1, &textRectL4, DT_CENTER | DT_SINGLELINE);
 
-    std::wstring p1MatchWins = GetText("play_bowins") + std::to_wstring(state->p1.matchWins);
+    std::wstring p1MatchWins = GetText("play_bowins") + std::to_wstring(state->player1.matchWins);
     RECT textRectL5 = {tabMarginX, startY + avaSize + UIScaler::SY(150), tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(190)};
     DrawTextW(hdc, p1MatchWins.c_str(), -1, &textRectL5, DT_CENTER | DT_SINGLELINE);
 
     {
         static PlayerState p1State;
-        p1State.avatarType = decodeAvatar(state->p1.avatarPath);
+        p1State.avatarType = decodeAvatar(state->player1.avatarPath);
         p1State.flipH = false;
 
         std::string nextAction = "idle";
@@ -785,20 +785,20 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     }
 
     int avaX_R = rightTabStartX + (rightTabW - avaSize) / 2;
-    std::wstring p2NameW = state->p2.name;
+    std::wstring player2NameW = state->player2.name;
 
     Gdiplus::SolidBrush *waterBrushR = GetCachedBrush(ToGdiColor(Theme::P2Watermark));
     g.TranslateTransform((Gdiplus::REAL)(avaX_R + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(80)));
     g.RotateTransform(30.0f);
-    g.DrawString(p2NameW.c_str(), -1, &s_waterFont, Gdiplus::PointF(0, 0), &s_alignCenter, waterBrushR);
+    g.DrawString(player2NameW.c_str(), -1, &s_waterFont, Gdiplus::PointF(0, 0), &s_alignCenter, waterBrushR);
     g.ResetTransform();
 
-    DrawPixelAvatar(g, avaX_R, startY + UIScaler::SY(20), avaSize, decodeAvatar(state->p2.avatarPath));
+    DrawPixelAvatar(g, avaX_R, startY + UIScaler::SY(20), avaSize, decodeAvatar(state->player2.avatarPath));
 
     SetTextColor(hdc, ToCOLORREF(Palette::CyanNormal));
     SelectObject(hdc, GlobalFont::Bold);
     RECT textRectR1 = {rightTabStartX, startY + avaSize + UIScaler::SY(30), rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(70)};
-    DrawTextW(hdc, p2NameW.c_str(), -1, &textRectR1, DT_CENTER | DT_SINGLELINE);
+    DrawTextW(hdc, player2NameW.c_str(), -1, &textRectR1, DT_CENTER | DT_SINGLELINE);
 
     SelectObject(hdc, GlobalFont::Default);
     SetTextColor(hdc, ToCOLORREF(Palette::White));
@@ -806,21 +806,21 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     RECT textRectR2 = {rightTabStartX, startY + avaSize + UIScaler::SY(60), rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(100)};
     DrawTextW(hdc, p2Piece.c_str(), -1, &textRectR2, DT_CENTER | DT_SINGLELINE);
 
-    std::wstring p2Wins = GetText("play_goals") + std::to_wstring(state->p2.totalWins);
+    std::wstring p2Wins = GetText("play_goals") + std::to_wstring(state->player2.totalWins);
     RECT textRectR3 = {rightTabStartX, startY + avaSize + UIScaler::SY(90), rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(130)};
     DrawTextW(hdc, p2Wins.c_str(), -1, &textRectR3, DT_CENTER | DT_SINGLELINE);
 
-    std::wstring p2Moves = GetText("play_dribble") + std::to_wstring(state->p2.movesCount);
+    std::wstring p2Moves = GetText("play_dribble") + std::to_wstring(state->player2.movesCount);
     RECT textRectR4 = {rightTabStartX, startY + avaSize + UIScaler::SY(120), rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(160)};
     DrawTextW(hdc, p2Moves.c_str(), -1, &textRectR4, DT_CENTER | DT_SINGLELINE);
 
-    std::wstring p2MatchWins = GetText("play_bowins") + std::to_wstring(state->p2.matchWins);
+    std::wstring p2MatchWins = GetText("play_bowins") + std::to_wstring(state->player2.matchWins);
     RECT textRectR5 = {rightTabStartX, startY + avaSize + UIScaler::SY(150), rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(190)};
     DrawTextW(hdc, p2MatchWins.c_str(), -1, &textRectR5, DT_CENTER | DT_SINGLELINE);
 
     {
         static PlayerState p2State;
-        p2State.avatarType = decodeAvatar(state->p2.avatarPath);
+        p2State.avatarType = decodeAvatar(state->player2.avatarPath);
         p2State.flipH = true;
         std::string nextAction = "idle";
         if (state->status == MATCH_FINISHED)
@@ -856,7 +856,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     std::wstring s_trn = GetText("play_turn");
 
     std::wstring formatText = s_fmt + L" BO" + std::to_wstring(state->targetScore);
-    std::wstring turnText = s_trn + L": " + (state->isP1Turn ? p1NameW : p2NameW);
+    std::wstring turnText = s_trn + L": " + (state->isP1Turn ? player1NameW : player2NameW);
     std::wstring fullScoreText = formatText + L"  |  " + turnText;
 
     int scoreW = UIScaler::SX(600);
@@ -1176,17 +1176,17 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         COLORREF winGlow;
 
         int winRequired = state->targetScore / 2 + 1;
-        bool matchOver = (state->p1.totalWins >= winRequired || state->p2.totalWins >= winRequired);
+        bool matchOver = (state->player1.totalWins >= winRequired || state->player2.totalWins >= winRequired);
 
         if (state->winner == CELL_PLAYER1)
         {
-            winMsg = matchOver ? (p1NameW + GetText("play_win_cup")) : (p1NameW + GetText("play_win_goal"));
+            winMsg = matchOver ? (player1NameW + GetText("play_win_cup")) : (player1NameW + GetText("play_win_goal"));
             winColor = ToCOLORREF(Palette::OrangeNormal);
             winGlow = RGB(255, 120, 0);
         }
         else if (state->winner == CELL_PLAYER2)
         {
-            winMsg = matchOver ? p2NameW + GetText("play_win_cup") : (p2NameW + GetText("play_win_goal"));
+            winMsg = matchOver ? player2NameW + GetText("play_win_cup") : (player2NameW + GetText("play_win_goal"));
             winColor = ToCOLORREF(Palette::CyanNormal);
             winGlow = RGB(0, 150, 255);
         }

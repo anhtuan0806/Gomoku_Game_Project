@@ -88,11 +88,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     // 2. Tải Cấu hình & Ngôn ngữ & Âm thanh
     LoadConfig(&g_Config, "Asset/config.ini");
     LoadLanguageFile(g_Config.currentLang); // Khởi tạo ngôn ngữ trước
-    InitAudioSystem();
+    initAudioSystem();
 
     if (g_Config.isBgmEnabled)
     {
-        PlayBGM("Asset/audio/c1.mp3");
+        playBgm("Asset/audio/c1.mp3");
     }
 
     // 3. Đăng ký lớp cửa sổ
@@ -283,7 +283,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     RemoveFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Black.ttf", FR_PRIVATE, 0);
     RemoveFontResourceExW(L"Asset/font/Be_Vietnam_Pro/BeVietnamPro-Italic.ttf", FR_PRIVATE, 0);
 
-    ShutdownAudioSystem();
+    shutdownAudioSystem();
     ShutdownGraphics(g_GdiplusToken);
 
     timeEndPeriod(1); // Trả lại độ chính xác mặc định cho hệ thống

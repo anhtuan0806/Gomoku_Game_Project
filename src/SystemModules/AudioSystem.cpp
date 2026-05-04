@@ -40,22 +40,22 @@ static std::thread g_SFXThread;
 static std::atomic<bool> g_SFXRunning(false);
 static std::once_flag g_SFXOnce;
 
-static bool OpenSFXAlias(const std::string &path, const std::string &alias)
+static bool openSfxAlias(const std::string &path, const std::string &alias)
 {
     // Use mpegvideo for better volume control with wav
     std::string openCmd = "open \"" + path + "\" type mpegvideo alias " + alias;
     return mciSendStringA(openCmd.c_str(), NULL, 0, NULL) == 0;
 }
 
-static void EnsureSFXThread()
+static void ensureSfxThread()
 {
     std::call_once(g_SFXOnce, []()
                    {
-        g_SFXRunning = true;
-        g_SFXThread = std::thread(SFXWorker); });
+    g_SFXRunning = true;
+    g_SFXThread = std::thread(sfxWorker); });
 }
 
-void PreLoad(const std::string &path, const std::string &alias)
+void preLoad(const std::string &path, const std::string &alias)
 {
     {
         std::lock_guard<std::mutex> lock(g_SFXMutex);
@@ -69,7 +69,7 @@ void PreLoad(const std::string &path, const std::string &alias)
         std::string closeCmd = "close " + alias;
         mciSendStringA(closeCmd.c_str(), NULL, 0, NULL);
 
-        g_SFXReady[alias] = OpenSFXAlias(path, alias);
+        g_SFXReady[alias] = openSfxAlias(path, alias);
         return;
     }
 
@@ -87,25 +87,25 @@ void PreLoad(const std::string &path, const std::string &alias)
     g_SFXCond.notify_one();
 }
 
-void InitAudioSystem()
+void initAudioSystem()
 {
-    EnsureSFXThread();
-    PreLoad("Asset/audio/move.wav", "sfx_move");
-    PreLoad("Asset/audio/select.wav", "sfx_select");
-    PreLoad("Asset/audio/DatCo.wav", "sfx_place");
-    PreLoad("Asset/audio/Tiengcoi.wav", "sfx_whistle");
-    PreLoad("Asset/audio/MatLuot.wav", "sfx_timeout");
-    PreLoad("Asset/audio/select.wav", "sfx_error");
-    PreLoad("Asset/audio/siuuu.wav", "sfx_success");
-    PreLoad("Asset/audio/siuuu.wav", "sfx_siu");
-    PreLoad("Asset/audio/TiengKhanGia_Het_Tran.wav", "sfx_crowd");
+    ensureSfxThread();
+    preLoad("Asset/audio/move.wav", "sfx_move");
+    preLoad("Asset/audio/select.wav", "sfx_select");
+    preLoad("Asset/audio/DatCo.wav", "sfx_place");
+    preLoad("Asset/audio/Tiengcoi.wav", "sfx_whistle");
+    preLoad("Asset/audio/MatLuot.wav", "sfx_timeout");
+    preLoad("Asset/audio/select.wav", "sfx_error");
+    preLoad("Asset/audio/siuuu.wav", "sfx_success");
+    preLoad("Asset/audio/siuuu.wav", "sfx_siu");
+    preLoad("Asset/audio/TiengKhanGia_Het_Tran.wav", "sfx_crowd");
 }
 
-void PlaySFX(const std::string &alias)
+void playSfx(const std::string &alias)
 {
     if (!g_Config.isSfxEnabled || g_Config.sfxVolume <= 0)
         return;
-    EnsureSFXThread();
+    ensureSfxThread();
 
     SFXRequest req;
     req.command = SFXCommand::Play;
@@ -121,7 +121,7 @@ void PlaySFX(const std::string &alias)
     g_SFXCond.notify_one();
 }
 
-void StopSFX(const std::string &alias)
+void stopSfx(const std::string &alias)
 {
     if (!g_SFXRunning)
     {
@@ -143,7 +143,7 @@ void StopSFX(const std::string &alias)
     g_SFXCond.notify_one();
 }
 
-void PlayBGM(const std::string &filepath)
+void playBgm(const std::string &filepath)
 {
     if (!g_Config.isBgmEnabled)
         return;
@@ -151,16 +151,16 @@ void PlayBGM(const std::string &filepath)
     // BGM cũng dùng mpegvideo
     std::string cmd = "open \"" + filepath + "\" type mpegvideo alias bgm";
     mciSendStringA(cmd.c_str(), NULL, 0, NULL);
-    UpdateBGMVolume(true);
+    updateBgmVolume(true);
     mciSendStringA("play bgm repeat", NULL, 0, NULL);
 }
 
-void StopBGM()
+void stopBgm()
 {
     mciSendStringA("close bgm", NULL, 0, NULL);
 }
 
-void UpdateBGMVolume(bool force)
+void updateBgmVolume(bool force)
 {
     static int lastBgmVol = -1;
     int vol = g_Config.bgmVolume * 10;
@@ -172,7 +172,7 @@ void UpdateBGMVolume(bool force)
     lastBgmVol = vol;
 }
 
-void ShutdownAudioSystem()
+void shutdownAudioSystem()
 {
     if (g_SFXRunning)
     {
@@ -187,7 +187,7 @@ void ShutdownAudioSystem()
     mciSendStringA("close all", NULL, 0, NULL);
 }
 
-void SFXWorker()
+void sfxWorker()
 {
     while (true)
     {
@@ -209,7 +209,7 @@ void SFXWorker()
             std::string closeCmd = "close " + req.alias;
             mciSendStringA(closeCmd.c_str(), NULL, 0, NULL);
 
-            bool opened = OpenSFXAlias(req.path, req.alias);
+            bool opened = openSfxAlias(req.path, req.alias);
             {
                 std::lock_guard<std::mutex> lock(g_SFXMutex);
                 g_SFXReady[req.alias] = opened;
@@ -244,7 +244,7 @@ void SFXWorker()
             std::string closeCmd = "close " + req.alias;
             mciSendStringA(closeCmd.c_str(), NULL, 0, NULL);
 
-            bool opened = OpenSFXAlias(path, req.alias);
+            bool opened = openSfxAlias(path, req.alias);
             {
                 std::lock_guard<std::mutex> lock(g_SFXMutex);
                 g_SFXReady[req.alias] = opened;

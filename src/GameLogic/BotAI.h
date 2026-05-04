@@ -31,8 +31,8 @@ struct TTEntry {
 // Lưu điểm tích lũy của cả hai bên để không scan lại toàn bàn.
 // Được update mỗi khi đặt / xóa quân trong alpha-beta.
 struct IncrementalScore {
-    int p1 = 0; // Tổng điểm CELL_PLAYER1
-    int p2 = 0; // Tổng điểm CELL_PLAYER2
+    int player1Score = 0; // Tổng điểm CELL_PLAYER1
+    int player2Score = 0; // Tổng điểm CELL_PLAYER2
 };
 
 // ============================================================

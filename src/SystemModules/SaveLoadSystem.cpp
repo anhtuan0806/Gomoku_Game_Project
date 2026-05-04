@@ -102,9 +102,9 @@ static bool ReadVec(std::ifstream &f, std::vector<T> &v)
     return true;
 }
 
-// ---------- Serialize PlayerInfo2 ----------
+// ---------- Serialize PlayerMatchInfo ----------
 
-static void WritePlayer(std::ofstream &f, const PlayerInfo2 &p)
+static void WritePlayer(std::ofstream &f, const PlayerMatchInfo &p)
 {
     WriteWStr(f, p.name);
     WriteStr(f, p.avatarPath);
@@ -116,7 +116,7 @@ static void WritePlayer(std::ofstream &f, const PlayerInfo2 &p)
     f.write(reinterpret_cast<const char *>(&p.totalTimePossessed), sizeof(p.totalTimePossessed));
 }
 
-static bool ReadPlayer(std::ifstream &f, PlayerInfo2 &p, uint32_t version)
+static bool ReadPlayer(std::ifstream &f, PlayerMatchInfo &p, uint32_t version)
 {
     if (!ReadWStr(f, p.name))
     {
@@ -218,13 +218,13 @@ bool SaveMatchData(const PlayState *state, const std::wstring &filename)
     file.write(reinterpret_cast<const char *>(&state->difficulty), sizeof(state->difficulty));
     file.write(reinterpret_cast<const char *>(&state->targetScore), sizeof(state->targetScore));
     file.write(reinterpret_cast<const char *>(&state->matchDuration), sizeof(state->matchDuration));
-    file.write(reinterpret_cast<const char *>(&state->p1TotalTimeLeft), sizeof(state->p1TotalTimeLeft));
-    file.write(reinterpret_cast<const char *>(&state->p2TotalTimeLeft), sizeof(state->p2TotalTimeLeft));
+    file.write(reinterpret_cast<const char *>(&state->player1TotalTimeLeft), sizeof(state->player1TotalTimeLeft));
+    file.write(reinterpret_cast<const char *>(&state->player2TotalTimeLeft), sizeof(state->player2TotalTimeLeft));
     file.write(reinterpret_cast<const char *>(&state->isMatchTimed), sizeof(state->isMatchTimed));
 
     // Dynamic fields
-    WritePlayer(file, state->p1);
-    WritePlayer(file, state->p2);
+    WritePlayer(file, state->player1);
+    WritePlayer(file, state->player2);
     WriteVec(file, state->winningCells);
     WriteVec(file, state->matchHistory);
     WriteVec(file, state->redoStack);
@@ -302,17 +302,17 @@ bool LoadMatchData(PlayState *state, const std::wstring &filename)
         return false;
     if (!file.read(reinterpret_cast<char *>(&state->matchDuration), sizeof(state->matchDuration)))
         return false;
-    if (!file.read(reinterpret_cast<char *>(&state->p1TotalTimeLeft), sizeof(state->p1TotalTimeLeft)))
+    if (!file.read(reinterpret_cast<char *>(&state->player1TotalTimeLeft), sizeof(state->player1TotalTimeLeft)))
         return false;
-    if (!file.read(reinterpret_cast<char *>(&state->p2TotalTimeLeft), sizeof(state->p2TotalTimeLeft)))
+    if (!file.read(reinterpret_cast<char *>(&state->player2TotalTimeLeft), sizeof(state->player2TotalTimeLeft)))
         return false;
     if (!file.read(reinterpret_cast<char *>(&state->isMatchTimed), sizeof(state->isMatchTimed)))
         return false;
 
     // Dynamic fields
-    if (!ReadPlayer(file, state->p1, version))
+    if (!ReadPlayer(file, state->player1, version))
         return false;
-    if (!ReadPlayer(file, state->p2, version))
+    if (!ReadPlayer(file, state->player2, version))
         return false;
     if (!ReadVec(file, state->winningCells))
         return false;
@@ -446,36 +446,36 @@ SaveMetadata GetSaveMetadata(int slot)
     // Board size depends on constant MAX_BOARD_SIZE (likely 20x20 = 400 * 4 = 1600 bytes)
     // Better strategy: Read them properly or seek
     // For safety, let's just read them
-    int dummyI;
-    bool dummyB;
+    int unusedInt;
+    bool unusedBool;
     int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE];
-    float dummyF;
-    file.read(reinterpret_cast<char *>(&dummyB), sizeof(dummyB));
-    file.read(reinterpret_cast<char *>(&dummyI), sizeof(dummyI));
-    file.read(reinterpret_cast<char *>(&dummyI), sizeof(dummyI));
+    float unusedFloat;
+    file.read(reinterpret_cast<char *>(&unusedBool), sizeof(unusedBool));
+    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
     file.read(reinterpret_cast<char *>(&meta.boardSize), sizeof(meta.boardSize));
     file.read(reinterpret_cast<char *>(board), sizeof(board));
-    file.read(reinterpret_cast<char *>(&dummyI), sizeof(dummyI));
-    file.read(reinterpret_cast<char *>(&dummyI), sizeof(dummyI));
-    file.read(reinterpret_cast<char *>(&dummyI), sizeof(dummyI));
-    file.read(reinterpret_cast<char *>(&dummyI), sizeof(dummyI));
-    file.read(reinterpret_cast<char *>(&dummyI), sizeof(dummyI));
-    file.read(reinterpret_cast<char *>(&dummyI), sizeof(dummyI));
+    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
     file.read(reinterpret_cast<char *>(&meta.difficulty), sizeof(meta.difficulty));
-    file.read(reinterpret_cast<char *>(&dummyI), sizeof(dummyI));
-    file.read(reinterpret_cast<char *>(&dummyF), sizeof(dummyF));
-    file.read(reinterpret_cast<char *>(&dummyI), sizeof(dummyI));
-    file.read(reinterpret_cast<char *>(&dummyI), sizeof(dummyI));
-    file.read(reinterpret_cast<char *>(&dummyB), sizeof(dummyB));
+    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+    file.read(reinterpret_cast<char *>(&unusedFloat), sizeof(unusedFloat));
+    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+    file.read(reinterpret_cast<char *>(&unusedBool), sizeof(unusedBool));
 
     // Player 1
-    std::wstring p1Name;
-    std::string p1Ava;
-    char p1Piece;
-    PlayerInfo2 tempP1{};
-    ReadWStr(file, p1Name);
-    ReadStr(file, p1Ava);
-    file.read(&p1Piece, sizeof(p1Piece));
+    std::wstring player1Name;
+    std::string player1AvatarPath;
+    char player1Piece;
+    PlayerMatchInfo tempPlayer1{};
+    ReadWStr(file, player1Name);
+    ReadStr(file, player1AvatarPath);
+    file.read(&player1Piece, sizeof(player1Piece));
     file.read(reinterpret_cast<char *>(&meta.p1Wins), sizeof(meta.p1Wins));
     // skip matchWins
     if (version >= 5)
@@ -484,8 +484,8 @@ SaveMetadata GetSaveMetadata(int slot)
         file.read(reinterpret_cast<char *>(&dummy), sizeof(dummy));
     }
     // movesCount + maxTurnTime
-    file.read(reinterpret_cast<char *>(&dummyI), sizeof(dummyI));
-    file.read(reinterpret_cast<char *>(&dummyF), sizeof(dummyF));
+    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+    file.read(reinterpret_cast<char *>(&unusedFloat), sizeof(unusedFloat));
     // skip totalTimePossessed
     if (version >= 5)
     {
@@ -493,12 +493,12 @@ SaveMetadata GetSaveMetadata(int slot)
         file.read(reinterpret_cast<char *>(&dummyP), sizeof(dummyP));
     }
 
-    std::wstring p2Name;
-    std::string p2Ava;
-    char p2Piece;
-    ReadWStr(file, p2Name);
-    ReadStr(file, p2Ava);
-    file.read(&p2Piece, sizeof(p2Piece));
+    std::wstring player2Name;
+    std::string player2AvatarPath;
+    char player2Piece;
+    ReadWStr(file, player2Name);
+    ReadStr(file, player2AvatarPath);
+    file.read(&player2Piece, sizeof(player2Piece));
     file.read(reinterpret_cast<char *>(&meta.p2Wins), sizeof(meta.p2Wins));
 
     file.close();
