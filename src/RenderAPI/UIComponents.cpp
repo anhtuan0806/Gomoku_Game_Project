@@ -122,7 +122,7 @@ void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int centerX, 
         Gdiplus::Graphics bitmapGraphics(bitmap);
         bitmapGraphics.SetSmoothingMode(Gdiplus::SmoothingModeNone); // Giữ pixel sắc nét
 
-        Gdiplus::Pen gridPen(Gdiplus::Color(60, 0, 0, 0), 1.0f);
+        Gdiplus::Pen gridPen(ToGdiColor(WithAlpha(Palette::Black, (BYTE)60)), 1.0f);
         for (int row = 0; row < model.height; ++row)
         {
             for (int col = 0; col < model.width; ++col)
@@ -487,9 +487,9 @@ void DrawPixelClock(Gdiplus::Graphics &g, int centerX, int centerY, int size, Gd
                 pixelSize = 1;
             Gdiplus::Bitmap *bitmap = new Gdiplus::Bitmap(size + 2, size + 2, PixelFormat32bppARGB);
             Gdiplus::Graphics bitmapGraphics(bitmap);
-            Gdiplus::SolidBrush darkBrush(Gdiplus::Color(180, 20, 20, 30));
-            Gdiplus::SolidBrush shineBrush(Gdiplus::Color(255, 255, 255, 255));
-            Gdiplus::SolidBrush mainBrush(color);
+            Gdiplus::SolidBrush *darkBrushPtr = GetCachedBrush(ToGdiColor(WithAlpha(Theme::GlassDark, (BYTE)180)));
+            Gdiplus::SolidBrush *shineBrushPtr = GetCachedBrush(ToGdiColor(Palette::White));
+            Gdiplus::SolidBrush *mainBrushPtr = GetCachedBrush(color);
             for (int row = 0; row < model.height; row++)
             {
                 for (int col = 0; col < model.width; col++)
@@ -497,13 +497,13 @@ void DrawPixelClock(Gdiplus::Graphics &g, int centerX, int centerY, int size, Gd
                     int val = model.data[row][col];
                     if (val == 0)
                         continue;
-                    Gdiplus::SolidBrush *brushLocal = &mainBrush;
+                    Gdiplus::SolidBrush *brushLocal = mainBrushPtr;
                     if (val == 1)
-                        brushLocal = &darkBrush;
+                        brushLocal = darkBrushPtr;
                     if (val == 3)
-                        brushLocal = &shineBrush;
+                        brushLocal = shineBrushPtr;
                     bitmapGraphics.FillRectangle(brushLocal, col * pixelSize, row * pixelSize, pixelSize, pixelSize);
-                    Gdiplus::Pen localPen(Gdiplus::Color(60, 0, 0, 0), 1.0f);
+                    Gdiplus::Pen localPen(ToGdiColor(WithAlpha(Palette::Black, (BYTE)60)), 1.0f);
                     bitmapGraphics.DrawRectangle(&localPen, col * pixelSize, row * pixelSize, pixelSize, pixelSize);
                 }
             }
@@ -542,8 +542,8 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
     Gdiplus::LinearGradientBrush gradBrush(
         Gdiplus::Point(bannerX, bannerY),
         Gdiplus::Point(bannerX + bannerW, bannerY),
-        Gdiplus::Color(230, 10, 15, 25),
-        Gdiplus::Color(230, 30, 60, 90));
+        ToGdiColor(Theme::BannerGradientStart),
+        ToGdiColor(Theme::BannerGradientEnd));
     g.FillRectangle(&gradBrush, bannerX, bannerY, bannerW, bannerH);
 
     // 2. Đường viền sáng pulse
@@ -577,10 +577,10 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
 
         // Khởi tạo Palette động dựa trên màu nhấn của màn hình để vẽ icon chuẩn xác
         std::map<int, Gdiplus::Color> palette;
-        palette[1] = Gdiplus::Color(200, 10, 20, 30);    // Viền tối mờ
-        palette[2] = Gdiplus::Color(255, gr, gg, gb);    // Màu chủ đạo (Accent)
-        palette[3] = Gdiplus::Color(255, 255, 255, 255); // Màu trắng (Shine)
-        palette[4] = Gdiplus::Color(160, gr, gg, gb);    // Màu phụ (Sub-accent)
+        palette[1] = ToGdiColor(Theme::BannerAccentDark); // Viền tối mờ
+        palette[2] = Gdiplus::Color(255, gr, gg, gb);     // Màu chủ đạo (Accent)
+        palette[3] = ToGdiColor(Palette::White);          // Màu trắng (Shine)
+        palette[4] = Gdiplus::Color(160, gr, gg, gb);     // Màu phụ (Sub-accent)
 
         DrawPixelModel(g, model, bannerX + 25, iconY, iconSize, palette);
         DrawPixelModel(g, model, bannerX + bannerW - 25, iconY, iconSize, palette);
@@ -597,59 +597,86 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
 
 void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeight, bool shouldShowFlashes, bool shouldAnimate)
 {
-    // --- CACHE TẦNG TĨNH (Pitch & Lines) ---
-    static Gdiplus::Bitmap *pitchCache = nullptr;
-    static int cachedW = 0;
-    static int cachedH = 0;
-
-    if (!pitchCache || cachedW != screenWidth || cachedH != screenHeight)
+    // Prefer a pixel-art pitch background (if available); fall back to vector drawing
+    static PixelModel pitchModel;
+    if (!pitchModel.isLoaded)
     {
-        if (pitchCache)
-        {
-            delete pitchCache;
-            pitchCache = nullptr;
-        }
-        pitchCache = new Gdiplus::Bitmap(screenWidth, screenHeight, PixelFormat32bppARGB);
-        Gdiplus::Graphics gP(pitchCache);
-        gP.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
-
-        // 1. Nền Cỏ sọc ngang
-        int stripeHeight = UIScaler::SY(60);
-        for (int stripeY = 0; stripeY < screenHeight; stripeY += stripeHeight)
-        {
-            bool isDark = (stripeY / stripeHeight) % 2 == 0;
-            Gdiplus::SolidBrush stripeBrush(isDark ? ToGdiColor(Theme::PitchDark) : ToGdiColor(Theme::PitchLight));
-            gP.FillRectangle(&stripeBrush, 0, stripeY, screenWidth, stripeHeight);
-        }
-
-        // 1.5. Hệ thống Line Sân Bóng (Pitch Markings)
-        Gdiplus::Pen pitchPen(ToGdiColor(Theme::PitchLine), (Gdiplus::REAL)UIScaler::S(6));
-        int midX = screenWidth / 2;
-        int midY = screenHeight / 2;
-        gP.DrawLine(&pitchPen, midX, 0, midX, screenHeight);
-
-        int circleRadius = screenHeight / 3;
-        gP.DrawEllipse(&pitchPen, midX - circleRadius, midY - circleRadius, circleRadius * 2, circleRadius * 2);
-
-        Gdiplus::SolidBrush dotBrush(ToGdiColor(Theme::PitchDot));
-        int dotR = UIScaler::S(8);
-        gP.FillEllipse(&dotBrush, midX - dotR, midY - dotR, dotR * 2, dotR * 2);
-
-        int boxW = UIScaler::SX(150);
-        int boxH = screenHeight / 2;
-        gP.DrawRectangle(&pitchPen, -5, midY - boxH / 2, boxW, boxH);
-        gP.DrawRectangle(&pitchPen, screenWidth - boxW + 5, midY - boxH / 2, boxW, boxH);
-
-        int arcRadius = UIScaler::S(80);
-        gP.DrawArc(&pitchPen, (int)(boxW - arcRadius / 2), (int)(midY - arcRadius), (int)(arcRadius * 2), (int)(arcRadius * 2), -90.0f, 180.0f);
-        gP.DrawArc(&pitchPen, (int)(screenWidth - boxW - arcRadius * 1.5f), (int)(midY - arcRadius), (int)(arcRadius * 2), (int)(arcRadius * 2), 90.0f, 180.0f);
-
-        cachedW = screenWidth;
-        cachedH = screenHeight;
+        pitchModel = LoadPixelModel("Asset/models/bg/history_pitch.txt");
     }
 
-    // Vẽ nền tĩnh từ Cache
-    g.DrawImage(pitchCache, 0, 0);
+    if (pitchModel.isLoaded)
+    {
+        std::map<int, Gdiplus::Color> pitchPalette = {
+            {1, ToGdiColor(Theme::PitchDark)},
+            {2, ToGdiColor(Theme::PitchLight)},
+            {3, ToGdiColor(Palette::GreenDark)},
+            {4, ToGdiColor(Theme::TitleFill)}
+        };
+
+        // Choose pixel size so the model roughly spans the screen width
+        int targetPixelSize = screenWidth / max(1, pitchModel.width);
+        if (targetPixelSize < 1)
+            targetPixelSize = 1;
+        int totalSize = targetPixelSize * max(pitchModel.width, pitchModel.height);
+
+        DrawPixelModel(g, pitchModel, screenWidth / 2, screenHeight / 2, totalSize, pitchPalette);
+    }
+    else
+    {
+        // Fallback: original vector-based cached pitch (kept for compatibility)
+        static Gdiplus::Bitmap *pitchCache = nullptr;
+        static int cachedW = 0;
+        static int cachedH = 0;
+
+        if (!pitchCache || cachedW != screenWidth || cachedH != screenHeight)
+        {
+            if (pitchCache)
+            {
+                delete pitchCache;
+                pitchCache = nullptr;
+            }
+            pitchCache = new Gdiplus::Bitmap(screenWidth, screenHeight, PixelFormat32bppARGB);
+            Gdiplus::Graphics gP(pitchCache);
+            gP.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+
+            // 1. Nền Cỏ sọc ngang
+            int stripeHeight = UIScaler::SY(60);
+            for (int stripeY = 0; stripeY < screenHeight; stripeY += stripeHeight)
+            {
+                bool isDark = (stripeY / stripeHeight) % 2 == 0;
+                Gdiplus::SolidBrush stripeBrush(isDark ? ToGdiColor(Theme::PitchDark) : ToGdiColor(Theme::PitchLight));
+                gP.FillRectangle(&stripeBrush, 0, stripeY, screenWidth, stripeHeight);
+            }
+
+            // 1.5. Hệ thống Line Sân Bóng (Pitch Markings)
+            Gdiplus::Pen pitchPen(ToGdiColor(Theme::PitchLine), (Gdiplus::REAL)UIScaler::S(6));
+            int midX = screenWidth / 2;
+            int midY = screenHeight / 2;
+            gP.DrawLine(&pitchPen, midX, 0, midX, screenHeight);
+
+            int circleRadius = screenHeight / 3;
+            gP.DrawEllipse(&pitchPen, midX - circleRadius, midY - circleRadius, circleRadius * 2, circleRadius * 2);
+
+            Gdiplus::SolidBrush dotBrush(ToGdiColor(Theme::PitchDot));
+            int dotR = UIScaler::S(8);
+            gP.FillEllipse(&dotBrush, midX - dotR, midY - dotR, dotR * 2, dotR * 2);
+
+            int boxW = UIScaler::SX(150);
+            int boxH = screenHeight / 2;
+            gP.DrawRectangle(&pitchPen, -5, midY - boxH / 2, boxW, boxH);
+            gP.DrawRectangle(&pitchPen, screenWidth - boxW + 5, midY - boxH / 2, boxW, boxH);
+
+            int arcRadius = UIScaler::S(80);
+            gP.DrawArc(&pitchPen, (int)(boxW - arcRadius / 2), (int)(midY - arcRadius), (int)(arcRadius * 2), (int)(arcRadius * 2), -90.0f, 180.0f);
+            gP.DrawArc(&pitchPen, (int)(screenWidth - boxW - arcRadius * 1.5f), (int)(midY - arcRadius), (int)(arcRadius * 2), (int)(arcRadius * 2), 90.0f, 180.0f);
+
+            cachedW = screenWidth;
+            cachedH = screenHeight;
+        }
+
+        // Vẽ nền tĩnh từ Cache
+        g.DrawImage(pitchCache, 0, 0);
+    }
 
     if (shouldAnimate)
     {
@@ -669,10 +696,10 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
                     int alpha = (int)((rawPulse - 0.92f) * 12.5f * 255);
                     alpha = max(0, min(255, alpha));
 
-                    Gdiplus::SolidBrush flashBrush(Gdiplus::Color((BYTE)alpha, 255, 255, 255));
+                    Gdiplus::SolidBrush *flashBrushPtr = GetCachedBrush(ToGdiColor(WithAlpha(Palette::White, (BYTE)alpha)));
                     // Vẽ một hình chữ thập đơn giản thay vì 3 hình chữ nhật
-                    g.FillRectangle(&flashBrush, flashX - 1, flashY - 6, 2, 12);
-                    g.FillRectangle(&flashBrush, flashX - 6, flashY - 1, 12, 2);
+                    g.FillRectangle(flashBrushPtr, flashX - 1, flashY - 6, 2, 12);
+                    g.FillRectangle(flashBrushPtr, flashX - 6, flashY - 1, 12, 2);
                 }
             }
         }
@@ -695,8 +722,8 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
                 int windY = (int)(windLine.yFrac * screenHeight);
                 int windX = (int)fmod(windLine.speed * g_GlobalAnimTime + windIndex * (screenWidth / (float)WIND_COUNT), (float)(screenWidth + windLine.len)) - windLine.len;
 
-                Gdiplus::SolidBrush windBrush(Gdiplus::Color((BYTE)windLine.alpha, 255, 255, 255));
-                g.FillRectangle(&windBrush, windX, windY, windLine.len, UIScaler::SY(2));
+                Gdiplus::SolidBrush *windBrushPtr = GetCachedBrush(ToGdiColor(WithAlpha(Palette::White, (BYTE)windLine.alpha)));
+                g.FillRectangle(windBrushPtr, windX, windY, windLine.len, UIScaler::SY(2));
             }
         }
 
@@ -709,7 +736,7 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
             }
             if (cloudModel.isLoaded)
             {
-                static std::map<int, Gdiplus::Color> cloudPalette = {{1, Gdiplus::Color(170, 245, 248, 255)}};
+                static std::map<int, Gdiplus::Color> cloudPalette = {{1, ToGdiColor(Theme::CloudAccent)}};
                 const float clouds[][3] = {{22.0f, 0.04f, 0.18f}, {14.0f, 0.10f, 0.12f}, {30.0f, 0.02f, 0.10f}};
                 for (int cloudIndex = 0; cloudIndex < 3; ++cloudIndex)
                 {
@@ -734,19 +761,19 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
                 {
                     float speed = 0.0f;
                     float xFraction = 0.0f;
-                    Gdiplus::Color color = Gdiplus::Color(0, 0, 0, 0);
-                    Gdiplus::Color shadow = Gdiplus::Color(0, 0, 0, 0);
+                    Gdiplus::Color color = ToGdiColor(Palette::Transparent);
+                    Gdiplus::Color shadow = ToGdiColor(Palette::Transparent);
                 } balloonDefs[] = {
-                    {28.0f, 0.10f, Gdiplus::Color(210, 230, 50, 50), Gdiplus::Color(255, 255, 180, 180)},
-                    {20.0f, 0.35f, Gdiplus::Color(210, 50, 120, 220), Gdiplus::Color(255, 160, 200, 255)},
-                    {35.0f, 0.60f, Gdiplus::Color(210, 50, 200, 80), Gdiplus::Color(255, 160, 255, 180)},
-                    {24.0f, 0.82f, Gdiplus::Color(210, 220, 160, 30), Gdiplus::Color(255, 255, 230, 140)}};
+                    {28.0f, 0.10f, ToGdiColor(Theme::Balloon1_Color), ToGdiColor(Theme::Balloon1_Shadow)},
+                    {20.0f, 0.35f, ToGdiColor(Theme::Balloon2_Color), ToGdiColor(Theme::Balloon2_Shadow)},
+                    {35.0f, 0.60f, ToGdiColor(Theme::Balloon3_Color), ToGdiColor(Theme::Balloon3_Shadow)},
+                    {24.0f, 0.82f, ToGdiColor(Theme::Balloon4_Color), ToGdiColor(Theme::Balloon4_Shadow)}};
                 for (int balloonIndex = 0; balloonIndex < 4; ++balloonIndex)
                 {
                     int balloonCenterX = (int)(balloonDefs[balloonIndex].xFraction * screenWidth) + (int)(sin(g_GlobalAnimTime * 1.2f + balloonIndex * 1.1f) * UIScaler::SX(18));
                     int balloonCenterY = screenHeight - (int)fmod(balloonDefs[balloonIndex].speed * g_GlobalAnimTime + balloonIndex * (screenHeight / 4.0f), (float)(screenHeight + UIScaler::SY(120)));
 
-                    std::map<int, Gdiplus::Color> balloonPalette = {{1, Gdiplus::Color(200, 30, 30, 30)}, {2, balloonDefs[balloonIndex].color}, {3, balloonDefs[balloonIndex].shadow}};
+                    std::map<int, Gdiplus::Color> balloonPalette = {{1, ToGdiColor(WithAlpha(Theme::FootballDark, (BYTE)200))}, {2, balloonDefs[balloonIndex].color}, {3, balloonDefs[balloonIndex].shadow}};
                     // Balloons palette is unique per balloon but constant over time.
                     // Use a key based on balloon index
                     DrawPixelModel(g, balloonModel, balloonCenterX, balloonCenterY, UIScaler::S(48), balloonPalette, 8880 + balloonIndex);
