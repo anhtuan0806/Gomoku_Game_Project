@@ -6,6 +6,15 @@
 #include "../RenderAPI/Colours.h"
 #include <string>
 
+/** @file GuildScreen.cpp
+ *  @brief Màn Guild/Guide: hiển thị hướng dẫn, luật chơi và thông tin hệ thống theo tab.
+ */
+
+/** @brief Xử lý input cho màn Guild/Guide (chuyển tab, thoát về menu).
+ *  @param currentState Tham chiếu trạng thái màn hình (có thể chuyển về `SCREEN_MENU`).
+ *  @param currentPage Tham chiếu trang/tab hiện hành (0..2).
+ *  @param wParam Mã phím/flags nhận từ main loop.
+ */
 void UpdateGuildScreen(ScreenState &currentState, int &currentPage, WPARAM wParam)
 {
     bool isRepeat = (wParam & 0x20000) != 0;
@@ -21,7 +30,7 @@ void UpdateGuildScreen(ScreenState &currentState, int &currentPage, WPARAM wPara
         if (!canMove)
             return;
         if (!isRepeat)
-            PlaySFX("sfx_move");
+            playSfx("sfx_move");
         currentState = SCREEN_MENU;
         currentPage = 0;
         lastMoveTime = now;
@@ -34,7 +43,7 @@ void UpdateGuildScreen(ScreenState &currentState, int &currentPage, WPARAM wPara
         {
             currentPage++;
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
         }
         lastMoveTime = now;
     }
@@ -46,12 +55,18 @@ void UpdateGuildScreen(ScreenState &currentState, int &currentPage, WPARAM wPara
         {
             currentPage--;
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
         }
         lastMoveTime = now;
     }
 }
 
+/** @brief Vẽ nội dung màn Guild/Guide theo `currentPage`.
+ *  @param hdc Device context để vẽ.
+ *  @param screenWidth Chiều rộng vùng vẽ.
+ *  @param screenHeight Chiều cao vùng vẽ.
+ *  @param currentPage Trang/tab hiện hành (0..2).
+ */
 void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPage)
 {
     Gdiplus::Graphics g(hdc);

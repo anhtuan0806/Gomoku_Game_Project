@@ -2,8 +2,22 @@
 #include <iomanip>
 #include <sstream>
 
+/** @file TimeSystem.cpp
+ *  @brief Triển khai chức năng quản lý countdown lượt, format hiển thị thời gian.
+ */
+
+// --- Globals ---
+HANDLE g_FrameTimer = NULL;
+double g_LastRenderMs = 0.0;
+double g_LastUpdateMs = 0.0;
+double g_LastBlitMs = 0.0;
+double g_LastSleepMs = 0.0;
+
 static double sTimeAccumulator = 0.0;
 
+/** @brief Cập nhật bộ đếm thời gian của `state` theo `dt` (giây).
+ *  @return true nếu thời gian đã giảm ít nhất 1 giây hoặc đã hết.
+ */
 bool updateCountdown(PlayState *state, double dt)
 {
     if (state->timeRemaining <= 0)
@@ -28,6 +42,9 @@ bool updateCountdown(PlayState *state, double dt)
     return false;
 }
 
+/** @brief Đặt lại timer cho `state` về `maxTurnTime` của người chơi hiện tại.
+ *  - Bảo vệ khi giá trị không hợp lệ bằng cách dùng fallback (30s hoặc `countdownTime`).
+ */
 void resetTimer(PlayState *state)
 {
     // Áp dụng: Ép thời gian đếm ngược bằng chính thời gian của Người chơi hiện tại!
@@ -54,6 +71,7 @@ void resetTimer(PlayState *state)
     sTimeAccumulator = 0.0;
 }
 
+/** @brief Trả về chuỗi hiển thị thời gian dạng "MM:SS" từ `state->timeRemaining`. */
 std::string getTimeDisplay(PlayState *state)
 {
     int minutes = state->timeRemaining / 60;

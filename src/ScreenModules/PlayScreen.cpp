@@ -19,6 +19,14 @@
 
 extern bool updateCountdown(PlayState *state, double dt);
 
+/** @file PlayScreen.cpp
+ *  @brief Màn chơi chính: cập nhật logic trận đấu, xử lý input và hiển thị trạng thái trận.
+ *
+ *  Chức năng chính:
+ *  - `UpdatePlayLogic`: cập nhật trạng thái trận theo delta-time (AI, timer, animations).
+ *  - `ProcessPlayInput`: xử lý phím trong các trạng thái (playing, paused, summary, etc.).
+ */
+
 static std::future<std::pair<int, int>> g_AIFuture;
 static bool g_AIsCalculating = false;
 static float g_WinAnimTime = 0.0f;
@@ -28,6 +36,12 @@ static int g_SummarySelected = 0;
 static float g_SaveFeedbackTimer = 0.0f;
 static std::wstring g_SaveStatusMsg = L"";
 
+/** @brief Cập nhật logic chơi mỗi khung thời gian.
+ *  @param state Trạng thái trận đấu hiện tại (được cập nhật bởi hàm).
+ *  @param dt Khoảng thời gian (giây) kể từ lần cập nhật trước.
+ *  @return `true` nếu cần vẽ lại màn hình (có thay đổi hiển thị), ngược lại `false`.
+ *  @note Hàm xử lý: thời gian trận, thời gian nắm bóng, kích hoạt AI (async), xử lý timeout và animation thắng.
+ */
 bool UpdatePlayLogic(PlayState *state, double dt)
 {
     bool needsRedraw = false;
@@ -70,7 +84,7 @@ bool UpdatePlayLogic(PlayState *state, double dt)
                 // Nếu sau khi trừ giây mà thời gian bằng 0 -> Hết lượt, đổi người chơi
                 if (state->timeRemaining <= 0)
                 {
-                    PlaySFX("sfx_timeout");
+                    playSfx("sfx_timeout");
                     switchTurn(state);
                 }
             }
@@ -95,7 +109,7 @@ bool UpdatePlayLogic(PlayState *state, double dt)
             g_AIsCalculating = false;
             if (processMove(state, bestMove.first, bestMove.second))
             {
-                PlaySFX("sfx_place");
+                playSfx("sfx_place");
                 needsRedraw = true;
             }
         }
@@ -120,6 +134,14 @@ bool UpdatePlayLogic(PlayState *state, double dt)
     return needsRedraw;
 }
 
+/** @brief Xử lý sự kiện phím trong màn chơi.
+ *  @param wParam Mã phím/flags (WM_KEY/WM_CHAR encoded).
+ *  @param state Trạng thái trận đấu để đọc/ghi.
+ *  @param currentState Tham chiếu trạng thái màn hình (có thể chuyển màn hình từ hàm này).
+ *  @param config Cấu hình game (bật/tắt SFX/BGM, âm lượng...).
+ *  @return `true` nếu trạng thái đã thay đổi và cần cập nhật UI; `false` nếu không.
+ *  @note Hàm xử lý nhiều ngữ cảnh: nhập tên lưu, chọn slot lưu, menu pause, playing, finished, summary.
+ */
 bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState, GameConfig *config)
 {
     bool hasChanged = false;
@@ -144,7 +166,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
 
     if (state->status == MATCH_PAUSED)
     {
-        // TRƯỜNG HỢP 1: ĐANG NHẬP TÊN
+        // Trường hợp: đang nhập tên lưu (SUB_SAVE_NAME_ENTRY)
         if (g_CurrentSubMenu == SUB_SAVE_NAME_ENTRY)
         {
             bool isChar = (wParam & 0x10000);
@@ -188,13 +210,13 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
 
                 if (SaveMatchData(state, path))
                 {
-                    PlaySFX("sfx_success");
+                    playSfx("sfx_success");
                     g_SaveStatusMsg = GetText("msg_save_success");
                     g_SaveFeedbackTimer = 1.5f; // Hiện thông báo trong 1.5s
                 }
                 else
                 {
-                    PlaySFX("sfx_error");
+                    playSfx("sfx_error");
                     g_SaveStatusMsg = GetText("msg_save_error");
                     g_SaveFeedbackTimer = 1.5f;
                 }
@@ -203,7 +225,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             return true;
         }
 
-        // TRƯỜNG HỢP 2: CHỌN SLOT LƯU
+        // Trường hợp: chọn slot lưu (SUB_SAVE_SELECT)
         if (g_CurrentSubMenu == SUB_SAVE_SELECT)
         {
             if (wParam == VK_ESCAPE)
@@ -217,7 +239,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                     return false;
                 g_SaveSlotSelected = (g_SaveSlotSelected - 1 < 0) ? MAX_SAVE_SLOTS - 1 : g_SaveSlotSelected - 1;
                 if (!isRepeat)
-                    PlaySFX("sfx_move");
+                    playSfx("sfx_move");
                 lastMoveTime = now;
                 return true;
             }
@@ -227,13 +249,13 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                     return false;
                 g_SaveSlotSelected = (g_SaveSlotSelected + 1 >= MAX_SAVE_SLOTS) ? 0 : g_SaveSlotSelected + 1;
                 if (!isRepeat)
-                    PlaySFX("sfx_move");
+                    playSfx("sfx_move");
                 lastMoveTime = now;
                 return true;
             }
             if (wParam == VK_RETURN || wParam == VK_SPACE)
             {
-                PlaySFX("sfx_select");
+                playSfx("sfx_select");
                 g_CurrentSubMenu = SUB_SAVE_NAME_ENTRY;
                 g_SaveNameInput = L"";
                 return true;
@@ -241,7 +263,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
             return false;
         }
 
-        // TRƯỜNG HỢP 3: MENU PAUSE CHÍNH
+        // Trường hợp: menu pause chính
         if (wParam == VK_ESCAPE)
         {
             state->status = g_PrePauseStatus;
@@ -259,7 +281,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 g_PauseSelected = (g_PauseSelected - 1 < 0) ? TOTAL_PAUSE_ITEMS - 1 : g_PauseSelected - 1;
             }
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -274,7 +296,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 g_PauseSelected = (g_PauseSelected + 1 >= TOTAL_PAUSE_ITEMS) ? 0 : g_PauseSelected + 1;
             }
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -307,17 +329,17 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 SaveConfig(config, "Asset/config.ini");
                 currentState = SCREEN_MENU;
                 if (config->isBgmEnabled)
-                    PlayBGM("Asset/audio/c1.mp3");
+                    playBgm("Asset/audio/c1.mp3");
                 ResetPlayScreenStatics();
                 break;
             }
             if (g_PauseSelected != 3)
             {
                 if (!isRepeat)
-                    PlaySFX("sfx_move");
+                    playSfx("sfx_move");
             }
             else
-                PlaySFX("sfx_select");
+                playSfx("sfx_select");
             hasChanged = true;
         }
         return hasChanged;
@@ -332,7 +354,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
 
         if (wParam == VK_ESCAPE)
         {
-            PlaySFX("sfx_select");
+            playSfx("sfx_select");
             g_PrePauseStatus = state->status;
             state->status = MATCH_PAUSED;
             g_PauseSelected = 0;
@@ -343,14 +365,14 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
         {
             undoMove(state);
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             return true;
         }
         if (wParam == 'E' || wParam == 'e')
         {
             redoMove(state);
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             return true;
         }
 
@@ -360,7 +382,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 return false;
             state->cursorRow--;
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -370,7 +392,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 return false;
             state->cursorRow++;
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -380,7 +402,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 return false;
             state->cursorCol--;
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -390,7 +412,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 return false;
             state->cursorCol++;
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -398,12 +420,12 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
         {
             if (processMove(state, state->cursorRow, state->cursorCol))
             {
-                PlaySFX("sfx_place");
+                playSfx("sfx_place");
                 return true;
             }
             else
             {
-                PlaySFX("sfx_error");
+                playSfx("sfx_error");
             }
         }
     }
@@ -416,7 +438,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
 
         if (wParam == VK_ESCAPE)
         {
-            PlaySFX("sfx_select");
+            playSfx("sfx_select");
             g_PrePauseStatus = state->status;
             state->status = MATCH_PAUSED;
             g_PauseSelected = 0;
@@ -433,7 +455,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
     {
         if (wParam == VK_ESCAPE)
         {
-            PlaySFX("sfx_select");
+            playSfx("sfx_select");
             g_PrePauseStatus = state->status;
             state->status = MATCH_PAUSED;
             g_PauseSelected = 0;
@@ -446,7 +468,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 return false;
             g_SummarySelected = (g_SummarySelected - 1 < 0) ? 2 : g_SummarySelected - 1;
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
@@ -456,15 +478,15 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 return false;
             g_SummarySelected = (g_SummarySelected + 1 > 2) ? 0 : g_SummarySelected + 1;
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             lastMoveTime = now;
             hasChanged = true;
         }
         else if (wParam == VK_RETURN || wParam == VK_SPACE)
         {
-            StopSFX("sfx_crowd");
-            StopSFX("sfx_whistle");
-            StopSFX("sfx_siu");
+            stopSfx("sfx_crowd");
+            stopSfx("sfx_whistle");
+            stopSfx("sfx_siu");
 
             if (g_SummarySelected == 0)
             {
@@ -476,21 +498,21 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                     state->player2.totalWins = 0;
                 }
                 startNextRound(state);
-                PlaySFX("sfx_whistle");
+                playSfx("sfx_whistle");
             }
             else if (g_SummarySelected == 1)
             {
-                PlaySFX("sfx_select");
+                playSfx("sfx_select");
                 g_PrePauseStatus = state->status;
                 state->status = MATCH_PAUSED;
                 g_CurrentSubMenu = SUB_SAVE_SELECT;
             }
             else if (g_SummarySelected == 2)
             {
-                PlaySFX("sfx_select");
+                playSfx("sfx_select");
                 currentState = SCREEN_MENU;
                 if (config->isBgmEnabled)
-                    PlayBGM("Asset/audio/c1.mp3");
+                    playBgm("Asset/audio/c1.mp3");
             }
             hasChanged = true;
         }

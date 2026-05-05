@@ -7,20 +7,24 @@
 #include <algorithm>
 #include <random>
 
-using namespace std;
 
-// ============================================================
-//  Zobrist Hashing
-//  sZobristTable[row][col][piece]  piece: 0=P1, 1=P2
-// ============================================================
-static uint64_t sZobristTable[MAX_BOARD_SIZE][MAX_BOARD_SIZE][2];
+/** @file BotAI.cpp
+ *  @brief Triển khai AI Bot: Zobrist hashing, Transposition Table và Alpha-Beta search.
+ */
+
+/** Zobrist table nội bộ: [row][col][pieceIndex] (pieceIndex: 0 = P1, 1 = P2) */
+static std::uint64_t sZobristTable[MAX_BOARD_SIZE][MAX_BOARD_SIZE][2];
 static bool sIsZobristInitialized = false;
 
+/**
+ * @brief Khởi tạo bảng Zobrist (sử dụng rng cố định để kết quả có thể tái tạo).
+ * @note Hàm an toàn khi gọi nhiều lần (idempotent).
+ */
 static void initializeZobrist()
 {
     if (sIsZobristInitialized)
         return;
-    mt19937_64 rng(0xDEADBEEFCAFEBABEULL);
+    std::mt19937_64 rng(0xDEADBEEFCAFEBABEULL);
     for (int row = 0; row < MAX_BOARD_SIZE; row++)
         for (int col = 0; col < MAX_BOARD_SIZE; col++)
             for (int pieceIdx = 0; pieceIdx < 2; pieceIdx++)
@@ -28,28 +32,46 @@ static void initializeZobrist()
     sIsZobristInitialized = true;
 }
 
-static inline uint64_t zobristHashForCell(int row, int col, int piece)
+/**
+ * @brief Lấy giá trị Zobrist cho ô (row,col) và piece (CELL_PLAYER1/2).
+ */
+static inline std::uint64_t zobristHashForCell(int row, int col, int piece)
 {
     // piece: CELL_PLAYER1=1 → idx 0, CELL_PLAYER2=2 → idx 1
     return sZobristTable[row][col][piece - 1];
 }
 
-// ============================================================
-//  Transposition Table
-// ============================================================
+/** Transposition table nội bộ. */
 static TTEntry sTranspositionTable[sTranspositionTableSize];
 
+/**
+ * @brief Xóa toàn bộ Transposition Table (zero-fill).
+ * @note Gọi khi bắt đầu ván mới để tránh dùng entry cũ không phù hợp.
+ */
 void clearTranspositionTable()
 {
-    memset(sTranspositionTable, 0, sizeof(sTranspositionTable));
+    std::memset(sTranspositionTable, 0, sizeof(sTranspositionTable));
 }
 
-static inline TTEntry *lookupTranspositionEntry(uint64_t hash)
+/**
+ * @brief Tra cứu entry trong TT theo hash (chỉ trả địa chỉ bucket).
+ * @return Con trỏ tới bucket tương ứng.
+ */
+static inline TTEntry *lookupTranspositionEntry(std::uint64_t hash)
 {
     return &sTranspositionTable[hash & (sTranspositionTableSize - 1)];
 }
 
-static inline void storeTranspositionEntry(uint64_t hash, int score, int depth, TTFlag flag)
+/**
+ * @brief Lưu một entry vào Transposition Table theo bucket hash.
+ * @param hash Zobrist hash của trạng thái.
+ * @param score Giá trị đánh giá.
+ * @param depth Độ sâu của giá trị.
+ * @param flag Loại entry (exact/lower/upper).
+ *
+ * @note Chỉ ghi đè khi bucket rỗng hoặc depth mới >= depth cũ để giữ giá trị sâu hơn.
+ */
+static inline void storeTranspositionEntry(std::uint64_t hash, int score, int depth, TTFlag flag)
 {
     TTEntry *e = lookupTranspositionEntry(hash);
     // Chỉ ghi đè nếu depth mới sâu hơn hoặc cùng hash
@@ -57,20 +79,23 @@ static inline void storeTranspositionEntry(uint64_t hash, int score, int depth, 
     {
         e->hash = hash;
         e->score = score;
-        e->depth = static_cast<int8_t>(depth);
+        e->depth = static_cast<std::int8_t>(depth);
         e->flag = flag;
     }
 }
 
-// ============================================================
-//  Line analysis
-// ============================================================
+/**
+ * @brief Thông tin dọc (line) dùng để đánh giá chuỗi liên tiếp của quân cờ.
+ */
 struct LineInfo
 {
-    int count;
-    int openEnds; // Số đầu hở thực sự (không tính biên bàn cờ)
+    int count;    /**< Số quân liên tiếp tính cả ô hiện tại */
+    int openEnds; /**< Số đầu hở thực sự (0,1,2) */
 };
 
+/**
+ * @brief Candidate move với điểm số tạm tính dùng cho ordering.
+ */
 struct MoveCandidate
 {
     int row;
@@ -78,12 +103,19 @@ struct MoveCandidate
     int score;
 };
 
+/**
+ * @brief Kiểm tra tọa độ nằm trong bàn.
+ */
 static inline bool isInBounds(int row, int col, int size)
 {
     return row >= 0 && row < size && col >= 0 && col < size;
 }
 
-// openEnds chỉ tính khi ô kế tiếp nằm trong bàn VÀ trống
+/**
+ * @brief Phân tích một hướng (dirRow,dirCol) bắt đầu từ ô (row,col) cho `player`.
+ * @return LineInfo chứa số quân liên tiếp và số đầu hở.
+ * @note `openEnds` chỉ tính khi ô kế tiếp nằm trong bàn VÀ trống.
+ */
 static LineInfo analyzeDirection(
     const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE],
     int size, int row, int col, int dirRow, int dirCol, int player)
@@ -117,6 +149,12 @@ static LineInfo analyzeDirection(
     return res;
 }
 
+/**
+ * @brief Chuyển `LineInfo` thành một điểm số heuristic.
+ * @param line LineInfo phân tích được.
+ * @param winLen Số lượng liên tiếp cần thắng.
+ * @return Điểm số heuristic (số lớn nếu thắng ngay).
+ */
 static int evaluateLine(const LineInfo &line, int winLen)
 {
     if (line.count >= winLen)
@@ -139,6 +177,9 @@ static int evaluateLine(const LineInfo &line, int winLen)
     }
 }
 
+/**
+ * @brief Tính điểm tấn công/phòng thủ cho một nước đi (row,col) cho `player`.
+ */
 static int scoreMove(
     const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE],
     int size, int winLen, int row, int col, int player)
@@ -154,9 +195,9 @@ static int scoreMove(
     return total;
 }
 
-// ============================================================
-//  Candidate filter  (radius 2)
-// ============================================================
+/**
+ * @brief Kiểm tra xem ô (row,col) có phải là candidate (gần một quân nào đó trong radius 2).
+ */
 static bool isCandidate(
     const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE], int size, int row, int col)
 {
@@ -170,10 +211,10 @@ static bool isCandidate(
     return false;
 }
 
-// ============================================================
-//  Incremental board score
-//  Trả về: p2_score - p1_score  (dương = P2 lợi thế)
-// ============================================================
+/**
+ * @brief Tính điểm tổng cho bàn hiện tại (p2_score - p1_score).
+ * @return Giá trị dương nếu P2 có lợi thế.
+ */
 static int computeIncrementalScore(
     const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE], int size, int winLen)
 {
@@ -191,9 +232,10 @@ static int computeIncrementalScore(
     return score;
 }
 
-// ============================================================
-//  Quiescence check: thắng tức thì?
-// ============================================================
+/**
+ * @brief Kiểm tra nhanh xem có chuỗi thắng tức thì cho `player` hay không.
+ * @note Dùng làm quiescence/fast terminal check trong search.
+ */
 static bool hasImmediateWin(
     const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE],
     int size, int winLen, int player)
@@ -224,14 +266,65 @@ static bool hasImmediateWin(
     return false;
 }
 
-// ============================================================
-//  Alpha-Beta  với Transposition Table + Move Ordering
-// ============================================================
+/**
+ * @brief Kiểm tra thắng tức thì CHỈ quanh ô (lastRow, lastCol) vừa đặt.
+ *
+ * Giảm từ O(N²) xuống O(winLen×4) cho mỗi lần gọi.
+ * Điều kiện: ô (lastRow, lastCol) đã chứa quân `player`.
+ */
+static bool hasImmediateWinAroundMove(
+    const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE],
+    int size, int winLen, int lastRow, int lastCol, int player)
+{
+    static const int dirs[4][2] = {{0, 1}, {1, 0}, {1, 1}, {1, -1}};
+    for (int dirIdx = 0; dirIdx < 4; dirIdx++)
+    {
+        int consecutiveCount = 1;
+        // Tiến
+        for (int step = 1; step < winLen; step++)
+        {
+            int nextRow = lastRow + dirs[dirIdx][0] * step;
+            int nextCol = lastCol + dirs[dirIdx][1] * step;
+            if (isInBounds(nextRow, nextCol, size) && board[nextRow][nextCol] == player)
+                consecutiveCount++;
+            else
+                break;
+        }
+        // Lùi
+        for (int step = 1; step < winLen; step++)
+        {
+            int nextRow = lastRow - dirs[dirIdx][0] * step;
+            int nextCol = lastCol - dirs[dirIdx][1] * step;
+            if (isInBounds(nextRow, nextCol, size) && board[nextRow][nextCol] == player)
+                consecutiveCount++;
+            else
+                break;
+        }
+        if (consecutiveCount >= winLen)
+            return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Alpha-Beta search lõi, sử dụng Transposition Table và move ordering.
+ *
+ * @param board Bảng chơi (mutable per search frame).
+ * @param size Kích thước bàn.
+ * @param winLen Số quân cần liên tiếp để thắng.
+ * @param depth Độ sâu còn lại.
+ * @param alpha Alpha bound.
+ * @param beta Beta bound.
+ * @param isMaximizing True nếu node hiện tại là maximizing (P2).
+ * @param hash Zobrist hash hiện tại của `board`.
+ * @return Giá trị đánh giá (int).
+ */
 static int alphaBetaSearch(
     int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE],
     int size, int winLen, int depth,
     int alpha, int beta, bool isMaximizing,
-    uint64_t hash)
+    std::uint64_t hash,
+    int lastRow, int lastCol)
 {
     // --- Transposition table lookup ---
     TTEntry *transEntry = lookupTranspositionEntry(hash);
@@ -251,14 +344,19 @@ static int alphaBetaSearch(
     if (depth == 0)
         return computeIncrementalScore(board, size, winLen);
 
-    // --- Kiểm tra thắng tức thì (quiescence nhẹ) ---
-    if (hasImmediateWin(board, size, winLen, CELL_PLAYER2))
-        return 900000 + depth;
-    if (hasImmediateWin(board, size, winLen, CELL_PLAYER1))
-        return -900000 - depth;
+    // --- Kiểm tra thắng tức thì quanh nước đi cuối (O(winLen) thay vì O(N²)) ---
+    if (lastRow >= 0 && lastCol >= 0)
+    {
+        int lastPlayer = board[lastRow][lastCol];
+        if (lastPlayer != CELL_EMPTY &&
+            hasImmediateWinAroundMove(board, size, winLen, lastRow, lastCol, lastPlayer))
+        {
+            return (lastPlayer == CELL_PLAYER2) ? (900000 + depth) : (-900000 - depth);
+        }
+    }
 
     // --- Sinh và sắp xếp nước đi ---
-    vector<MoveCandidate> moves;
+    std::vector<MoveCandidate> moves;
     moves.reserve(64);
     int currentPlayer = isMaximizing ? CELL_PLAYER2 : CELL_PLAYER1;
     int opponentPlayer = isMaximizing ? CELL_PLAYER1 : CELL_PLAYER2;
@@ -278,7 +376,7 @@ static int alphaBetaSearch(
     if (moves.empty())
         return computeIncrementalScore(board, size, winLen);
 
-    sort(moves.begin(), moves.end(),
+    std::sort(moves.begin(), moves.end(),
          [](const MoveCandidate &a, const MoveCandidate &b)
          { return a.score > b.score; });
 
@@ -292,10 +390,10 @@ static int alphaBetaSearch(
 
     for (const auto &m : moves)
     {
-        uint64_t newHash = hash ^ zobristHashForCell(m.row, m.col, isMaximizing ? CELL_PLAYER2 : CELL_PLAYER1);
+        std::uint64_t newHash = hash ^ zobristHashForCell(m.row, m.col, isMaximizing ? CELL_PLAYER2 : CELL_PLAYER1);
         board[m.row][m.col] = isMaximizing ? CELL_PLAYER2 : CELL_PLAYER1;
 
-        int value = alphaBetaSearch(board, size, winLen, depth - 1, alpha, beta, !isMaximizing, newHash);
+        int value = alphaBetaSearch(board, size, winLen, depth - 1, alpha, beta, !isMaximizing, newHash, m.row, m.col);
 
         board[m.row][m.col] = CELL_EMPTY;
 
@@ -330,12 +428,12 @@ static int alphaBetaSearch(
     return best;
 }
 
-// ============================================================
-//  Xây Zobrist hash từ trạng thái bàn cờ hiện tại
-// ============================================================
-static uint64_t buildHash(const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE], int size)
+/**
+ * @brief Xây Zobrist hash từ trạng thái bàn cờ hiện tại.
+ */
+static std::uint64_t buildHash(const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE], int size)
 {
-    uint64_t h = 0;
+    std::uint64_t h = 0;
     for (int row = 0; row < size; row++)
         for (int col = 0; col < size; col++)
             if (board[row][col] != CELL_EMPTY)
@@ -343,15 +441,15 @@ static uint64_t buildHash(const int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE], int s
     return h;
 }
 
-// ============================================================
-//  Fallback moves
-// ============================================================
+/**
+ * @brief Chọn nước đi ngẫu nhiên hợp lệ (fallback).
+ */
 static void selectRandomMove(const PlayState *state, int &outRow, int &outCol)
 {
     int size = state->boardSize;
     for (int attempts = 0; attempts < size * size; attempts++)
     {
-        int randRow = rand() % size, randCol = rand() % size;
+        int randRow = std::rand() % size, randCol = std::rand() % size;
         if (state->board[randRow][randCol] == CELL_EMPTY)
         {
             outRow = randRow;
@@ -369,6 +467,9 @@ static void selectRandomMove(const PlayState *state, int &outRow, int &outCol)
             }
 }
 
+/**
+ * @brief Chọn nước đi đơn giản dựa trên heuristic tấn công/phòng thủ.
+ */
 static void selectSimpleMove(const PlayState *state, int &outRow, int &outCol)
 {
     int bestScore = -1;
@@ -396,9 +497,14 @@ static void selectSimpleMove(const PlayState *state, int &outRow, int &outCol)
         selectRandomMove(state, outRow, outCol);
 }
 
-// ============================================================
-//  Public entry point
-// ============================================================
+/**
+ * @brief Tính toán nước đi cho máy dựa trên `difficulty` và trạng thái hiện tại.
+ *
+ * @param state Trạng thái ván chơi hiện thời.
+ * @param difficulty 1..3 (1 Random, 2 heuristic, 3 alpha-beta).
+ * @param outRow Tham chiếu trả về hàng nước đi.
+ * @param outCol Tham chiếu trả về cột nước đi.
+ */
 void calculateComputerMove(const PlayState *state, int difficulty, int &outRow, int &outCol)
 {
     initializeZobrist();
@@ -425,10 +531,10 @@ void calculateComputerMove(const PlayState *state, int difficulty, int &outRow, 
         for (int col = 0; col < MAX_BOARD_SIZE; col++)
             virtualBoard[row][col] = state->board[row][col];
 
-    uint64_t rootHash = buildHash(virtualBoard, size);
+    std::uint64_t rootHash = buildHash(virtualBoard, size);
 
     // Sinh danh sách ứng cử viên ở root (không bị giới hạn MAX_BRANCHES)
-    vector<MoveCandidate> moves;
+    std::vector<MoveCandidate> moves;
     moves.reserve(64);
     for (int row = 0; row < size; row++)
     {
@@ -448,7 +554,7 @@ void calculateComputerMove(const PlayState *state, int difficulty, int &outRow, 
         return;
     }
 
-    sort(moves.begin(), moves.end(),
+    std::sort(moves.begin(), moves.end(),
          [](const MoveCandidate &a, const MoveCandidate &b)
          { return a.score > b.score; });
 
@@ -485,11 +591,11 @@ void calculateComputerMove(const PlayState *state, int difficulty, int &outRow, 
 
     for (const auto &m : moves)
     {
-        uint64_t newHash = rootHash ^ zobristHashForCell(m.row, m.col, CELL_PLAYER2);
+        std::uint64_t newHash = rootHash ^ zobristHashForCell(m.row, m.col, CELL_PLAYER2);
         virtualBoard[m.row][m.col] = CELL_PLAYER2;
 
         int score = alphaBetaSearch(virtualBoard, size, winLen,
-                                    depth - 1, INT_MIN, INT_MAX, false, newHash);
+                                    depth - 1, INT_MIN, INT_MAX, false, newHash, m.row, m.col);
 
         virtualBoard[m.row][m.col] = CELL_EMPTY;
 

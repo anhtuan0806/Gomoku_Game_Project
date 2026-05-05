@@ -3,9 +3,17 @@
 #include <windows.h>
 #include <gdiplus.h>
 
-// =============================================================
-// SmartColor: POD struct (Plain Old Data) - Không có phương thức bên trong
-// =============================================================
+/** @file Colours.h
+ *  @brief Định nghĩa `SmartColor`, bảng `Palette` và `Theme`, cùng các hàm tiện ích chuyển đổi màu.
+ *
+ *  Các màu được biểu diễn dưới dạng `SmartColor` (kênh Alpha + RGB). Module cung cấp
+ *  cả bảng màu nguyên thủy (`Palette`) và các màu mang ngữ nghĩa dùng trong UI (`Theme`).
+ */
+
+/**
+ * @brief Cấu trúc màu nhẹ (Alpha + RGB) dùng nội bộ.
+ * @note POD - không chứa phương thức; thuận tiện để truyền/so sánh.
+ */
 struct SmartColor
 {
     BYTE a;
@@ -14,13 +22,35 @@ struct SmartColor
     BYTE b;
 };
 
+/**
+ * @brief Chuyển một `SmartColor` sang `COLORREF` (Dùng cho GDI cổ điển).
+ * @param sc SmartColor nguồn.
+ * @return COLORREF tương ứng (không chứa kênh alpha).
+ */
 COLORREF ToCOLORREF(const SmartColor &sc);
+
+/**
+ * @brief Chuyển một `SmartColor` sang `Gdiplus::Color` (Dùng cho GDI+).
+ * @param sc SmartColor nguồn.
+ * @return `Gdiplus::Color` tương ứng (bao gồm alpha).
+ */
 Gdiplus::Color ToGdiColor(const SmartColor &sc);
+
+/**
+ * @brief Trả về một `SmartColor` mới với kênh alpha thay đổi.
+ * @param sc SmartColor nguồn.
+ * @param newAlpha Giá trị alpha mới (0-255).
+ * @return SmartColor mới với alpha đã cập nhật.
+ */
 SmartColor WithAlpha(const SmartColor &sc, BYTE newAlpha);
 
-// =============================================================
-// Palette: Bảng màu nguyên thủy
-// =============================================================
+/**
+ * @namespace Palette
+ * @brief Bảng màu cơ bản (primitive palette) — tập các `SmartColor` cố định.
+ *
+ * Các màu trong `Palette` là màu cơ sở, không biểu thị ngữ nghĩa. Chúng được sử
+ * dụng để tạo các palettes cụ thể hoặc làm nguồn cho `Theme`.
+ */
 namespace Palette
 {
     constexpr SmartColor Transparent = {0, 0, 0, 0};
@@ -196,6 +226,25 @@ namespace Theme
 
     // ----- Banner thắng (Victory Banner) -----
     constexpr SmartColor BannerBgBase = {220, 0, 0, 0};
+    // ----- Banner gradients and accents -----
+    constexpr SmartColor BannerGradientStart = {230, 10, 15, 25};
+    constexpr SmartColor BannerGradientEnd = {230, 30, 60, 90};
+    constexpr SmartColor BannerAccentDark = {200, 10, 20, 30};
+
+    // ----- Cloud / Balloon accents (UI) -----
+    constexpr SmartColor CloudAccent = {170, 245, 248, 255};
+    constexpr SmartColor Balloon1_Color = {210, 230, 50, 50};
+    constexpr SmartColor Balloon1_Shadow = {255, 255, 180, 180};
+    constexpr SmartColor Balloon2_Color = {210, 50, 120, 220};
+    constexpr SmartColor Balloon2_Shadow = {255, 160, 200, 255};
+    constexpr SmartColor Balloon3_Color = {210, 50, 200, 80};
+    constexpr SmartColor Balloon3_Shadow = {255, 160, 255, 180};
+    constexpr SmartColor Balloon4_Color = {210, 220, 160, 30};
+    constexpr SmartColor Balloon4_Shadow = {255, 255, 230, 140};
+
+    // ----- Stadium Effects -----
+    constexpr SmartColor WindStreak = {255, 255, 255, 255};  // Sọc gió (Alpha dùng động)
+    constexpr SmartColor BalloonOutline = {200, 30, 30, 30}; // Viền bóng bay
 
     // ----- Pitch board -----
     constexpr SmartColor BoardPitch = {255, 56, 142, 60};

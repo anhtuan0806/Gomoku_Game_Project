@@ -11,6 +11,10 @@
 #include <vector>
 #include <windows.h>
 
+/** @file LoadGameScreen.cpp
+ *  @brief Màn Load Game: chọn slot lưu, tải/đổi tên/xóa save và hiển thị metadata.
+ */
+
 // Các trạng thái của màn hình Load Game
 enum LoadScreenMode
 {
@@ -30,6 +34,14 @@ const int MAX_SLOTS = 5;
 const int MAX_ACTIONS = 4;
 const int BACK_BTN_INDEX = 5;
 
+/** @brief Xử lý phím trên màn Load Game.
+ *  @param wParam Mã phím/flags (WM_KEY/WM_CHAR encoded).
+ *  @param currentState Tham chiếu trạng thái màn hình (có thể chuyển về MENU hoặc PLAY).
+ *  @param playState PlayState để truyền khi tải save.
+ *  @param selectedOption Tham chiếu giá trị option hiện tại (giữ đồng bộ với UI).
+ *  @param statusMessage Tham chiếu để trả về thông điệp trạng thái cho caller.
+ *  @return `true` nếu có thay đổi trạng thái.
+ */
 bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *playState, int &selectedOption, std::wstring &statusMessage)
 {
     bool hasChanged = true;
@@ -62,14 +74,14 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
                 {
                     if (RenameSave(g_SelectedSlot + 1, g_EditNameBuffer))
                     {
-                        PlaySFX("sfx_success");
+                        playSfx("sfx_success");
                         g_LoadStatusMsg = GetText("msg_rename_success");
                         g_LoadFeedbackTimer = 1.0f;
                         g_CurrentMode = MODE_SELECT_ACTION;
                     }
                     else
                     {
-                        PlaySFX("sfx_error");
+                        playSfx("sfx_error");
                     }
                 }
             }
@@ -96,7 +108,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
                 return false;
             g_SelectedSlot = (g_SelectedSlot - 1 + (MAX_SLOTS + 1)) % (MAX_SLOTS + 1);
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             lastMoveTime = now;
         }
         else if (rawKey == 'S' || rawKey == VK_DOWN)
@@ -105,14 +117,14 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
                 return false;
             g_SelectedSlot = (g_SelectedSlot + 1) % (MAX_SLOTS + 1);
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             lastMoveTime = now;
         }
         else if (rawKey == VK_RETURN || rawKey == VK_SPACE)
         {
             if (g_SelectedSlot == BACK_BTN_INDEX)
             {
-                PlaySFX("sfx_select");
+                playSfx("sfx_select");
                 currentState = SCREEN_MENU;
                 g_CurrentMode = MODE_SELECT_SLOT;
                 g_SelectedSlot = 0;
@@ -122,13 +134,13 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
                 // Nếu slot có dữ liệu thì cho phép chọn hành động
                 if (CheckSaveExists(g_SelectedSlot + 1))
                 {
-                    PlaySFX("sfx_select");
+                    playSfx("sfx_select");
                     g_CurrentMode = MODE_SELECT_ACTION;
                     g_SelectedAction = 0;
                 }
                 else
                 {
-                    PlaySFX("sfx_error");
+                    playSfx("sfx_error");
                     g_LoadStatusMsg = GetText("msg_slot_empty");
                     g_LoadFeedbackTimer = 1.0f;
                 }
@@ -147,7 +159,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
                 return false;
             g_SelectedAction = (g_SelectedAction - 1 + MAX_ACTIONS) % MAX_ACTIONS;
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             lastMoveTime = now;
         }
         else if (rawKey == 'S' || rawKey == VK_DOWN)
@@ -156,7 +168,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
                 return false;
             g_SelectedAction = (g_SelectedAction + 1) % MAX_ACTIONS;
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
             lastMoveTime = now;
         }
         else if (rawKey == VK_RETURN || rawKey == VK_SPACE)
@@ -165,16 +177,25 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             { // Tải
                 if (LoadMatchData(playState, GetSavePath(g_SelectedSlot + 1)))
                 {
-                    StopBGM();
-                    PlaySFX("sfx_whistle");
-                    playState->status = MATCH_PLAYING;
+                    stopBgm();
+                    playSfx("sfx_whistle");
+                    // Nếu bản lưu tải về đã ở trạng thái kết thúc (hoặc có winner/winningCells),
+                    // hiển thị summary thay vì ép sang playing để tránh tiếp tục đặt nước
+                    if (playState->status == MATCH_FINISHED || playState->winner != 0 || !playState->winningCells.empty())
+                    {
+                        playState->status = MATCH_SUMMARY;
+                    }
+                    else
+                    {
+                        playState->status = MATCH_PLAYING;
+                    }
                     currentState = SCREEN_PLAY;
                     g_CurrentMode = MODE_SELECT_SLOT;
                 }
             }
             else if (g_SelectedAction == 1)
             { // Đổi tên
-                PlaySFX("sfx_select");
+                playSfx("sfx_select");
                 g_EditNameBuffer = GetSaveDisplayName(g_SelectedSlot + 1);
                 g_CurrentMode = MODE_EDIT_NAME;
             }
@@ -182,20 +203,20 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             { // Xóa
                 if (DeleteSave(g_SelectedSlot + 1))
                 {
-                    PlaySFX("sfx_success");
+                    playSfx("sfx_success");
                     g_LoadStatusMsg = GetText("msg_delete_success");
                     g_LoadFeedbackTimer = 1.0f;
                     g_CurrentMode = MODE_SELECT_SLOT;
                 }
                 else
                 {
-                    PlaySFX("sfx_error");
+                    playSfx("sfx_error");
                 }
             }
             else if (g_SelectedAction == 3)
             { // Quay lại
                 if (!isRepeat)
-                    PlaySFX("sfx_move");
+                    playSfx("sfx_move");
                 g_CurrentMode = MODE_SELECT_SLOT;
             }
         }
@@ -209,6 +230,12 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
     return hasChanged;
 }
 
+/** @brief Vẽ giao diện Load Game: danh sách slot, metadata và các hành động.
+ *  @param hdc Device context để vẽ.
+ *  @param selectedOption Mục đang chọn (để highlight).
+ *  @param statusMessage Thông điệp trạng thái (hiển thị khi có lỗi/thành công).
+ *  @param screenWidth, screenHeight Kích thước vùng vẽ.
+ */
 void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring &statusMessage, int screenWidth, int screenHeight)
 {
     Gdiplus::Graphics g(hdc);
@@ -417,6 +444,13 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring &statu
     }
 }
 
+/** @brief Cập nhật trạng thái màn Load Game (xử lý timer phản hồi và input wrapper).
+ *  @param currentState Tham chiếu trạng thái màn hình để có thể chuyển màn.
+ *  @param playState Trạng thái chơi để truyền khi tải save.
+ *  @param selectedOption Tham chiếu mục chọn hiện tại.
+ *  @param statusMessage Tham chiếu chuỗi trạng thái trả về từ ProcessLoadGameInput.
+ *  @param wParam Mã phím/flags nhận từ main loop.
+ */
 void UpdateLoadGameScreen(ScreenState &currentState, PlayState *playState, int &selectedOption, std::wstring &statusMessage, WPARAM wParam)
 {
     // Xử lý timer phản hồi

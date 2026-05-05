@@ -6,6 +6,14 @@
 #include "../SystemModules/AudioSystem.h"
 #include <string>
 
+/** @file AboutScreen.cpp
+ *  @brief Màn About: hiển thị thông tin nhóm, phiên bản và công nghệ sử dụng.
+ */
+
+/** @brief Xử lý input trên màn About (thoát về menu khi nhấn Esc).
+ *  @param currentState Tham chiếu trạng thái màn hình (có thể đổi về `SCREEN_MENU`).
+ *  @param wParam Mã phím/flags nhận từ main loop.
+ */
 void UpdateAboutScreen(ScreenState &currentState, WPARAM wParam)
 {
     bool isRepeat = (wParam & 0x20000) != 0;
@@ -21,12 +29,17 @@ void UpdateAboutScreen(ScreenState &currentState, WPARAM wParam)
         if (!canMove)
             return;
         if (!isRepeat)
-            PlaySFX("sfx_move");
+            playSfx("sfx_move");
         currentState = SCREEN_MENU;
         lastMoveTime = now;
     }
 }
 
+/** @brief Vẽ nội dung màn About: banner, thông tin nhóm và công nghệ.
+ *  @param hdc Device context để vẽ.
+ *  @param screenWidth Chiều rộng vùng vẽ.
+ *  @param screenHeight Chiều cao vùng vẽ.
+ */
 void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight)
 {
     Gdiplus::Graphics g(hdc);

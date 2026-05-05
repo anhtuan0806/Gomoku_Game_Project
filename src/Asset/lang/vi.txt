@@ -12,6 +12,8 @@ setting_bgm_vol=Âm lượng Nhạc
 setting_sfx=Tạp âm Thi đấu
 setting_sfx_vol=Âm lượng SFX
 setting_lang=Ngôn ngữ Bình luận
+setting_vfx=Hiệu ứng Hình ảnh
+setting_fps=Giới hạn FPS
 btn_on=BẬT
 btn_off=TẮT
 btn_back=QUAY LẠI CHỈ ĐẠO
@@ -90,8 +92,11 @@ val_challenger=Thách Đấu
 val_sec=Giây
 val_first_to= Chạm 
 val_goals= Bàn 
+val_locked=ĐÃ KHÓA
 
 setting_hint=A / D: Thay đổi  |  W / S: Chọn mục  |  ESC / Enter: Lưu & Thoát
+
+save_label_title=NHẬP TÊN BẢN LƯU
 
 msg_rename_success=Đã đổi tên thành công!
 msg_slot_empty=Slot này chưa có dữ liệu!

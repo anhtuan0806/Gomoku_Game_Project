@@ -144,6 +144,9 @@
     <ClInclude Include="SystemModules\SaveLoadSystem.h">
       <Filter>SystemModules</Filter>
     </ClInclude>
+    <ClInclude Include="SystemModules\EngineStats.h">
+      <Filter>SystemModules</Filter>
+    </ClInclude>
     <ClInclude Include="SystemModules\TimeSystem.h">
       <Filter>SystemModules</Filter>
     </ClInclude>
@@ -203,6 +206,9 @@
     <ClCompile Include="SystemModules\SaveLoadSystem.cpp">
       <Filter>SystemModules</Filter>
     </ClCompile>
+    <ClCompile Include="SystemModules\EngineStats.cpp">
+      <Filter>SystemModules</Filter>
+    </ClCompile>
     <ClCompile Include="SystemModules\TimeSystem.cpp">
       <Filter>SystemModules</Filter>
     </ClCompile>
@@ -212,6 +218,15 @@
     </ClCompile>
     <ClCompile Include="GameLogic\PlayerEngineer.cpp">
       <Filter>GameLogic</Filter>
+    </ClCompile>
+    <ClCompile Include="ApplicationTypes\GameState.cpp">
+      <Filter>ApplicationTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="ApplicationTypes\PlayState.cpp">
+      <Filter>ApplicationTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="ApplicationTypes\GameConfig.cpp">
+      <Filter>ApplicationTypes</Filter>
     </ClCompile>
     <ClCompile Include="RenderAPI\Colours.cpp">
       <Filter>RenderAPI</Filter>
@@ -278,6 +293,9 @@
       <Filter>Asset\models\bg</Filter>
     </Text>
     <Text Include="Asset\models\bg\history_pitch.txt">
+      <Filter>Asset\models\bg</Filter>
+    </Text>
+    <Text Include="Asset\models\bg\stadium_background.txt">
       <Filter>Asset\models\bg</Filter>
     </Text>
     <Text Include="Asset\models\bg\title_caro.txt">

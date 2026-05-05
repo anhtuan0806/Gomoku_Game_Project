@@ -1,5 +1,9 @@
 #include "GameRules.h"
 
+/** @file GameRules.cpp
+ *  @brief Cài đặt các luật chơi cơ bản: xác thực nước đi và kiểm tra điều kiện thắng/hòa.
+ */
+
 bool isValidMove(const PlayState *state, int row, int col)
 {
     if (row < 0 || row >= state->boardSize || col < 0 || col >= state->boardSize)
@@ -7,12 +11,12 @@ bool isValidMove(const PlayState *state, int row, int col)
     return state->board[row][col] == CELL_EMPTY;
 }
 
-// ============================================================
-//  checkWinCondition
-//      collect TẤT CẢ ô trong chuỗi thắng (không giới hạn winLength phần tử).
-//       Chuỗi có thể dài hơn winLength (vd đặt ô giữa nối 2 đoạn),
-//       tất cả ô đều được highlight.
-// ============================================================
+/**
+ * @brief Kiểm tra điều kiện thắng sau khi đặt quân tại (lastRow,lastCol).
+ *
+ * Hàm thu thập toàn bộ ô thuộc chuỗi thắng (có thể dài hơn `winLength`).
+ * @return `CELL_PLAYER1`/`CELL_PLAYER2` nếu có người thắng; `CELL_EMPTY` nếu hòa; -1 nếu ván chưa kết thúc.
+ */
 int checkWinCondition(const PlayState *state, int lastRow, int lastCol,
                       std::vector<std::pair<int, int>> *outWinCells)
 {

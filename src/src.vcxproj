@@ -160,6 +160,7 @@
     <ClInclude Include="ScreenModules\SettingScreen.h" />
     <ClInclude Include="SystemModules\AudioSystem.h" />
     <ClInclude Include="SystemModules\ConfigLoader.h" />
+    <ClInclude Include="SystemModules\EngineStats.h" />
     <ClInclude Include="SystemModules\Localization.h" />
     <ClInclude Include="SystemModules\SaveLoadSystem.h" />
     <ClInclude Include="SystemModules\TimeSystem.h" />
@@ -169,6 +170,9 @@
     <ClCompile Include="GameLogic\GameEngine.cpp" />
     <ClCompile Include="GameLogic\GameRules.cpp" />
     <ClCompile Include="GameLogic\PlayerEngineer.cpp" />
+    <ClCompile Include="ApplicationTypes\GameState.cpp" />
+    <ClCompile Include="ApplicationTypes\PlayState.cpp" />
+    <ClCompile Include="ApplicationTypes\GameConfig.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RenderAPI\Colours.cpp" />
     <ClCompile Include="RenderAPI\Renderer.cpp" />
@@ -185,6 +189,7 @@
     <ClCompile Include="SystemModules\ConfigLoader.cpp" />
     <ClCompile Include="SystemModules\Localization.cpp" />
     <ClCompile Include="SystemModules\SaveLoadSystem.cpp" />
+    <ClCompile Include="SystemModules\EngineStats.cpp" />
     <ClCompile Include="SystemModules\TimeSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -201,7 +206,7 @@
     <Text Include="Asset\models\bg\cloud.txt" />
     <Text Include="Asset\models\bg\football.txt" />
     <Text Include="Asset\models\bg\gears.txt" />
-    <Text Include="Asset\models\bg\history_pitch.txt" />
+    <Text Include="Asset\models\bg\stadium_background.txt" />
     <Text Include="Asset\models\bg\title_caro.txt" />
     <Text Include="Asset\models\bg\trophy.txt" />
     <Text Include="Asset\models\bg\whistle.txt" />

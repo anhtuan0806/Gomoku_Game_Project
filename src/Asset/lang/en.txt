@@ -12,6 +12,8 @@ setting_bgm_vol=Music Volume
 setting_sfx=Match SFX
 setting_sfx_vol=SFX Volume
 setting_lang=Commentary Language
+setting_vfx=Visual Effects
+setting_fps=FPS Limit
 btn_on=ON
 btn_off=OFF
 btn_back=RETURN TO TACTICS
@@ -72,6 +74,7 @@ val_challenger=Challenger Tier
 val_sec=Secs
 val_first_to= First to 
 val_goals= Goals 
+val_locked=LOCKED
 
 pause_title=PAUSE
 pause_resume=RETURN TO PITCH
@@ -92,6 +95,8 @@ summary_bowin=BO WINS:
 summary_win= [WINNER]
 
 setting_hint=A / D: Adjust  |  W / S: Select  |  ESC / Enter: Save & Exit
+
+save_label_title=ENTER SAVE NAME
 
 msg_rename_success=Rename successful!
 msg_slot_empty=This slot is empty!

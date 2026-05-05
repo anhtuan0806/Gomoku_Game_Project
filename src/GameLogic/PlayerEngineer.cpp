@@ -1,13 +1,18 @@
 #include "PlayerEngineer.h"
 
-// ============================================================
-//  initializePlayer
-//  Khởi tạo toàn bộ thông tin người chơi.
-//  movesCount và totalWins đều về 0 — GameEngine chịu trách nhiệm
-//  tăng/giảm trong suốt ván đấu.
-// ============================================================
-void initializePlayer(PlayerMatchInfo &player, const wstring &name,
-                      const string &avatar, char piece, float maxTime)
+// (g_PlayState is now defined in ApplicationTypes/PlayState.cpp)
+
+
+/** @file PlayerEngineer.cpp
+ *  @brief Thực thi các thao tác khởi tạo và reset cho `PlayerMatchInfo`.
+ */
+
+/**
+ * @brief Khởi tạo toàn bộ thông tin người chơi.
+ * @note `movesCount` và `totalWins` được đặt về 0; `GameEngine` quản lý tăng/giảm trong ván.
+ */
+void initializePlayer(PlayerMatchInfo &player, const std::wstring &name,
+                      const std::string &avatar, char piece, float maxTime)
 {
     player.name = name;
     player.avatarPath = avatar;
@@ -19,12 +24,11 @@ void initializePlayer(PlayerMatchInfo &player, const wstring &name,
     player.totalTimePossessed = 0.0f;
 }
 
-// ============================================================
-//  resetPlayerForRound
-//  Chỉ reset các chỉ số mang tính "thời điểm" cho round mới.
-// ============================================================
+/**
+ * @brief Reset các chỉ số `round-level` (ví dụ `movesCount`) cho round mới.
+ * @note `totalWins` và `matchWins` được giữ nguyên để theo dõi series BO.
+ */
 void resetPlayerForRound(PlayerMatchInfo &player)
 {
     player.movesCount = 0;
-    // Lưu ý: totalWins và matchWins được giữ nguyên để tính tiến trình series BO
 }

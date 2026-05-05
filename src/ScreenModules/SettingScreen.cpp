@@ -5,11 +5,24 @@
 #include "../RenderAPI/Colours.h"
 #include "../SystemModules/AudioSystem.h"
 #include "../SystemModules/ConfigLoader.h"
+#include "../SystemModules/EngineStats.h"
 #include "../ApplicationTypes/PlayState.h"
 #include <string>
 
-const int TOTAL_SETTING_ITEMS = 6;
+/** @file SettingScreen.cpp
+ *  @brief Màn cài đặt: xử lý thay đổi cấu hình (BGM/SFX, ngôn ngữ, VFX, FPS) và vẽ UI.
+ */
 
+const int TOTAL_SETTING_ITEMS = 8;
+
+/** @brief Áp dụng thay đổi cho mục cài đặt tương ứng.
+ *  @param currentState Tham chiếu trạng thái màn (có thể chuyển về MENU khi lưu/thoát).
+ *  @param config Cấu hình game để cập nhật.
+ *  @param selectedOption Mục cài đặt đang thao tác.
+ *  @param direction Hướng (1/-1) khi thay đổi giá trị bằng phím trái/phải.
+ *  @param isEnterPressed Flag nếu người dùng nhấn Enter.
+ *  @param isRepeat Flag nếu phím đang ở trạng thái autorepeat.
+ */
 void ProcessSettingInput(ScreenState &currentState, GameConfig *config, int selectedOption, int direction, bool isEnterPressed, bool isRepeat)
 {
     if (direction == 0 && !isEnterPressed)
@@ -24,11 +37,11 @@ void ProcessSettingInput(ScreenState &currentState, GameConfig *config, int sele
             config->isBgmEnabled = (direction == 1);
 
         if (!config->isBgmEnabled)
-            StopBGM();
+            stopBgm();
         else
-            PlayBGM("Asset/audio/c1.mp3");
+            playBgm("Asset/audio/c1.mp3");
         if (!isRepeat)
-            PlaySFX("sfx_move");
+            playSfx("sfx_move");
         break;
     case 1:
         if (direction != 0)
@@ -38,9 +51,9 @@ void ProcessSettingInput(ScreenState &currentState, GameConfig *config, int sele
                 config->bgmVolume = 100;
             if (config->bgmVolume < 0)
                 config->bgmVolume = 0;
-            UpdateBGMVolume();
+            updateBgmVolume();
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
         }
         break;
     case 2:
@@ -49,7 +62,7 @@ void ProcessSettingInput(ScreenState &currentState, GameConfig *config, int sele
         else
             config->isSfxEnabled = (direction == 1);
         if (!isRepeat)
-            PlaySFX("sfx_move");
+            playSfx("sfx_move");
         break;
     case 3:
         if (direction != 0)
@@ -60,7 +73,7 @@ void ProcessSettingInput(ScreenState &currentState, GameConfig *config, int sele
             if (config->sfxVolume < 0)
                 config->sfxVolume = 0;
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
         }
         break;
     case 4:
@@ -69,20 +82,44 @@ void ProcessSettingInput(ScreenState &currentState, GameConfig *config, int sele
             config->currentLang = (config->currentLang == APP_LANG_VI) ? APP_LANG_EN : APP_LANG_VI;
             LoadLanguageFile(config->currentLang);
             if (!isRepeat)
-                PlaySFX("sfx_move");
+                playSfx("sfx_move");
         }
         break;
     case 5:
+        if (isEnterPressed || direction != 0)
+        {
+            config->isVisualEffectsEnabled = !config->isVisualEffectsEnabled;
+            if (!isRepeat)
+                playSfx("sfx_move");
+        }
+        break;
+    case 6:
+        if (direction != 0 || isEnterPressed)
+        {
+            // Toggle giữa 30 và 60 FPS, áp dụng ngay lập tức
+            config->fpsLimit = (config->fpsLimit == 60) ? 30 : 60;
+            EngineStats::SetTargetFPS(static_cast<double>(config->fpsLimit));
+            if (!isRepeat)
+                playSfx("sfx_move");
+        }
+        break;
+    case 7:
         if (isEnterPressed)
         {
             SaveConfig(config, "Asset/config.ini");
-            PlaySFX("sfx_select");
+            playSfx("sfx_select");
             currentState = SCREEN_MENU;
         }
         break;
     }
 }
 
+/** @brief Xử lý input cho màn Settings (di chuyển lựa chọn, gọi ProcessSettingInput).
+ *  @param currentState Tham chiếu trạng thái màn hình.
+ *  @param config Cấu hình game.
+ *  @param selectedOption Tham chiếu mục đang chọn.
+ *  @param keyCode Mã phím/flags (WM_KEY/WM_CHAR encoded).
+ */
 void UpdateSettingScreen(ScreenState &currentState, GameConfig *config, int &selectedOption, WPARAM keyCode)
 {
     if (keyCode == 0)
@@ -110,7 +147,7 @@ void UpdateSettingScreen(ScreenState &currentState, GameConfig *config, int &sel
             selectedOption = (selectedOption - 1 < 0) ? TOTAL_SETTING_ITEMS - 1 : selectedOption - 1;
         } while ((selectedOption == 1 && !config->isBgmEnabled) || (selectedOption == 3 && !config->isSfxEnabled));
         if (!isRepeat)
-            PlaySFX("sfx_move");
+            playSfx("sfx_move");
         lastMoveTime = now;
         return;
     }
@@ -123,7 +160,7 @@ void UpdateSettingScreen(ScreenState &currentState, GameConfig *config, int &sel
             selectedOption = (selectedOption + 1 >= TOTAL_SETTING_ITEMS) ? 0 : selectedOption + 1;
         } while ((selectedOption == 1 && !config->isBgmEnabled) || (selectedOption == 3 && !config->isSfxEnabled));
         if (!isRepeat)
-            PlaySFX("sfx_move");
+            playSfx("sfx_move");
         lastMoveTime = now;
         return;
     }
@@ -148,6 +185,14 @@ void UpdateSettingScreen(ScreenState &currentState, GameConfig *config, int &sel
     ProcessSettingInput(currentState, config, selectedOption, direction, isEnterPressed, isRepeat);
 }
 
+/** @brief Vẽ ô chữ cho màn Setting (hàm tiện ích giống DrawColText ở các màn khác).
+ *  @param hdc Device context.
+ *  @param text Nội dung cần vẽ.
+ *  @param x, y, width Vùng ô.
+ *  @param color Màu chữ.
+ *  @param font Font sử dụng.
+ *  @param format Cờ DrawText.
+ */
 void DrawColTextSetting(HDC hdc, const std::wstring &text, int x, int y, int width, COLORREF color, HFONT font, UINT format)
 {
     SetTextColor(hdc, color);
@@ -158,6 +203,12 @@ void DrawColTextSetting(HDC hdc, const std::wstring &text, int x, int y, int wid
     SelectObject(hdc, oldFont);
 }
 
+/** @brief Vẽ giao diện màn Setting, hiển thị các mục có thể thay đổi.
+ *  @param hdc Device context.
+ *  @param config Cấu hình hiện tại để hiển thị giá trị.
+ *  @param selectedOption Mục đang chọn (để highlight).
+ *  @param screenWidth, screenHeight Kích thước vùng vẽ.
+ */
 void RenderSettingScreen(HDC hdc, const GameConfig *config, int selectedOption, int screenWidth, int screenHeight)
 {
     Gdiplus::Graphics g(hdc);
@@ -165,7 +216,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig *config, int selectedOption, 
     DrawProceduralStadium(g, screenWidth, screenHeight);
 
     int panelW = UIScaler::SX(720);
-    int panelH = UIScaler::SY(580);
+    int panelH = UIScaler::SY(680);
     int panelX = (screenWidth - panelW) / 2;
     int panelY = (screenHeight - panelH) / 2 - UIScaler::SY(10);
 
@@ -230,6 +281,14 @@ void RenderSettingScreen(HDC hdc, const GameConfig *config, int selectedOption, 
             value = (config->currentLang == APP_LANG_VI) ? L"< " + GetText("lang_vi") + L" >" : L"< " + GetText("lang_en") + L" >";
             break;
         case 5:
+            label = GetText("setting_vfx") + L":";
+            value = config->isVisualEffectsEnabled ? L" [ " + GetText("btn_on") + L" ]" : L" [ " + GetText("btn_off") + L" ]";
+            break;
+        case 6:
+            label = GetText("setting_fps") + L":";
+            value = L"< " + std::to_wstring(config->fpsLimit) + L" FPS >";
+            break;
+        case 7:
             label = L"";
             value = L"";
             break;
@@ -237,7 +296,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig *config, int selectedOption, 
 
         int yPos = startY + i * spacing;
 
-        if (i == 5)
+        if (i == 7)
         {
             COLORREF btnColor = ToCOLORREF(Palette::BlueDarkest);
             if (i == selectedOption)
@@ -257,9 +316,9 @@ void RenderSettingScreen(HDC hdc, const GameConfig *config, int selectedOption, 
         else
         {
             DrawColTextSetting(hdc, label, col1X, yPos, col1W, labelColor, GlobalFont::Bold, DT_RIGHT);
-            if (i == 0 || i == 2)
+            if (i == 0 || i == 2 || i == 5)
             {
-                bool enabled = (i == 0) ? config->isBgmEnabled : config->isSfxEnabled;
+                bool enabled = (i == 0) ? config->isBgmEnabled : (i == 2 ? config->isSfxEnabled : config->isVisualEffectsEnabled);
                 COLORREF tColor = enabled ? RGB(0, 180, 50) : RGB(220, 50, 50);
                 DrawColTextSetting(hdc, value, col2X, yPos, col2W, tColor, (i == selectedOption ? GlobalFont::Bold : GlobalFont::Default), DT_LEFT);
             }
@@ -282,7 +341,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig *config, int selectedOption, 
                 g.FillRectangle(&thumbBrush, thumbX, barY - UIScaler::SY(2), UIScaler::SX(10), barH + UIScaler::SY(4));
                 DrawColTextSetting(hdc, std::to_wstring(vol) + L"%", barX + barW + UIScaler::SX(15), yPos, col2W - barW - UIScaler::SX(15), valColor, fontItem, DT_LEFT);
             }
-            else if (i == 4)
+            else if (i == 4 || i == 6)
             {
                 DrawColTextSetting(hdc, value, col2X, yPos, col2W, valColor, fontItem, DT_LEFT);
             }

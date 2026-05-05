@@ -6,13 +6,17 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
-
-// Magic number de kiem tra file hop le (tranh load file rac)
+// Magic number để kiểm tra file hợp lệ (tránh load file rác)
 static const uint32_t SAVE_MAGIC = 0xCA05A1E2;
 static const uint32_t SAVE_VERSION = 5;
 
-// ---------- Helpers: Write/Read cac kieu dong ----------
+/**
+ * @name Helpers: read/write strings, vectors
+ * @brief Hàm nội bộ để serialize/deserialize các kiểu chuỗi, vector và POD.
+ * @{ */
 
+/** @brief Ghi std::wstring vào file (đầu tiên ghi chiều dài, sau đó ghi dữ liệu).
+ */
 static void WriteWStr(std::ofstream &f, const std::wstring &s)
 {
     uint32_t len = (uint32_t)s.size();
@@ -23,6 +27,8 @@ static void WriteWStr(std::ofstream &f, const std::wstring &s)
     }
 }
 
+/** @brief Đọc std::wstring từ file; trả về false nếu lỗi hoặc kích thước vượt ngưỡng.
+ */
 static bool ReadWStr(std::ifstream &f, std::wstring &s)
 {
     uint32_t len = 0;
@@ -32,7 +38,7 @@ static bool ReadWStr(std::ifstream &f, std::wstring &s)
     }
     if (len > 4096)
     {
-        return false; // Gioi han bao ve chong file loi
+        return false; // Giới hạn bảo vệ chống file lỗi
     }
     s.resize(len);
     if (len > 0 && !f.read(reinterpret_cast<char *>(&s[0]), len * sizeof(wchar_t)))
@@ -42,6 +48,7 @@ static bool ReadWStr(std::ifstream &f, std::wstring &s)
     return true;
 }
 
+/** @brief Ghi std::string (đầu tiên ghi chiều dài) */
 static void WriteStr(std::ofstream &f, const std::string &s)
 {
     uint32_t len = (uint32_t)s.size();
@@ -52,6 +59,7 @@ static void WriteStr(std::ofstream &f, const std::string &s)
     }
 }
 
+/** @brief Đọc std::string từ file; trả về false nếu lỗi. */
 static bool ReadStr(std::ifstream &f, std::string &s)
 {
     uint32_t len = 0;
@@ -71,6 +79,7 @@ static bool ReadStr(std::ifstream &f, std::string &s)
     return true;
 }
 
+/** @brief Ghi vector POD ra file (ghi length + raw data) */
 template <typename T>
 static void WriteVec(std::ofstream &f, const std::vector<T> &v)
 {
@@ -82,6 +91,7 @@ static void WriteVec(std::ofstream &f, const std::vector<T> &v)
     }
 }
 
+/** @brief Đọc vector POD từ file; trả về false nếu lỗi hoặc kích thước quá lớn. */
 template <typename T>
 static bool ReadVec(std::ifstream &f, std::vector<T> &v)
 {
@@ -92,7 +102,7 @@ static bool ReadVec(std::ifstream &f, std::vector<T> &v)
     }
     if (len > 100000)
     {
-        return false; // Gioi han bao ve
+        return false; // Giới hạn bảo vệ
     }
     v.resize(len);
     if (len > 0 && !f.read(reinterpret_cast<char *>(v.data()), len * sizeof(T)))
@@ -102,8 +112,11 @@ static bool ReadVec(std::ifstream &f, std::vector<T> &v)
     return true;
 }
 
+/** @} */
+
 // ---------- Serialize PlayerMatchInfo ----------
 
+/** @brief Ghi thông tin `PlayerMatchInfo` vào file (phiên bản hỗ trợ nhiều trường theo version). */
 static void WritePlayer(std::ofstream &f, const PlayerMatchInfo &p)
 {
     WriteWStr(f, p.name);
@@ -116,6 +129,9 @@ static void WritePlayer(std::ofstream &f, const PlayerMatchInfo &p)
     f.write(reinterpret_cast<const char *>(&p.totalTimePossessed), sizeof(p.totalTimePossessed));
 }
 
+/** @brief Đọc `PlayerMatchInfo` từ file theo `version` lưu trữ.
+ *  @return false nếu lỗi đọc.
+ */
 static bool ReadPlayer(std::ifstream &f, PlayerMatchInfo &p, uint32_t version)
 {
     if (!ReadWStr(f, p.name))
@@ -165,6 +181,10 @@ static bool ReadPlayer(std::ifstream &f, PlayerMatchInfo &p, uint32_t version)
 
 // ---------- Public API ----------
 
+/**
+ * @brief Lưu toàn bộ trạng thái `PlayState` vào file `filename`.
+ * @return true nếu lưu thành công.
+ */
 bool SaveMatchData(const PlayState *state, const std::wstring &filename)
 {
     CreateDirectoryW(L"Asset", NULL);
@@ -233,6 +253,10 @@ bool SaveMatchData(const PlayState *state, const std::wstring &filename)
     return true;
 }
 
+/**
+ * @brief Tải trạng thái ván chơi từ file `filename` vào `state`.
+ * @return true nếu load thành công.
+ */
 bool LoadMatchData(PlayState *state, const std::wstring &filename)
 {
     std::filesystem::path loadPath(filename);
@@ -325,17 +349,20 @@ bool LoadMatchData(PlayState *state, const std::wstring &filename)
     return true;
 }
 
+/** @brief Trả về đường dẫn lưu file cho `slot`. */
 std::wstring GetSavePath(int slot)
 {
     return L"Asset/save/slot_" + std::to_wstring(slot) + L".bin";
 }
 
+/** @brief Kiểm tra xem file save tại `slot` có tồn tại hay không. */
 bool CheckSaveExists(int slot)
 {
     DWORD dwAttrib = GetFileAttributesW(GetSavePath(slot).c_str());
     return (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }
 
+/** @brief Xóa file save tại `slot`. */
 bool DeleteSave(int slot)
 {
     if (!CheckSaveExists(slot))
@@ -344,6 +371,7 @@ bool DeleteSave(int slot)
     return std::filesystem::remove(p);
 }
 
+/** @brief Đổi tên save trong `slot` (giữ nguyên timestamp). */
 bool RenameSave(int slot, const std::wstring &newName)
 {
     if (!CheckSaveExists(slot))
@@ -360,6 +388,9 @@ bool RenameSave(int slot, const std::wstring &newName)
     return SaveMatchData(&temp, GetSavePath(slot));
 }
 
+/** @brief Lấy tên hiển thị (display name) cho save tại `slot`.
+ *  @return Chuỗi rỗng nếu không tồn tại.
+ */
 std::wstring GetSaveDisplayName(int slot)
 {
     if (!CheckSaveExists(slot))
@@ -391,6 +422,9 @@ std::wstring GetSaveDisplayName(int slot)
     return L"File lỗi";
 }
 
+/** @brief Lấy metadata tóm tắt của save tại `slot` (dùng cho UI danh sách save).
+ *  @return SaveMetadata với `.exists` = false nếu file không tồn tại hoặc không hợp lệ.
+ */
 SaveMetadata GetSaveMetadata(int slot)
 {
     SaveMetadata meta;
@@ -442,10 +476,6 @@ SaveMetadata GetSaveMetadata(int slot)
     file.read(reinterpret_cast<char *>(&meta.type), sizeof(meta.type));
 
     // Skip POD fields to get wins
-    // p1Turn(1) + countdownTime(4) + timeRemaining(4) + boardSize(4) + board(max*max*4) + cursorRow(4) + cursorCol(4) + lastMoveRow(4) + lastMoveCol(4) + status(4) + winner(4) + difficulty(4) + targetScore(4) + matchDuration(4) + p1TotalTimeLeft(4) + p2TotalTimeLeft(4) + isMatchTimed(1)
-    // Board size depends on constant MAX_BOARD_SIZE (likely 20x20 = 400 * 4 = 1600 bytes)
-    // Better strategy: Read them properly or seek
-    // For safety, let's just read them
     int unusedInt;
     bool unusedBool;
     int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE];

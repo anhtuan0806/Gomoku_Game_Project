@@ -9,6 +9,15 @@
 #include <cmath>
 #include <vector>
 
+/** @file MatchConfigScreen.cpp
+ *  @brief Màn cấu hình trận đấu: xử lý input, kiểm tra tên, và vẽ giao diện cấu hình.
+ *
+ *  Hàm chính:
+ *  - `ValidateNames`: kiểm tra và chuẩn hoá tên người chơi, đặt `validationMsg` nếu có lỗi.
+ *  - `UpdateMatchConfigScreen`: xử lý phím người dùng (di chuyển menu, edit tên, xác nhận).
+ *  - `RenderMatchConfigScreen`: vẽ hai trang cấu hình (tuỳ chọn trận và thẻ người chơi).
+ */
+
 static int currentPage = 0; // 0 = Lên Khuôn Trận Đấu, 1 = Lên Sơ Đồ Cầu Thủ
 
 const int PAGE_0_ITEMS = 6;
@@ -28,6 +37,11 @@ static bool isEditingName1 = false;
 static bool isEditingName2 = false;
 static std::wstring validationMsg = L"";
 
+/** @brief Kiểm tra và chuẩn hoá tên người chơi.
+ *  @param playState Trạng thái cấu hình trận đấu (dùng để xác định PvE/PvP).
+ *  @return `true` nếu tên hợp lệ; nếu trả về `false` thì `validationMsg` được đặt thông báo.
+ *  @note Hàm có thể tự động điền tên mặc định nếu trường tên để trống và giới hạn độ dài tối đa.
+ */
 bool ValidateNames(PlayState *playState)
 {
     bool isPvE = (playState->matchType == MATCH_PVE);
@@ -79,7 +93,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
     if (!isChar)
         validationMsg = L""; // Xóa lỗi khi người dùng thao tác phím điều hướng
 
-    // --- TRƯỜNG HỢP: ĐANG TRONG CHẾ ĐỘ NHẬP LIỆU TRỰC TIẾP ---
+    // Trường hợp: đang ở chế độ chỉnh sửa tên (edit mode)
     if (isEditingName1 || isEditingName2)
     {
         std::wstring &target = isEditingName1 ? editName1 : editName2;
@@ -113,7 +127,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
         }
     }
 
-    // --- TRƯỜNG HỢP: DI CHUYỂN MENU VÀ CÀI ĐẶT ---
+    // Trường hợp: thao tác điều hướng menu và chọn tuỳ chọn
     if (isChar)
         return; // Không xử lý WM_CHAR khi không edit
 
@@ -141,7 +155,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             (currentPage == 1 && playState->matchType == MATCH_PVE && (selectedOption == 2 || selectedOption == 3)) // Bỏ qua Avatar/Tên P2 nếu PvE
         );
         if (!isRepeat)
-            PlaySFX("sfx_move");
+            playSfx("sfx_move");
         lastMoveTime = now;
     }
     else if (rawKey == 'S' || rawKey == 's' || rawKey == VK_DOWN)
@@ -156,7 +170,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
                                   (selectedOption == 3 && playState->matchType == MATCH_PVE))) ||
             (currentPage == 1 && playState->matchType == MATCH_PVE && (selectedOption == 2 || selectedOption == 3)));
         if (!isRepeat)
-            PlaySFX("sfx_move");
+            playSfx("sfx_move");
         lastMoveTime = now;
     }
 
@@ -175,7 +189,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             {
                 playState->gameMode = (playState->gameMode == MODE_CARO) ? MODE_TIC_TAC_TOE : MODE_CARO;
                 if (!isRepeat)
-                    PlaySFX("sfx_move");
+                    playSfx("sfx_move");
             }
             break;
         case 1: // PvP / PvE
@@ -183,7 +197,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             {
                 playState->matchType = (playState->matchType == MATCH_PVP) ? MATCH_PVE : MATCH_PVP;
                 if (!isRepeat)
-                    PlaySFX("sfx_move");
+                    playSfx("sfx_move");
             }
             break;
         case 2: // Độ khó
@@ -195,7 +209,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
                 if (playState->difficulty > 3)
                     playState->difficulty = 1;
                 if (!isRepeat)
-                    PlaySFX("sfx_move");
+                    playSfx("sfx_move");
             }
             break;
         case 3: // Thời gian
@@ -207,7 +221,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
                 if (playState->countdownTime > 60)
                     playState->countdownTime = 60;
                 if (!isRepeat)
-                    PlaySFX("sfx_move");
+                    playSfx("sfx_move");
             }
             break;
         case 4: // Bo
@@ -219,7 +233,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
                 if (playState->targetScore > 5)
                     playState->targetScore = 1;
                 if (!isRepeat)
-                    PlaySFX("sfx_move");
+                    playSfx("sfx_move");
             }
             break;
         case 5: // Tiếp Theo
@@ -227,7 +241,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             {
                 currentPage = 1;
                 selectedOption = 0;
-                PlaySFX("sfx_select");
+                playSfx("sfx_select");
             }
             break;
         }
@@ -242,7 +256,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             {
                 sPlayer1AvatarIndex = (sPlayer1AvatarIndex + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
                 if (!isRepeat)
-                    PlaySFX("sfx_move");
+                    playSfx("sfx_move");
             }
             break;
         case 1: // Sửa Tên P1 (Enter)
@@ -250,7 +264,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             {
                 isEditingName1 = true;
                 editName1 = L""; // Xóa để nhập mới cho lẹ
-                PlaySFX("sfx_select");
+                playSfx("sfx_select");
             }
             break;
         case 2: // Đổi Avatar P2 (A/D)
@@ -258,7 +272,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             {
                 sPlayer2AvatarIndex = (sPlayer2AvatarIndex + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
                 if (!isRepeat)
-                    PlaySFX("sfx_move");
+                    playSfx("sfx_move");
             }
             break;
         case 3: // Sửa Tên P2 (Enter)
@@ -266,7 +280,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             {
                 isEditingName2 = true;
                 editName2 = L"";
-                PlaySFX("sfx_select");
+                playSfx("sfx_select");
             }
             break;
         case 4: // Quay lại
@@ -275,7 +289,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
                 currentPage = 0;
                 selectedOption = 5;
                 if (!isRepeat)
-                    PlaySFX("sfx_move");
+                    playSfx("sfx_move");
             }
             break;
         case 5: // Bắt Đầu
@@ -283,7 +297,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             {
                 if (!ValidateNames(playState))
                 {
-                    PlaySFX("sfx_error");
+                    playSfx("sfx_error");
                     return;
                 }
 
@@ -304,8 +318,8 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
                 int bSize = (playState->gameMode == MODE_CARO) ? 15 : 3;
                 initializeNewMatch(playState, playState->gameMode, playState->matchType, bSize, playState->countdownTime, playState->difficulty, playState->targetScore, 15);
 
-                StopBGM(); // Tắt nhạc menu
-                PlaySFX("sfx_whistle");
+                stopBgm(); // Tắt nhạc menu
+                playSfx("sfx_whistle");
 
                 currentPage = 0;
                 selectedOption = 0;
@@ -316,7 +330,16 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
     }
 }
 
-// Hàm hỗ trợ vẽ text theo ô (Cột)
+/** @brief Vẽ một ô văn bản (căn theo cột) với font và alignment xác định.
+ *  @param hdc Device context để vẽ.
+ *  @param text Nội dung cần vẽ.
+ *  @param x Tọa độ trái của ô.
+ *  @param y Tọa độ trên của ô.
+ *  @param width Chiều rộng ô.
+ *  @param color Màu chữ (COLORREF).
+ *  @param font Font sử dụng (HFONT).
+ *  @param format Cờ định dạng DrawText (ví dụ DT_LEFT/DT_RIGHT/DT_CENTER).
+ */
 void DrawColText(HDC hdc, const std::wstring &text, int x, int y, int width, COLORREF color, HFONT font, UINT format)
 {
     SetTextColor(hdc, color);
@@ -328,6 +351,14 @@ void DrawColText(HDC hdc, const std::wstring &text, int x, int y, int width, COL
     SelectObject(hdc, oldFont);
 }
 
+/** @brief Vẽ toàn bộ màn hình cấu hình trận đấu.
+ *  @param hdc Device context để vẽ.
+ *  @param selectedOption Mục đang được chọn (dùng để highlight và xử lý input).
+ *  @param config Trạng thái cấu hình (PlayState) để hiển thị giá trị hiện tại.
+ *  @param screenWidth Chiều rộng vùng vẽ.
+ *  @param screenHeight Chiều cao vùng vẽ.
+ *  @note Hàm vẽ hai trang: trang 0 là các tuỳ chọn trận đấu; trang 1 là thẻ người chơi (avatar/tên).
+ */
 void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *config, int screenWidth, int screenHeight)
 {
     Gdiplus::Graphics g(hdc);

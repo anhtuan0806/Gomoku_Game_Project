@@ -7,13 +7,34 @@
 #include <cmath>
 #include <map>
 
+/** @file MenuScreen.cpp
+ *  @brief Màn menu chính: xử lý điều hướng menu và vẽ giao diện menu.
+ *
+ *  Chức năng chính:
+ *  - `ProcessMenuInput`: xử lý phím người dùng (di chuyển, chọn mục).
+ *  - `RenderMenuScreen`: vẽ danh sách mục menu và hiệu ứng tiêu đề.
+ */
+
 const int TOTAL_MENU_ITEMS = 6;
 
-void UpdateMenuScreen(ScreenState& currentState, int& selectedOption, WPARAM wParam) {
-    if (wParam == 0) return;
+/** @brief Wrapper xử lý sự kiện cho menu (gọi `ProcessMenuInput`).
+ *  @param currentState Tham chiếu trạng thái màn hình (có thể đổi màn hình từ hàm này).
+ *  @param selectedOption Tham chiếu mục đang chọn.
+ *  @param wParam Mã phím/flags từ WM_KEY/WM_CHAR.
+ */
+void UpdateMenuScreen(ScreenState &currentState, int &selectedOption, WPARAM wParam)
+{
+    if (wParam == 0)
+        return;
     ProcessMenuInput(wParam, currentState, selectedOption);
 }
 
+/** @brief Xử lý phím người dùng trên màn menu.
+ *  @param wParam Mã phím/flags (WM_KEY/WM_CHAR encoded).
+ *  @param currentState Tham chiếu trạng thái màn hình (có thể chuyển màn hình nếu chọn mục).
+ *  @param selectedOption Tham chiếu mục được chọn (cập nhật khi di chuyển).
+ *  @return `true` nếu trạng thái menu thay đổi và cần cập nhật UI.
+ */
 bool ProcessMenuInput(WPARAM wParam, ScreenState &currentState, int &selectedOption)
 {
     bool hasChanged = false;
@@ -36,7 +57,8 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState &currentState, int &selectedOpt
         {
             selectedOption = TOTAL_MENU_ITEMS - 1;
         }
-        if (!isRepeat) PlaySFX("sfx_move");
+        if (!isRepeat)
+            playSfx("sfx_move");
         lastMoveTime = now;
         hasChanged = true;
     }
@@ -49,27 +71,45 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState &currentState, int &selectedOpt
         {
             selectedOption = 0;
         }
-        if (!isRepeat) PlaySFX("sfx_move");
+        if (!isRepeat)
+            playSfx("sfx_move");
         lastMoveTime = now;
         hasChanged = true;
     }
     else if (wParam == VK_RETURN || wParam == VK_SPACE)
     {
-        PlaySFX("sfx_select");
+        playSfx("sfx_select");
         switch (selectedOption)
         {
-        case 0: currentState = SCREEN_PLAY; break;
-        case 1: currentState = SCREEN_LOAD_GAME; break;
-        case 2: currentState = SCREEN_SETTING; break;
-        case 3: currentState = SCREEN_GUIDE; break;
-        case 4: currentState = SCREEN_ABOUT; break;
-        case 5: currentState = SCREEN_EXIT; break;
+        case 0:
+            currentState = SCREEN_PLAY;
+            break;
+        case 1:
+            currentState = SCREEN_LOAD_GAME;
+            break;
+        case 2:
+            currentState = SCREEN_SETTING;
+            break;
+        case 3:
+            currentState = SCREEN_GUIDE;
+            break;
+        case 4:
+            currentState = SCREEN_ABOUT;
+            break;
+        case 5:
+            currentState = SCREEN_EXIT;
+            break;
         }
         hasChanged = true;
     }
     return hasChanged;
 }
 
+/** @brief Vẽ màn hình menu chính.
+ *  @param hdc Device context để vẽ.
+ *  @param selectedOption Mục đang được chọn (để highlight và hiệu ứng).
+ *  @param screenWidth, screenHeight Kích thước vùng vẽ.
+ */
 void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHeight)
 {
     Gdiplus::Graphics g(hdc);
@@ -102,8 +142,7 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
 
     std::wstring menuItems[TOTAL_MENU_ITEMS] = {
         GetText("menu_play"), GetText("menu_load"), GetText("menu_settings"),
-        GetText("menu_guild"), GetText("menu_about"), GetText("menu_exit")
-    };
+        GetText("menu_guild"), GetText("menu_about"), GetText("menu_exit")};
 
     for (int i = 0; i < TOTAL_MENU_ITEMS; i++)
     {

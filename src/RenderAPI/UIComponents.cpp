@@ -1,6 +1,7 @@
 #include "UIComponents.h"
 #include "UIScaler.h"
 #include "Colours.h"
+#include "../ApplicationTypes/GameConfig.h"
 #include <map>
 #include <cmath>
 #include <fstream>
@@ -20,6 +21,9 @@ static std::unordered_map<size_t, Gdiplus::Bitmap *> g_ModelCache;
 static std::unordered_map<std::string, PixelModel> g_RawModelCache;
 static std::unordered_map<ULONG, Gdiplus::SolidBrush *> g_BrushCache;
 
+/** Cache font quân cờ theo cellSize, tránh CreateFont/DeleteObject mỗi frame */
+static std::unordered_map<int, HFONT> g_PieceFontCache;
+
 // Helper: Kết hợp Hash để tạo Key nhanh
 template <class T>
 inline void hash_combine(size_t &seed, const T &v)
@@ -28,6 +32,14 @@ inline void hash_combine(size_t &seed, const T &v)
     seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
+/**
+ * @brief Lấy hoặc tạo brush đã được cache theo màu GDI+.
+ *
+ * @param color Màu GDI+ cần brush.
+ * @return Gdiplus::SolidBrush* Con trỏ brush đã được lưu trong cache module.
+ * @note Caller không được delete con trỏ trả về. Cache chịu trách nhiệm giải phóng
+ *       khi `ClearUICaches()` được gọi.
+ */
 Gdiplus::SolidBrush *GetCachedBrush(const Gdiplus::Color &color)
 {
     ULONG key = color.GetValue();
@@ -41,9 +53,16 @@ Gdiplus::SolidBrush *GetCachedBrush(const Gdiplus::Color &color)
     return brush;
 }
 
-// -------------------------------------------------------------
-// HỆ THỐNG LOAD PIXEL MODEL TỪ FILE TXT
-// -------------------------------------------------------------
+/**
+ * @brief Đọc một PixelModel từ file văn bản và lưu vào cache nội bộ.
+ *
+ * File định dạng: dòng đầu `width height`, các dòng sau chứa các mã số
+ * biểu diễn màu cho từng cột của mỗi hàng.
+ *
+ * @param filePath Đường dẫn tới file model.
+ * @return PixelModel Trả về struct theo giá trị; `isLoaded` = true nếu đọc thành công.
+ * @note Hàm lưu một bản sao vào `g_RawModelCache` để tái sử dụng lần sau.
+ */
 PixelModel LoadPixelModel(const std::string &filePath)
 {
     // Kiểm tra cache trước khi đọc file từ đĩa
@@ -83,6 +102,22 @@ PixelModel LoadPixelModel(const std::string &filePath)
     return model;
 }
 
+/**
+ * @brief Vẽ một PixelModel đã được mô tả bởi ma trận số lên `g`.
+ *
+ * Hàm sẽ tính toán kích thước pixel phù hợp với `totalSize`, tạo bitmap đệm
+ * và sử dụng cache `g_ModelCache` để tránh vẽ lại bitmap cho cùng một key.
+ *
+ * @param g Đối tượng Gdiplus::Graphics để vẽ.
+ * @param model PixelModel nguồn (không bị hàm sở hữu).
+ * @param centerX Tọa độ X tâm vẽ.
+ * @param centerY Tọa độ Y tâm vẽ.
+ * @param totalSize Kích thước tổng mong muốn (px).
+ * @param palette Bản đồ mã màu -> Gdiplus::Color.
+ * @param manualPaletteHash Nếu !=0 dùng để tạo key cache thay vì hash palette.
+ * @note Bitmap được cấp phát bằng `new Gdiplus::Bitmap(...)` và được lưu trong
+ *       `g_ModelCache`; caller không được tự delete các bitmap này.
+ */
 void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int centerX, int centerY, int totalSize, const std::map<int, Gdiplus::Color> &palette, size_t manualPaletteHash)
 {
     if (!model.isLoaded || model.width == 0 || model.height == 0 || totalSize <= 0)
@@ -155,11 +190,13 @@ void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int centerX, 
         g.DrawImage(cachedBitmap, centerX - (int)cachedBitmap->GetWidth() / 2, centerY - (int)cachedBitmap->GetHeight() / 2);
     }
 }
-// -------------------------------------------------------------
 
-// --- DỮ LIỆU MA TRẬN AVATAR PIXEL ART 8x8 ---
-const int AVATAR_SIZE = 8;
-
+/**
+ * @brief Tra cứu SmartColor theo `type` và `code` cho avatar pixel.
+ *
+ * Hàm là helper nội bộ dùng để ánh xạ các mã màu (int) sang SmartColor
+ * theo từng loại avatar. Trả về màu mặc định nếu không khớp.
+ */
 static SmartColor LookupAvatarColor(int type, int code)
 {
     // 1. Các mã màu "Toàn cầu" thực sự (Không đổi theo nhân vật)
@@ -285,12 +322,28 @@ static SmartColor LookupAvatarColor(int type, int code)
     return Theme::CR7_SkinM;
 }
 
-// Cầu nối công khai trả về kiểu GDI+ cho Renderer
+/**
+ * @brief Chuyển SmartColor do `LookupAvatarColor` trả về sang Gdiplus::Color.
+ *
+ * Hàm này là cầu nối giữa bảng màu nội bộ và API GDI+.
+ */
 Gdiplus::Color GetPaletteColor(int type, int code)
 {
     return ToGdiColor(LookupAvatarColor(type, code));
 }
 
+/**
+ * @brief Vẽ avatar pixel tại vị trí cho trước, sử dụng cache để tối ưu.
+ *
+ * Hàm sẽ cố gắng load model từ `Asset/models/avt_0X/avt.txt` và tạo bitmap đệm
+ * chứa bóng (shadow) và sprite. Bitmap được lưu trong `g_AvatarCache`.
+ *
+ * @param g Đối tượng GDI+ Graphics.
+ * @param centerX Tọa độ X tâm vẽ.
+ * @param centerY Tọa độ Y tâm vẽ.
+ * @param size Kích thước mong muốn (px).
+ * @param avatarType Loại avatar (id). Nếu không hợp lệ sẽ dùng 0.
+ */
 void DrawPixelAvatar(Gdiplus::Graphics &g, int centerX, int centerY, int size, int avatarType)
 {
     if (avatarType < 0 || avatarType > 2)
@@ -374,6 +427,14 @@ void DrawPixelAvatar(Gdiplus::Graphics &g, int centerX, int centerY, int size, i
     }
 }
 
+/**
+ * @brief Vẽ icon trái bóng pixel với cache theo `size`.
+ *
+ * @param g Đối tượng GDI+ Graphics.
+ * @param centerX Tọa độ X tâm vẽ.
+ * @param centerY Tọa độ Y tâm vẽ.
+ * @param size Kích thước mong muốn (px).
+ */
 void DrawPixelFootball(Gdiplus::Graphics &g, int centerX, int centerY, int size)
 {
     if (size <= 0)
@@ -419,6 +480,9 @@ void DrawPixelFootball(Gdiplus::Graphics &g, int centerX, int centerY, int size)
     }
 }
 
+/**
+ * @brief Vẽ icon cúp (trophy) dạng pixel và cache theo `size`.
+ */
 void DrawPixelTrophy(Gdiplus::Graphics &g, int centerX, int centerY, int size)
 {
     if (size <= 0)
@@ -464,6 +528,9 @@ void DrawPixelTrophy(Gdiplus::Graphics &g, int centerX, int centerY, int size)
     }
 }
 
+/**
+ * @brief Vẽ icon đồng hồ pixel với màu chính `color` và cache theo key(size,color).
+ */
 void DrawPixelClock(Gdiplus::Graphics &g, int centerX, int centerY, int size, Gdiplus::Color color)
 {
     if (size <= 0)
@@ -520,16 +587,22 @@ void DrawPixelClock(Gdiplus::Graphics &g, int centerX, int centerY, int size, Gd
     }
 }
 
-// =============================================================
-// DrawPixelBanner: Tiêu đề procedural thay chữ thuần
-// Nền gradient tối + viền sáng pulse + 2 icon bóng 2 bên + chữ GDI
-// =============================================================
+/**
+ * @brief Vẽ banner tiêu đề procedural (overload không iconModelPath).
+ *
+ * Gọi overload với `iconModelPath==""`.
+ */
 void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
                      int centerX, int centerY, int panelWidth, COLORREF textColor, COLORREF glowColor)
 {
     DrawPixelBanner(g, hdc, text, centerX, centerY, panelWidth, textColor, glowColor, "");
 }
 
+/**
+ * @brief Vẽ banner tiêu đề procedural với icon tùy chỉnh (nếu `iconModelPath` không rỗng).
+ *
+ * @param iconModelPath Đường dẫn file mô hình pixel cho icon (ví dụ: "Asset/models/bg/football.txt").
+ */
 void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
                      int centerX, int centerY, int panelWidth, COLORREF textColor, COLORREF glowColor, const std::string &iconModelPath)
 {
@@ -595,119 +668,115 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
     SelectObject(hdc, oldF);
 }
 
-void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeight, bool shouldShowFlashes, bool shouldAnimate)
+/**
+ * @brief Vẽ nền sân vận động bằng file pixel model thay cho nền procedural.
+ */
+static void DrawPixelStadiumBackground(Gdiplus::Graphics &g, int screenWidth, int screenHeight)
 {
-    // Prefer a pixel-art pitch background (if available); fall back to vector drawing
-    static PixelModel pitchModel;
-    if (!pitchModel.isLoaded)
+    static PixelModel stadiumModel;
+    if (!stadiumModel.isLoaded)
     {
-        pitchModel = LoadPixelModel("Asset/models/bg/history_pitch.txt");
+        stadiumModel = LoadPixelModel("Asset/models/bg/stadium_background.txt");
+    }
+    if (!stadiumModel.isLoaded || stadiumModel.width <= 0 || stadiumModel.height <= 0)
+    {
+        Gdiplus::SolidBrush fallbackBrush(ToGdiColor(Theme::PitchDark));
+        g.FillRectangle(&fallbackBrush, 0, 0, screenWidth, screenHeight);
+        return;
     }
 
-    if (pitchModel.isLoaded)
+    static Gdiplus::Bitmap *stadiumCache = nullptr;
+    static int cachedW = 0;
+    static int cachedH = 0;
+
+    if (!stadiumCache || cachedW != screenWidth || cachedH != screenHeight)
     {
-        std::map<int, Gdiplus::Color> pitchPalette = {
+        if (stadiumCache)
+        {
+            delete stadiumCache;
+            stadiumCache = nullptr;
+        }
+
+        stadiumCache = new Gdiplus::Bitmap(screenWidth, screenHeight, PixelFormat32bppARGB);
+        Gdiplus::Graphics bg(stadiumCache);
+        bg.SetSmoothingMode(Gdiplus::SmoothingModeNone);
+        bg.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
+
+        const int scaleX = (screenWidth + stadiumModel.width - 1) / stadiumModel.width;
+        const int scaleY = (screenHeight + stadiumModel.height - 1) / stadiumModel.height;
+        const int pixelSize = max(1, max(scaleX, scaleY));
+        const int drawW = stadiumModel.width * pixelSize;
+        const int drawH = stadiumModel.height * pixelSize;
+        const int offsetX = (screenWidth - drawW) / 2;
+        const int offsetY = (screenHeight - drawH) / 2;
+
+        static const std::map<int, Gdiplus::Color> stadiumPalette = {
             {1, ToGdiColor(Theme::PitchDark)},
             {2, ToGdiColor(Theme::PitchLight)},
             {3, ToGdiColor(Theme::PitchLine)},
-            {4, ToGdiColor(Palette::GrayDark)},
-            {5, ToGdiColor(Palette::BlueLight)},
-            {6, ToGdiColor(Palette::White)}};
+            {4, ToGdiColor(Theme::PitchDot)}};
 
-        // If the screen is FullHD, render a 192x108 pixel grid scaled to exact FullHD
-        if (screenWidth == 1920 && screenHeight == 1080)
+        for (int row = 0; row < stadiumModel.height; ++row)
         {
-            const int GRID_W = 192;
-            const int GRID_H = 108;
-            int blockW = screenWidth / GRID_W;
-            int blockH = screenHeight / GRID_H;
-            int totalW = blockW * GRID_W;
-            int totalH = blockH * GRID_H;
-            int offsetX = (screenWidth - totalW) / 2;
-            int offsetY = (screenHeight - totalH) / 2;
-
-            const int SKY_ROWS = 12;     // small sky band at top
-            const int STANDS_ROWS = 6;   // small stands under the sky
-            const int PITCH_START = SKY_ROWS + STANDS_ROWS;
-            const int PITCH_ROWS = GRID_H - PITCH_START;
-            const int STRIPE_H = 6; // stripe height in grid rows
-
-            const int LEFT_NET_X0 = 8;
-            const int LEFT_NET_X1 = 19; // inclusive
-            const int RIGHT_NET_X1 = GRID_W - 1 - LEFT_NET_X0;
-            const int RIGHT_NET_X0 = GRID_W - 1 - LEFT_NET_X1;
-            const int NET_H = 26;
-            const int NET_TOP = PITCH_START + (PITCH_ROWS / 2) - (NET_H / 2);
-            const int NET_BOTTOM = NET_TOP + NET_H - 1;
-
-            int centerCol = GRID_W / 2;
-            int centerColLeft = centerCol - 1;
-            int centerColRight = centerCol;
-
-            for (int row = 0; row < GRID_H; ++row)
+            for (int col = 0; col < stadiumModel.width; ++col)
             {
-                for (int col = 0; col < GRID_W; ++col)
-                {
-                    int idx = 0;
-                    if (row < SKY_ROWS)
-                    {
-                        idx = 5; // sky
-                    }
-                    else if (row < SKY_ROWS + STANDS_ROWS)
-                    {
-                        idx = 4; // stands
-                    }
-                    else
-                    {
-                        // pitch area
-                        if (row == PITCH_START || row == GRID_H - 1)
-                        {
-                            idx = 3; // top/bottom pitch border
-                        }
-                        else if (col == centerColLeft || col == centerColRight)
-                        {
-                            idx = 3; // center line
-                        }
-                        else if ((col >= LEFT_NET_X0 && col <= LEFT_NET_X1 || col >= RIGHT_NET_X0 && col <= RIGHT_NET_X1) && (row >= NET_TOP && row <= NET_BOTTOM))
-                        {
-                            idx = 6; // net
-                        }
-                        else
-                        {
-                            int pr = row - PITCH_START;
-                            int stripe = (pr / STRIPE_H) % 2;
-                            idx = (stripe == 0) ? 1 : 2;
-                        }
-                    }
+                const int code = stadiumModel.data[row][col];
+                auto colorIt = stadiumPalette.find(code);
+                if (colorIt == stadiumPalette.end())
+                    continue;
 
-                    auto it = pitchPalette.find(idx);
-                    if (it == pitchPalette.end())
-                        continue;
-                    Gdiplus::SolidBrush *brushPtr = GetCachedBrush(it->second);
-                    int dx = offsetX + col * blockW;
-                    int dy = offsetY + row * blockH;
-                    g.FillRectangle(brushPtr, dx, dy, blockW, blockH);
-                }
+                Gdiplus::SolidBrush *brush = GetCachedBrush(colorIt->second);
+                bg.FillRectangle(brush, offsetX + col * pixelSize, offsetY + row * pixelSize, pixelSize, pixelSize);
             }
         }
-        else
-        {
-            // Choose pixel size so the model roughly spans the screen width
-            int targetPixelSize = screenWidth / max(1, pitchModel.width);
-            if (targetPixelSize < 1)
-                targetPixelSize = 1;
-            int totalSize = targetPixelSize * max(pitchModel.width, pitchModel.height);
 
-            DrawPixelModel(g, pitchModel, screenWidth / 2, screenHeight / 2, totalSize, pitchPalette);
-        }
+        cachedW = screenWidth;
+        cachedH = screenHeight;
     }
-    else
-    {
-        // Fallback: original vector-based cached pitch (kept for compatibility)
-        static Gdiplus::Bitmap *pitchCache = nullptr;
-        static int cachedW = 0;
-        static int cachedH = 0;
 
+    if (stadiumCache)
+    {
+        g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
+        g.DrawImage(stadiumCache, 0, 0);
+    }
+}
+
+/**
+ * @brief Vẽ nền sân vận động procedural, sử dụng cache tĩnh cho phần tĩnh.
+ *
+ * @param g Đối tượng GDI+ Graphics.
+ * @param screenWidth Chiều rộng vùng vẽ.
+ * @param screenHeight Chiều cao vùng vẽ.
+ * @param showFlashes Bật hiệu ứng flash (dùng ở menu).
+ * @param animate Nếu false chỉ vẽ phần tĩnh (tiết kiệm CPU).
+ */
+void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeight, bool showFlashes, bool animate)
+{
+    // Nếu tồn tại pixel stadium model, vẽ nó làm nền tĩnh nhưng vẫn cho phép
+    // vẽ các layer animation (clouds, wind, balloons) phía trên.
+    static PixelModel stadiumPixel;
+    bool usePixelBackground = false;
+    if (!stadiumPixel.isLoaded)
+    {
+        stadiumPixel = LoadPixelModel("Asset/models/bg/stadium_background.txt");
+    }
+    if (stadiumPixel.isLoaded)
+    {
+        DrawPixelStadiumBackground(g, screenWidth, screenHeight);
+        usePixelBackground = true;
+    }
+
+    // Tắt hiệu ứng hình ảnh: bỏ qua animation nền (clouds, wind, balloon, flashes)
+    if (!g_Config.isVisualEffectsEnabled)
+        animate = false;
+
+    // --- CACHE TẦNG TĨNH (Pitch & Lines) ---
+    static Gdiplus::Bitmap *pitchCache = nullptr;
+    static int cachedW = 0;
+    static int cachedH = 0;
+
+    if (!usePixelBackground)
+    {
         if (!pitchCache || cachedW != screenWidth || cachedH != screenHeight)
         {
             if (pitchCache)
@@ -721,11 +790,11 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
 
             // 1. Nền Cỏ sọc ngang
             int stripeHeight = UIScaler::SY(60);
-            for (int stripeY = 0; stripeY < screenHeight; stripeY += stripeHeight)
+            for (int y = 0; y < screenHeight; y += stripeHeight)
             {
-                bool isDark = (stripeY / stripeHeight) % 2 == 0;
+                bool isDark = (y / stripeHeight) % 2 == 0;
                 Gdiplus::SolidBrush stripeBrush(isDark ? ToGdiColor(Theme::PitchDark) : ToGdiColor(Theme::PitchLight));
-                gP.FillRectangle(&stripeBrush, 0, stripeY, screenWidth, stripeHeight);
+                gP.FillRectangle(&stripeBrush, 0, y, screenWidth, stripeHeight);
             }
 
             // 1.5. Hệ thống Line Sân Bóng (Pitch Markings)
@@ -758,28 +827,28 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
         g.DrawImage(pitchCache, 0, 0);
     }
 
-    if (shouldAnimate)
+    if (animate)
     {
-        // 2. Hiệu ứng Camera Flash (CHỈ vẽ ở MenuScreen khi shouldShowFlashes = true)
-        if (shouldShowFlashes)
+        // 2. Hiệu ứng Camera Flash (CHỈ vẽ ở MenuScreen khi showFlashes = true)
+        if (showFlashes)
         {
             const int flashCount = 15;
-            for (int flashIndex = 0; flashIndex < flashCount; ++flashIndex)
+            for (int i = 0; i < flashCount; i++)
             {
-                int flashX = (flashIndex * 918273) % screenWidth;
-                int flashY = (flashIndex * 374621) % (screenHeight / 3);
-                float flashPhase = (flashIndex * 137) % 314 / 50.0f;
+                int fx = (i * 918273) % screenWidth;
+                int fy = (i * 374621) % (screenHeight / 3);
+                float phase = (i * 137) % 314 / 50.0f;
 
-                float rawPulse = sin(g_GlobalAnimTime * 15.0f + flashPhase);
+                float rawPulse = sin(g_GlobalAnimTime * 15.0f + phase);
                 if (rawPulse > 0.92f)
                 { // Ngưỡng cao hơn để chớp dứt khoát hơn
                     int alpha = (int)((rawPulse - 0.92f) * 12.5f * 255);
                     alpha = max(0, min(255, alpha));
 
-                    Gdiplus::SolidBrush *flashBrushPtr = GetCachedBrush(ToGdiColor(WithAlpha(Palette::White, (BYTE)alpha)));
+                    Gdiplus::SolidBrush flashBrush(ToGdiColor(WithAlpha(Theme::CameraFlash, (BYTE)alpha)));
                     // Vẽ một hình chữ thập đơn giản thay vì 3 hình chữ nhật
-                    g.FillRectangle(flashBrushPtr, flashX - 1, flashY - 6, 2, 12);
-                    g.FillRectangle(flashBrushPtr, flashX - 6, flashY - 1, 12, 2);
+                    g.FillRectangle(&flashBrush, fx - 1, fy - 6, 2, 12);
+                    g.FillRectangle(&flashBrush, fx - 6, fy - 1, 12, 2);
                 }
             }
         }
@@ -796,14 +865,14 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
             } WIND_LINES[] = {
                 {0.18f, 55.0f, 160, 45}, {0.31f, 40.0f, 220, 50}, {0.44f, 60.0f, 140, 40}, {0.60f, 50.0f, 180, 45}, {0.72f, 45.0f, 200, 50}, {0.85f, 62.0f, 150, 42}, {0.24f, 80.0f, 90, 30}, {0.52f, 75.0f, 110, 35}};
 
-            for (int windIndex = 0; windIndex < WIND_COUNT; ++windIndex)
+            for (int i = 0; i < WIND_COUNT; i++)
             {
-                const WindLine &windLine = WIND_LINES[windIndex];
-                int windY = (int)(windLine.yFrac * screenHeight);
-                int windX = (int)fmod(windLine.speed * g_GlobalAnimTime + windIndex * (screenWidth / (float)WIND_COUNT), (float)(screenWidth + windLine.len)) - windLine.len;
+                const WindLine &wl = WIND_LINES[i];
+                int wy = (int)(wl.yFrac * screenHeight);
+                int wx = (int)fmod(wl.speed * g_GlobalAnimTime + i * (screenWidth / (float)WIND_COUNT), (float)(screenWidth + wl.len)) - wl.len;
 
-                Gdiplus::SolidBrush *windBrushPtr = GetCachedBrush(ToGdiColor(WithAlpha(Palette::White, (BYTE)windLine.alpha)));
-                g.FillRectangle(windBrushPtr, windX, windY, windLine.len, UIScaler::SY(2));
+                Gdiplus::SolidBrush windBrush(ToGdiColor(WithAlpha(Theme::WindStreak, (BYTE)wl.alpha)));
+                g.FillRectangle(&windBrush, wx, wy, wl.len, UIScaler::SY(2));
             }
         }
 
@@ -818,12 +887,12 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
             {
                 static std::map<int, Gdiplus::Color> cloudPalette = {{1, ToGdiColor(Theme::CloudAccent)}};
                 const float clouds[][3] = {{22.0f, 0.04f, 0.18f}, {14.0f, 0.10f, 0.12f}, {30.0f, 0.02f, 0.10f}};
-                for (int cloudIndex = 0; cloudIndex < 3; ++cloudIndex)
+                for (int i = 0; i < 3; i++)
                 {
-                    int cloudSize = (int)(screenWidth * clouds[cloudIndex][2]);
-                    int cloudCenterX = (int)fmod(clouds[cloudIndex][0] * g_GlobalAnimTime + cloudIndex * (screenWidth / 3.0f), (float)(screenWidth + UIScaler::SX(200)));
-                    int cloudCenterY = (int)(clouds[cloudIndex][1] * screenHeight) + (int)(sin(g_GlobalAnimTime * 0.8f + cloudIndex) * UIScaler::SY(4));
-                    DrawPixelModel(g, cloudModel, cloudCenterX, cloudCenterY, cloudSize, cloudPalette, 9991); // 9991 is clouds fixed palette hash
+                    int cSize = (int)(screenWidth * clouds[i][2]);
+                    int cx = (int)fmod(clouds[i][0] * g_GlobalAnimTime + i * (screenWidth / 3.0f), (float)(screenWidth + UIScaler::SX(200)));
+                    int cy = (int)(clouds[i][1] * screenHeight) + (int)(sin(g_GlobalAnimTime * 0.8f + i) * UIScaler::SY(4));
+                    DrawPixelModel(g, cloudModel, cx, cy, cSize, cloudPalette, 9991); // 9991 is clouds fixed palette hash
                 }
             }
         }
@@ -839,30 +908,33 @@ void DrawProceduralStadium(Gdiplus::Graphics &g, int screenWidth, int screenHeig
             {
                 static const struct BalloonDef
                 {
-                    float speed = 0.0f;
-                    float xFraction = 0.0f;
-                    Gdiplus::Color color = ToGdiColor(Palette::Transparent);
-                    Gdiplus::Color shadow = ToGdiColor(Palette::Transparent);
-                } balloonDefs[] = {
+                    float s = 0.0f;
+                    float x = 0.0f;
+                    Gdiplus::Color c = Gdiplus::Color(0, 0, 0, 0);
+                    Gdiplus::Color sh = Gdiplus::Color(0, 0, 0, 0);
+                } bs[] = {
                     {28.0f, 0.10f, ToGdiColor(Theme::Balloon1_Color), ToGdiColor(Theme::Balloon1_Shadow)},
                     {20.0f, 0.35f, ToGdiColor(Theme::Balloon2_Color), ToGdiColor(Theme::Balloon2_Shadow)},
                     {35.0f, 0.60f, ToGdiColor(Theme::Balloon3_Color), ToGdiColor(Theme::Balloon3_Shadow)},
                     {24.0f, 0.82f, ToGdiColor(Theme::Balloon4_Color), ToGdiColor(Theme::Balloon4_Shadow)}};
-                for (int balloonIndex = 0; balloonIndex < 4; ++balloonIndex)
+                for (int i = 0; i < 4; i++)
                 {
-                    int balloonCenterX = (int)(balloonDefs[balloonIndex].xFraction * screenWidth) + (int)(sin(g_GlobalAnimTime * 1.2f + balloonIndex * 1.1f) * UIScaler::SX(18));
-                    int balloonCenterY = screenHeight - (int)fmod(balloonDefs[balloonIndex].speed * g_GlobalAnimTime + balloonIndex * (screenHeight / 4.0f), (float)(screenHeight + UIScaler::SY(120)));
+                    int bx = (int)(bs[i].x * screenWidth) + (int)(sin(g_GlobalAnimTime * 1.2f + i * 1.1f) * UIScaler::SX(18));
+                    int by = screenHeight - (int)fmod(bs[i].s * g_GlobalAnimTime + i * (screenHeight / 4.0f), (float)(screenHeight + UIScaler::SY(120)));
 
-                    std::map<int, Gdiplus::Color> balloonPalette = {{1, ToGdiColor(WithAlpha(Theme::FootballDark, (BYTE)200))}, {2, balloonDefs[balloonIndex].color}, {3, balloonDefs[balloonIndex].shadow}};
+                    std::map<int, Gdiplus::Color> bPalette = {{1, ToGdiColor(Theme::BalloonOutline)}, {2, bs[i].c}, {3, bs[i].sh}};
                     // Balloons palette is unique per balloon but constant over time.
-                    // Use a key based on balloon index
-                    DrawPixelModel(g, balloonModel, balloonCenterX, balloonCenterY, UIScaler::S(48), balloonPalette, 8880 + balloonIndex);
+                    // Use a key based on balloon index i
+                    DrawPixelModel(g, balloonModel, bx, by, UIScaler::S(48), bPalette, 8880 + i);
                 }
             }
         }
     }
 }
 
+/**
+ * @brief Vẽ một chuỗi Unicode căn giữa trong vùng xác định bằng GDI.
+ */
 void DrawTextCentered(HDC hdc, const std::wstring &text, int posY, int rightX, COLORREF color, HFONT hFont, int leftX)
 {
     HFONT fontToUse = (hFont != nullptr) ? hFont : GlobalFont::Default;
@@ -875,6 +947,12 @@ void DrawTextCentered(HDC hdc, const std::wstring &text, int posY, int rightX, C
     SelectObject(hdc, hOldFont);
 }
 
+/**
+ * @brief Vẽ bảng trò chơi (grid), hiệu ứng highlight và quân cờ dựa trên `PlayState`.
+ *
+ * @note Hàm sử dụng cả GDI+ cho hiệu ứng và GDI cho vẽ text/quân cờ; caller phải
+ *       đảm bảo `g` và `hdc` hợp lệ đồng thời.
+ */
 void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int cellSize, int offsetX, int offsetY)
 {
     int size = state->boardSize;
@@ -899,7 +977,7 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
     // 2. GIAI ĐOẠN 1 (GDI+): Vẽ các hiệu ứng Highlight & Animation
     // Không tạo Graphics mới ở đây, dùng đối tượng g truyền từ ngoài vào để tránh overhead
 
-    // Highlight ô thắng (Draw Win Brushes first)
+    // Highlight ô thắng
     if (!state->winningCells.empty())
     {
         float wPulse = 0.5f + sin(g_GlobalAnimTime * 10.0f) * 0.5f;
@@ -963,9 +1041,20 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
     }
 
     // 3. GIAI ĐOẠN 2 (GDI): Vẽ quân cờ (X/O) - Sau khi đã xong tất cả GDI+ để tránh Interleaving
-    HFONT pieceFont = CreateFont(
-        cellSize - 4, 0, 0, 0, FW_HEAVY, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-        OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, L"Arial");
+    // Cache font quân cờ theo cellSize để tránh CreateFont/DeleteObject 60 lần/giây
+    HFONT pieceFont = nullptr;
+    auto fontIter = g_PieceFontCache.find(cellSize);
+    if (fontIter != g_PieceFontCache.end())
+    {
+        pieceFont = fontIter->second;
+    }
+    else
+    {
+        pieceFont = CreateFont(
+            cellSize - 4, 0, 0, 0, FW_HEAVY, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+            OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, L"Arial");
+        g_PieceFontCache[cellSize] = pieceFont;
+    }
     HFONT oldFont = (HFONT)SelectObject(hdc, pieceFont);
     SetBkMode(hdc, TRANSPARENT);
 
@@ -993,22 +1082,32 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
         }
     }
     SelectObject(hdc, oldFont);
-    DeleteObject(pieceFont);
+    // Không DeleteObject: font được cache trong g_PieceFontCache
 }
 
+/**
+ * @brief Thiết lập màu chữ cho HDC và đặt nền chữ trong suốt.
+ */
 void SetTextColour(HDC hdc, COLORREF colour)
 {
     ::SetTextColor(hdc, colour); // Gọi hàm chuẩn của Windows GDI
     SetBkMode(hdc, TRANSPARENT); // Đảm bảo chữ không có nền màu bao quanh
 }
 
+/**
+ * @brief Vẽ 1 frame của hành động avatar dựa trên `state` và cache frame.
+ *
+ * Hàm cập nhật `state.currentFrame` dựa trên thời gian và sử dụng `g_ActionCache`
+ * để lưu bitmap đã render của từng frame. Nếu frame không tồn tại sẽ fallback
+ * về frame 0 hoặc avatar mặc định.
+ */
 void DrawPixelAction(Gdiplus::Graphics &g, int centerX, int centerY, int size, PlayerState &state)
 {
     if (size <= 0)
     {
         return;
     }
-    // 1. Cập nhật Frame dựa trên thời gian (Delta Time)
+    // 1. Cập nhật Frame dựa trên thời gian
     ULONGLONG now = GetTickCount64();
     if (now - state.lastFrameTime > (ULONGLONG)state.animationSpeed)
     {
@@ -1123,6 +1222,12 @@ void DrawPixelAction(Gdiplus::Graphics &g, int centerX, int centerY, int size, P
     }
 }
 
+/**
+ * @brief Giải phóng toàn bộ tài nguyên được lưu trong các cache nội bộ.
+ *
+ * Hàm xóa và `delete` tất cả `Gdiplus::Bitmap*` và `Gdiplus::SolidBrush*`
+ * được cấp phát bởi module, sau đó làm rỗng các container cache.
+ */
 void ClearUICaches()
 {
     // Giải phóng Model Cache
@@ -1187,6 +1292,16 @@ void ClearUICaches()
 
     // Raw Models
     g_RawModelCache.clear();
+
+    // Piece Font Cache
+    for (auto &pair : g_PieceFontCache)
+    {
+        if (pair.second)
+        {
+            DeleteObject(pair.second);
+        }
+    }
+    g_PieceFontCache.clear();
 
     // Brush cache
     for (auto &pair : g_BrushCache)

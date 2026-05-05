@@ -14,6 +14,14 @@
 
 extern GameConfig g_Config;
 
+/** @file AudioSystem.cpp
+ *  @brief Cài đặt hệ thống âm thanh: quản lý BGM, queue SFX và worker xử lý I/O.
+ *
+ *  Thiết kế:
+ *  - SFX được preload và gán alias để phát nhanh bằng `mciSendString`.
+ *  - Một worker thread tiêu thụ `g_SFXQueue` để thực hiện preload/play/stop không chặn UI.
+ */
+
 enum class SFXCommand
 {
     Preload,
@@ -40,21 +48,34 @@ static std::thread g_SFXThread;
 static std::atomic<bool> g_SFXRunning(false);
 static std::once_flag g_SFXOnce;
 
+/**
+ * @brief Mở một alias MCI cho file âm thanh tại `path`.
+ * @param path Đường dẫn file âm thanh.
+ * @param alias Khóa alias để tham chiếu sau này.
+ * @return true nếu mở thành công.
+ * @note Sử dụng `type mpegvideo` để có khả năng điều chỉnh volume tốt hơn trên một số hệ thống.
+ */
 static bool openSfxAlias(const std::string &path, const std::string &alias)
 {
-    // Use mpegvideo for better volume control with wav
     std::string openCmd = "open \"" + path + "\" type mpegvideo alias " + alias;
     return mciSendStringA(openCmd.c_str(), NULL, 0, NULL) == 0;
 }
 
+/** @brief Khởi tạo worker thread xử lý SFX (đảm bảo chỉ chạy một lần). */
 static void ensureSfxThread()
 {
     std::call_once(g_SFXOnce, []()
                    {
-    g_SFXRunning = true;
-    g_SFXThread = std::thread(sfxWorker); });
+        g_SFXRunning = true;
+        g_SFXThread = std::thread(sfxWorker); });
 }
 
+/**
+ * @brief Yêu cầu preload một file âm thanh: nếu worker chưa chạy thì thực hiện đồng bộ,
+ *        ngược lại đẩy yêu cầu vào queue để worker xử lý.
+ * @param path Đường dẫn file âm thanh.
+ * @param alias Khóa alias để dùng khi phát.
+ */
 void preLoad(const std::string &path, const std::string &alias)
 {
     {
@@ -87,6 +108,7 @@ void preLoad(const std::string &path, const std::string &alias)
     g_SFXCond.notify_one();
 }
 
+/** @brief Khởi tạo hệ thống âm thanh: bật worker và preload các SFX cơ bản. */
 void initAudioSystem()
 {
     ensureSfxThread();
@@ -101,6 +123,9 @@ void initAudioSystem()
     preLoad("Asset/audio/TiengKhanGia_Het_Tran.wav", "sfx_crowd");
 }
 
+/** @brief Yêu cầu phát SFX theo `alias` (được enqueue để không block UI).
+ *  @param alias Khóa SFX đã nạp.
+ */
 void playSfx(const std::string &alias)
 {
     if (!g_Config.isSfxEnabled || g_Config.sfxVolume <= 0)
@@ -121,6 +146,9 @@ void playSfx(const std::string &alias)
     g_SFXCond.notify_one();
 }
 
+/** @brief Yêu cầu dừng SFX theo `alias` (enqueue nếu worker hoạt động).
+ *  @param alias Khóa SFX.
+ */
 void stopSfx(const std::string &alias)
 {
     if (!g_SFXRunning)
@@ -143,11 +171,14 @@ void stopSfx(const std::string &alias)
     g_SFXCond.notify_one();
 }
 
+/** @brief Phát BGM từ file `filepath` (lặp lại).
+ *  @note Sử dụng MCI alias `bgm` cho nhạc nền.
+ */
 void playBgm(const std::string &filepath)
 {
     if (!g_Config.isBgmEnabled)
         return;
-    StopBGM();
+    stopBgm();
     // BGM cũng dùng mpegvideo
     std::string cmd = "open \"" + filepath + "\" type mpegvideo alias bgm";
     mciSendStringA(cmd.c_str(), NULL, 0, NULL);
@@ -155,11 +186,15 @@ void playBgm(const std::string &filepath)
     mciSendStringA("play bgm repeat", NULL, 0, NULL);
 }
 
+/** @brief Dừng và đóng alias BGM nếu đang mở. */
 void stopBgm()
 {
     mciSendStringA("close bgm", NULL, 0, NULL);
 }
 
+/** @brief Cập nhật âm lượng BGM theo cấu hình `g_Config`.
+ *  @param force Nếu true thì áp dụng ngay cả khi không đổi so với lần trước.
+ */
 void updateBgmVolume(bool force)
 {
     static int lastBgmVol = -1;
@@ -172,6 +207,7 @@ void updateBgmVolume(bool force)
     lastBgmVol = vol;
 }
 
+/** @brief Dừng worker, đóng các alias và giải phóng tài nguyên âm thanh. */
 void shutdownAudioSystem()
 {
     if (g_SFXRunning)
@@ -183,10 +219,13 @@ void shutdownAudioSystem()
     {
         g_SFXThread.join();
     }
-    StopBGM();
+    stopBgm();
     mciSendStringA("close all", NULL, 0, NULL);
 }
 
+/** @brief Luồng tiêu thụ `g_SFXQueue` để thực hiện preload/play/stop một cách tuần tự.
+ *  Luồng này chạy cho tới khi `g_SFXRunning` = false và queue rỗng.
+ */
 void sfxWorker()
 {
     while (true)
@@ -278,3 +317,5 @@ void sfxWorker()
         mciSendStringA(playCmd.c_str(), NULL, 0, NULL);
     }
 }
+
+// Temporary PascalCase wrappers removed; use canonical API (`playBgm`, `playSfx`, etc.).

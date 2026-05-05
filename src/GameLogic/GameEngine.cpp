@@ -5,9 +5,13 @@
 #include "../SystemModules/TimeSystem.h"
 #include "../SystemModules/AudioSystem.h"
 
-// ============================================================
-//  initializeNewMatch
-// ============================================================
+/** @file GameEngine.cpp
+ *  @brief Triển khai logic quản lý ván chơi: khởi tạo match/round, undo/redo, xử lý nước đi.
+ */
+
+/**
+ * @brief Khởi tạo một trận đấu mới theo tham số truyền vào và chuyển sang round đầu tiên.
+ */
 void initializeNewMatch(PlayState *state, PlayMode mode, MatchType type, int boardSize,
                         int countdownTime, int difficulty, int targetScore, int totalTime)
 {
@@ -33,9 +37,9 @@ void initializeNewMatch(PlayState *state, PlayMode mode, MatchType type, int boa
     startNextRound(state);
 }
 
-// ============================================================
-//  startNextRound
-// ============================================================
+/**
+ * @brief Bắt đầu round mới: reset bảng, trạng thái lượt, thời gian round.
+ */
 void startNextRound(PlayState *state)
 {
     state->timeRemaining = state->countdownTime;
@@ -67,9 +71,9 @@ void startNextRound(PlayState *state)
     resetTimer(state);
 }
 
-// ============================================================
-//  switchTurn
-// ============================================================
+/**
+ * @brief Chuyển lượt giữa hai người chơi và reset bộ đếm thời gian nước đi.
+ */
 void switchTurn(PlayState *state)
 {
     state->isPlayer1Turn = !state->isPlayer1Turn;
@@ -77,9 +81,9 @@ void switchTurn(PlayState *state)
     resetTimer(state);
 }
 
-// ============================================================
-//  undoMove
-// ============================================================
+/**
+ * @brief Hoàn tác nước đi gần nhất (hoặc 2 nước nếu PVE) và cập nhật trạng thái liên quan.
+ */
 void undoMove(PlayState *state)
 {
     if (state->matchHistory.empty())
@@ -120,7 +124,7 @@ void undoMove(PlayState *state)
         state->lastMoveCol = last.second;
     }
 
-    // Nếu ván đã kết thúc thì reopen
+    // Nếu ván đã kết thúc thì reopen (trừ khi muốn giữ kết thúc)
     if (state->status == MATCH_FINISHED)
     {
         state->status = MATCH_PLAYING;
@@ -134,9 +138,9 @@ void undoMove(PlayState *state)
     resetTimer(state);
 }
 
-// ============================================================
-//  redoMove
-// ============================================================
+/**
+ * @brief Redo các nước đã undo (1 hoặc 2 bước tuỳ PVE/PVP) và kiểm tra trạng thái thắng.
+ */
 void redoMove(PlayState *state)
 {
     if (state->redoStack.empty())
@@ -183,9 +187,10 @@ void redoMove(PlayState *state)
     resetTimer(state);
 }
 
-// ============================================================
-//  processMove
-// ============================================================
+/**
+ * @brief Áp dụng một nước đi nếu hợp lệ, cập nhật lịch sử, kiểm tra thắng/thua và phát hiệu ứng âm thanh.
+ * @return `true` nếu nước đi hợp lệ.
+ */
 bool processMove(PlayState *state, int row, int col)
 {
     if (state->status != MATCH_PLAYING || !isValidMove(state, row, col))
@@ -234,9 +239,9 @@ bool processMove(PlayState *state, int row, int col)
         state->status = MATCH_FINISHED;
         state->winner = winStatus;
 
-        PlaySFX("sfx_whistle");
-        PlaySFX("sfx_crowd");
-        PlaySFX("sfx_siu");
+        playSfx("sfx_whistle");
+        playSfx("sfx_crowd");
+        playSfx("sfx_siu");
     }
     else
     {

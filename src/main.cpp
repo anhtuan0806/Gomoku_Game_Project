@@ -17,6 +17,7 @@
 #include "RenderAPI/Renderer.h"
 #include "RenderAPI/UIComponents.h"
 #include "GameLogic/GameEngine.h"
+#include "SystemModules/EngineStats.h"
 
 // --- Khai báo các Header màn hình ---
 #include "ScreenModules/MenuScreen.h"
@@ -26,46 +27,6 @@
 #include "ScreenModules/MatchConfigScreen.h"
 #include "ScreenModules/GuildScreen.h"
 #include "ScreenModules/AboutScreen.h"
-
-// --- Trạng thái toàn cục ---
-ScreenState g_CurrentScreen = SCREEN_MENU;
-GameConfig g_Config;
-PlayState g_PlayState;
-
-// Lựa chọn hiện tại trong các menu
-int g_ConfigSelected = 0;
-int g_MenuSelected = 0;
-int g_LoadSelected = 0;
-int g_SettingSelected = 0;
-std::wstring g_LoadStatus = L"";
-int g_GuildPage = 0;
-
-// Tài nguyên đồ họa
-ULONG_PTR g_GdiplusToken;
-DoubleBuffer g_BackBuffer = {0};
-double g_LastRenderMs = 0.0;
-double g_LastUpdateMs = 0.0;
-double g_LastBlitMs = 0.0;
-double g_LastSleepMs = 0.0;
-bool g_NeedsRedraw = true;
-HANDLE g_FrameTimer = NULL;
-
-static bool ShouldAnimateScreen(ScreenState screen)
-{
-    switch (screen)
-    {
-    case SCREEN_MENU:
-    case SCREEN_PLAY:
-    case SCREEN_SETTING:
-    case SCREEN_MATCH_CONFIG:
-    case SCREEN_LOAD_GAME:
-    case SCREEN_GUIDE:
-    case SCREEN_ABOUT:
-        return true;
-    default:
-        return false;
-    }
-}
 
 // --- Khai báo hàm Win32 ---
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -82,7 +43,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     g_FrameTimer = CreateWaitableTimer(NULL, TRUE, NULL);
 
     // Thiết lập tỷ lệ màn hình ngay từ ban đầu
-    UIScaler::Update(850, 750);
+    UIScaler::Update((int)UIScaler::BASE_WIDTH, (int)UIScaler::BASE_HEIGHT);
     GlobalFont::Initialize();
 
     // 2. Tải Cấu hình & Ngôn ngữ & Âm thanh
@@ -133,45 +94,24 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
 
+    // FPS target lấy từ config (30 hoặc 60)
+    EngineStats::Initialize(static_cast<double>(g_Config.fpsLimit));
     MSG msg = {};
-    const double targetFrameSeconds = 1.0 / 60.0;
-    auto lastTime = std::chrono::high_resolution_clock::now();
-    double fpsTimer = 0.0;
-    int fpsFrames = 0;
-    double lastFps = 0.0;
-
     bool bRunning = true;
+
     while (bRunning)
     {
-        // 1. Xử lý TOÀN BỘ tin nhắn đang chờ trong hàng đợi
-        // Việc này ngăn hiện tượng "Starving" khi người dùng ấn giữ phím (input spam)
         while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
-            if (msg.message == WM_QUIT)
-            {
-                bRunning = false;
-                break;
-            }
+            if (msg.message == WM_QUIT) { bRunning = false; break; }
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
 
-        if (!bRunning)
-            break;
+        if (!bRunning) break;
 
-        // 2. Cập nhật Logic & Render (LUÔN CHẠY sau khi xử lý tin nhắn)
-        auto frameStart = std::chrono::high_resolution_clock::now();
-
-        // Tính toán Delta Time (dt)
-        auto currentTime = frameStart;
-        std::chrono::duration<double> elapsed = currentTime - lastTime;
-        lastTime = currentTime;
-        double dt = elapsed.count();
-
-        // Giới hạn dt tối đa để tránh "nhảy vọt" (v.d khi di chuyển cửa sổ)
-        if (dt > 0.1)
-            dt = 0.1;
-
+        // Bắt đầu khung hình và lấy Delta Time
+        double dt = EngineStats::BeginFrame();
         g_GlobalAnimTime += (float)dt;
 
         // Cập nhật Logic
@@ -183,41 +123,18 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         }
         else if (g_CurrentScreen == SCREEN_EXIT)
         {
-            ShowWindow(hWnd, SW_HIDE); // Hide window immediately to feel instant
+            ShowWindow(hWnd, SW_HIDE);
             bRunning = false;
         }
-        auto updateEnd = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> updateElapsed = updateEnd - updateStart;
-        g_LastUpdateMs = updateElapsed.count();
+        g_LastUpdateMs = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - updateStart).count();
 
-        // Cập nhật FPS và tiêu đề cửa sổ (mỗi 0.5s)
-        fpsTimer += dt;
-        fpsFrames++;
-        if (fpsTimer >= 0.5)
-        {
-            lastFps = fpsFrames / fpsTimer;
-            fpsFrames = 0;
-            fpsTimer = 0.0;
+        // Cập nhật thông số hiệu năng lên tiêu đề cửa sổ
+        EngineStats::UpdateTitleStats(hWnd, dt);
 
-            std::wstringstream title;
-            title.setf(std::ios::fixed);
-            title.precision(1);
-            title << L"CARO: Champions League";
-            title << L" | FPS: " << (int)lastFps;
-            title << L" | Upd: " << g_LastUpdateMs << L" ms";
-            title << L" | Ren: " << g_LastRenderMs << L" ms";
-            title << L" | Blt: " << g_LastBlitMs << L" ms";
-            title << L" | Slp: " << g_LastSleepMs << L" ms";
-            SetWindowTextW(hWnd, title.str().c_str());
-        }
-
-        // Ép vẽ lại toàn cục mỗi khung hình
         if (!IsIconic(hWnd))
         {
             if (ShouldAnimateScreen(g_CurrentScreen) || needsLogicRedraw)
-            {
                 g_NeedsRedraw = true;
-            }
 
             if (g_NeedsRedraw)
             {
@@ -226,42 +143,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
             }
         }
 
-        // 3. Điều khiển tốc độ khung hình (Throttling)
-        auto frameEnd = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> frameElapsed = frameEnd - frameStart;
-
-        if (frameElapsed.count() < targetFrameSeconds)
-        {
-            double sleepTime = targetFrameSeconds - frameElapsed.count();
-            auto sleepStart = std::chrono::high_resolution_clock::now();
-            if (sleepTime > 0.0005)
-            {
-                if (g_FrameTimer)
-                {
-                    LARGE_INTEGER dueTime;
-                    dueTime.QuadPart = -(LONGLONG)(sleepTime * 10000000.0);
-                    if (SetWaitableTimer(g_FrameTimer, &dueTime, 0, NULL, NULL, FALSE))
-                    {
-                        WaitForSingleObject(g_FrameTimer, INFINITE);
-                    }
-                    else
-                    {
-                        Sleep((DWORD)(sleepTime * 1000.0));
-                    }
-                }
-                else
-                {
-                    Sleep((DWORD)(sleepTime * 1000.0));
-                }
-            }
-            auto sleepEnd = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> sleepElapsed = sleepEnd - sleepStart;
-            g_LastSleepMs = sleepElapsed.count();
-        }
-        else
-        {
-            g_LastSleepMs = 0.0;
-        }
+        // Kết thúc khung hình (Throttling)
+        EngineStats::EndFrame();
     }
 
     // 7. Giải phóng tài nguyên
@@ -405,7 +288,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         }
 
-        if (g_BackBuffer.hdcMem == nullptr)
+        if (g_BackBuffer.hdcMemory == nullptr)
         {
             CreateBuffer(hWnd, hdc, g_BackBuffer);
         }
@@ -415,31 +298,31 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (g_CurrentScreen)
         {
         case SCREEN_MENU:
-            RenderMenuScreen(g_BackBuffer.hdcMem, (int)g_MenuSelected, w, h);
+            RenderMenuScreen(g_BackBuffer.hdcMemory, (int)g_MenuSelected, w, h);
             break;
         case SCREEN_PLAY:
-            RenderPlayScreen(g_BackBuffer.hdcMem, &g_PlayState, w, h, &g_Config);
+            RenderPlayScreen(g_BackBuffer.hdcMemory, &g_PlayState, w, h, &g_Config);
             break;
         case SCREEN_SETTING:
-            RenderSettingScreen(g_BackBuffer.hdcMem, &g_Config, g_SettingSelected, w, h);
+            RenderSettingScreen(g_BackBuffer.hdcMemory, &g_Config, g_SettingSelected, w, h);
             break;
         case SCREEN_LOAD_GAME:
-            RenderLoadGameScreen(g_BackBuffer.hdcMem, g_LoadSelected, g_LoadStatus, w, h);
+            RenderLoadGameScreen(g_BackBuffer.hdcMemory, g_LoadSelected, g_LoadStatus, w, h);
             break;
         case SCREEN_MATCH_CONFIG:
-            RenderMatchConfigScreen(g_BackBuffer.hdcMem, g_ConfigSelected, &g_PlayState, w, h);
+            RenderMatchConfigScreen(g_BackBuffer.hdcMemory, g_ConfigSelected, &g_PlayState, w, h);
             break;
         case SCREEN_GUIDE:
-            RenderGuildScreen(g_BackBuffer.hdcMem, w, h, g_GuildPage);
+            RenderGuildScreen(g_BackBuffer.hdcMemory, w, h, g_GuildPage);
             break;
 
         case SCREEN_ABOUT:
-            RenderAboutScreen(g_BackBuffer.hdcMem, w, h);
+            RenderAboutScreen(g_BackBuffer.hdcMemory, w, h);
             break;
         }
 
         auto blitStart = std::chrono::high_resolution_clock::now();
-        BitBlt(hdc, 0, 0, w, h, g_BackBuffer.hdcMem, 0, 0, SRCCOPY);
+        BitBlt(hdc, 0, 0, w, h, g_BackBuffer.hdcMemory, 0, 0, SRCCOPY);
         auto blitEnd = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> blitElapsed = blitEnd - blitStart;
         g_LastBlitMs = blitElapsed.count();
