@@ -106,49 +106,48 @@ Chương trình sử dụng hệ thống **Serialization Nhị Phân (Binary)** 
 Kiến trúc phần mềm theo dạng **Modular Procedural** (chia module nhưng không thuần OOP để tối ưu memory footprint):
 
 ```text
-    src/
-    ├── ApplicationTypes/           -- Kiểu dữ liệu nền 
-    |   ├── GameConfig.h            -- Cấu hình Game
-    |   ├── GameConstants.h         -- Hằng số Game
-    |   ├── GameState.h             -- Trạng thái Game
-    |   └── PlayState.h             -- Trạng thái Game (Play Mode)
-    ├── GameLogic/                  -- Bộ não Game
-    |   ├── BotAI.h                 -- Bot AI
-    |   ├── GameEngine.h            -- Engine Game
-    |   ├── Rules.h                 -- Luật chơi
-    |   └── PlayerEngineer.h        -- Player Engineer
-    ├── RenderAPI/                  -- Lõi đồ họa
-    |   ├──Colours.h                -- Colours
-    |   ├──Renderer.h               -- Renderer (GDI+ setup)
-    |   ├──UIComponents.h           -- UI Components
-    |   └──UIScaler.h               -- UI Scaler
-    ├── ScreenModules/              -- Các module GUI 
-    |   ├──MenuScreen.h             -- Main Menu
-    |   ├──MatchConfigScreen.h      -- Match Config
-    |   ├──PlayScreen.h             -- Play Screen
-    |   ├──SettingsScreen.h         -- Settings
-    |   ├──LoadGameScreen.h         -- Load Game
-    |   ├──GuildScreen.h            -- Guild
-    |   └──AboutScreen.h            -- About
-    ├── SystemModules/              -- Các Subsystems
-    |   ├──AudioSystem.h            -- Audio System
-    |   ├──SaveLoadSystem.h         -- Save Load System
-    |   ├──Localization.h           -- Localization
-    |   ├──ConfigLoader.h           -- Config Loader
-    |   |──TimeSystem.h             -- Time System 
-    |   |──EngineStats.h            -- Engine Stats
-    |   └──WinApiHandler.h          -- WinApi Handler
-    |── main.cpp                    -- Vòng lặp chính, xử lý Windows Message (WndProc)
-    |── Asset/
-    |   |── audio/                  -- File BGM (.mp3) và SFX (.wav)
-    |   |── font/                   -- Font VT323
-    |   |── lang/                   -- File đa ngôn ngữ (.txt)
-    |   |── models/                 -- Sprite tọa độ Pixel Art (avatar, background)
-    |   └── save/                   -- Thư mục chứa các file slot_X.bin
-    |── README.md                   -- file hướng dẫn sử dụng
-    |── src.sln                     -- file solution
-    |── src.vcxproj                 -- file project
-    └── src.vcxproj.filters         -- file filter
+src/
+├── ApplicationTypes/           -- Kiểu dữ liệu nền 
+|   ├── GameConfig.h            -- Cấu hình Game
+|   ├── GameConstants.h         -- Hằng số Game
+|   ├── GameState.h             -- Trạng thái Game
+|   └── PlayState.h             -- Trạng thái Game (Play Mode)
+├── GameLogic/                  -- Bộ não Game
+|   ├── BotAI.h                 -- Bot AI
+|   ├── GameEngine.h            -- Engine Game
+|   ├── Rules.h                 -- Luật chơi
+|   └── PlayerEngineer.h        -- Player Engineer
+├── RenderAPI/                  -- Lõi đồ họa
+|   ├── Colours.h               -- Colours
+|   ├── Renderer.h              -- Renderer (GDI+ setup)
+|   ├── UIComponents.h          -- UI Components
+|   └── UIScaler.h              -- UI Scaler
+├── ScreenModules/              -- Các module GUI 
+|   ├── MenuScreen.h            -- Main Menu
+|   ├── MatchConfigScreen.h     -- Match Config
+|   ├── PlayScreen.h            -- Play Screen
+|   ├── SettingsScreen.h        -- Settings
+|   ├── LoadGameScreen.h        -- Load Game
+|   ├── GuildScreen.h           -- Guild
+|   └── AboutScreen.h           -- About
+├── SystemModules/              -- Các Subsystems
+|   ├── AudioSystem.h           -- Audio System
+|   ├── SaveLoadSystem.h        -- Save Load System
+|   ├── Localization.h          -- Localization
+|   ├── ConfigLoader.h          -- Config Loader
+|   ├── TimeSystem.h            -- Time System 
+|   └── EngineStats.h           -- Engine Stats
+├── main.cpp                    -- Vòng lặp chính, xử lý Windows Message (WndProc)
+├── Asset/
+|   ├── audio/                  -- File BGM (.mp3) và SFX (.wav)
+|   ├── font/                   -- Font VT323
+|   ├── lang/                   -- File đa ngôn ngữ (.txt)
+|   ├── models/                 -- Sprite tọa độ Pixel Art (avatar, background)
+|   └── save/                   -- Thư mục chứa các file slot_X.bin
+├── README.md                   -- file hướng dẫn sử dụng
+├── src.sln                     -- file solution
+├── src.vcxproj                 -- file project
+└── src.vcxproj.filters         -- file filter
 ```
 
 ---
@@ -193,8 +192,8 @@ graph TD
 | | `ESC` | Quay lại / Thoát |
 | **Trong Trận (Play)** | `W, A, S, D` / Mũi tên | Di chuyển con trỏ trên sân |
 | | `Enter` / `Space` | Đánh quân (Đặt bóng) |
-| | `Q` | Undo - Rút lại nước đi (PvE) |
-| | `E` | Redo - Hoàn tác (PvE) |
+| | `Q` | Undo - Rút lại nước đi  |
+| | `E` | Redo - Hoàn tác  |
 | | `ESC` | Mở Hộp Tác Chiến (Pause Menu) |
 | | `S` (khi Pause) | Cắt nhanh đến màn hình lưu game |
 
