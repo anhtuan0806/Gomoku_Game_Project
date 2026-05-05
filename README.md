@@ -6,94 +6,150 @@
 [![Engine](https://img.shields.io/badge/Engine-Custom_Win32_GDI%2B-orange?style=for-the-badge)](https://learn.microsoft.com/en-us/windows/win32/gdiplus/-gdiplus-gdi-start)
 [![Status](https://img.shields.io/badge/Status-Stable_v1.0-brightgreen?style=for-the-badge)](https://github.com/anhtuan0806/Gomoku_Game_Project)
 
-**Caro Champions League** là một trò chơi cờ caro (Gomoku) và Tic-Tac-Toe trên nền tảng Windows. Dự án được phát triển hoàn toàn bằng **C++** kết hợp cùng **Win32 API** và **GDI+**, mang đến trải nghiệm đồ họa Pixel Art cổ điển nhưng tinh tế với các hiệu ứng hiện đại.
+**Caro Champions League** là một trò chơi cờ caro (Gomoku) và Tic-Tac-Toe trên nền tảng Windows. Dự án được phát triển hoàn toàn bằng **C++** kết hợp cùng **Win32 API** và thư viện đồ họa **GDI+**, mang đến trải nghiệm đồ họa Pixel Art cổ điển nhưng tinh tế với các hiệu ứng hình ảnh hiện đại (Glassmorphism, Procedural Animation).
+
+Dự án này là Đồ án môn học Cơ sở lập trình, được mở rộng với hàng loạt tính năng nâng cao về AI, đồ họa, và quản lý hệ thống.
 
 ---
 
 ## Mục lục
 
-- [Tính năng nổi bật](#tính-năng-nổi-bật)
-- [Hệ thống đồ họa & Animation](#hệ-thống-đồ-họa--animation)
-- [Cấu trúc dự án](#cấu-trúc-dự-án)
-- [Luồng hoạt động](#luồng-hoạt-động)
-- [Cơ chế lưu trữ & Metadata](#cơ-chế-lưu-trữ--metadata)
-- [Hệ thống Bot AI](#hệ-thống-bot-ai)
-- [Điều khiển](#điều-khiển)
-- [Yêu cầu hệ thống & Build](#yêu-cầu-hệ-thống--build)
+1. [Tính năng nổi bật](#tính-năng-nổi-bật)
+2. [Hệ thống đồ họa & UI](#hệ-thống-đồ-họa--ui)
+3. [Hệ thống Âm thanh](#hệ-thống-âm-thanh)
+4. [Hệ thống Bot AI](#hệ-thống-bot-ai)
+5. [Cơ chế Lưu trữ & Metadata](#cơ-chế-lưu-trữ--metadata)
+6. [Cấu trúc dự án](#cấu-trúc-dự-án)
+7. [Luồng hoạt động](#luồng-hoạt-động)
+8. [Điều khiển](#điều-khiển)
+9. [Yêu cầu hệ thống & Build](#yêu-cầu-hệ-thống--build)
 
 ---
 
 ## Tính năng nổi bật
 
 ### 1. Chế độ thi đấu đa dạng
-
-- **Game Modes:** Caro (15x15) và Tic-Tac-Toe (3x3).
-- **Match Types:**
-  - **PvP:** Đối đầu trực tiếp giữa hai kỳ thủ.
-  - **PvE:** Thử thách khả năng tư duy với Bot AI thông minh.
-- **Series Thể thức:** Bo1, Bo3, Bo5. Hệ thống tự động theo dõi số bàn thắng (`totalWins`) để tính điểm trận (`matchWins`) và phân định nhà vô địch serie.
+- **Game Modes:** Hỗ trợ cả **Caro** (bàn cờ 15x15, điều kiện thắng 5) và **Tic-Tac-Toe** (bàn cờ 3x3, điều kiện thắng 3).
+- **Match Types:** 
+  - **PvP:** Đấu đối kháng trực tiếp giữa hai người chơi trên cùng một máy.
+  - **PvE:** Thử thách khả năng tư duy với Bot AI tích hợp nhiều độ khó.
+- **Series Thể thức:** Thi đấu theo chuỗi Bo1, Bo3, Bo5. Hệ thống tự động theo dõi tỷ số (`totalWins`), đếm số ván thắng và phân định nhà vô địch của serie.
 
 ### 2. Thống kê trận đấu chuyên sâu
-
 - **Tỷ lệ kiểm soát bóng:** Đo lường thời gian suy nghĩ và giữ lượt của từng người chơi (`totalTimePossessed`).
-- **Số lần dẫn bóng:** Theo dõi số lượng nước đi thực hiện trong mỗi ván.
-- **Bảng tổng sắp:** Hiển thị chi tiết số bàn thắng và số trận thắng serie ngay trên giao diện thi đấu.
+- **Số lần dẫn bóng:** Theo dõi số lượng nước đi (`movesCount`) đã thực hiện trong mỗi ván.
+- **Bảng tổng sắp:** Hiển thị chi tiết số ván thắng và điểm số của chuỗi ngay trên giao diện thi đấu.
 
-### 3. Localization & Font chuyên dụng
+### 3. Đa Ngôn Ngữ & Tùy biến
+- Hỗ trợ **Tiếng Việt** (có dấu) và **Tiếng Anh**.
+- Hệ thống Load file ngôn ngữ động từ `Asset/lang/vi.txt` và `en.txt`.
+- Sử dụng font Pixel Art **VT323** được nhúng trực tiếp.
 
-- Hỗ trợ tiếng Việt có dấu với font pixel art **VT323**.
-- Hệ thống ngôn ngữ linh hoạt (Vietnamese/English).
-
-### 4. Undo/Redo
-
-- Khả năng rút lại nước đi và hoàn tác linh hoạt.
-
-### 5. Hệ thống Âm thanh & Hiệu năng (V5.1)
-
-- **Asynchronous Audio:** Hệ thống âm thanh được refactor sang cơ chế đa luồng (background thread), xử lý qua hàng đợi lệnh (command queue) để loại bỏ hiện tượng giật lag khi phát nhiều âm thanh cùng lúc.
-- **Input Throttling:** Tối ưu hóa việc lọc đầu vào (input filtering) và khống chế tần suất phím nhấn, đảm bảo game phản hồi mượt mà ngay cả khi thao tác nhanh.
-- **Main Loop Optimization:** Chuyển đổi sang mô hình "Drain Message Queue" để duy trì tốc độ khung hình ổn định khi nhận lượng lớn tin nhắn từ Windows.
+### 4. Undo/Redo linh hoạt
+- Khả năng **Rút lại nước đi (Undo)** và **Hoàn tác (Redo)** thông qua việc lưu lại lịch sử `matchHistory` và `redoStack`, hữu ích trong chế độ PvE để học hỏi và sửa sai.
 
 ---
 
-## Hệ thống đồ họa & Animation
+## Hệ thống đồ họa & UI
 
 ### Đồ họa Procedural & Pixel Art
+- **Sân vận động (Stadium):** Nền sân cỏ được vẽ hoàn toàn bằng thuật toán (procedural drawing), kết hợp hiệu ứng đèn flash khán đài (`CameraFlash`), mây bay (`clouds`), và bóng bay lơ lửng (`balloons`).
+- **Hiệu ứng Kính mờ (Glassmorphism):** Các bảng điều khiển (Pause, Settings, Match Config) sử dụng hiệu ứng kính mờ trong suốt, tạo cảm giác sang trọng (`Theme::GlassWhite`, `Theme::GlassDark`).
+- **Smooth UI Scaling:** Tích hợp module `UIScaler` tự động điều chỉnh tỷ lệ các thành phần giao diện một cách sắc nét khi cửa sổ thay đổi kích thước. Tối ưu nhất ở độ phân giải `1280x720` trở lên.
+- **Quản lý Cache Đồ Họa:** Sử dụng cơ chế Double Buffering để loại bỏ nhấp nháy, kết hợp với cache Bitmap và Brush (`g_ModelCache`, `g_BrushCache`) giúp giảm tải CPU khi render.
 
-- **Sân vận động:** Được vẽ hoàn toàn bằng thuật toán (procedural), bao gồm cỏ sọc, đường biên, và hiệu ứng đèn flash khán đài (`CameraFlash`) nhấp nháy theo thời gian thực.
-- **Glassmorphism:** Các bảng điều khiển (Pause, Settings, Match Config) sử dụng hiệu ứng kính mờ với độ trong suốt tùy chỉnh (`Theme::GlassWhite`, `Theme::GlassDark`).
-- **Smooth Scaling:** Hệ thống `UIScaler` tự động điều chỉnh tỷ lệ các thành phần UI dựa trên độ phân giải cửa sổ (tối ưu nhất ở 1280x720 hoặc cao hơn).
+### Hệ thống Animation Cầu thủ (Action-Based)
+Hệ thống animation cho các Avatar hoạt động dựa trên các chuỗi sprite (spritesheet dạng txt):
+- **Trạng thái hành động:** `idle` (đứng yên), `run` (di chuyển), `sad` (thua cuộc/mất bóng), `win` (thắng cuộc/ăn mừng).
+- **Bộ Avatar cao cấp:** Tích hợp model pixel-art cho các siêu sao bóng đá như **Ronaldo (CR7)**, **Messi (MES)**, và **Neymar (NEY)**, với hệ thống Palette màu tuỳ chỉnh riêng cho da, tóc, áo đấu.
 
-### Action-Based Animations (V5)
+---
 
-Hệ thống animation cho avatar được cấu trúc theo các hành động cụ thể:
+## Hệ thống Âm thanh
 
-- **Hành động:** `idle` (đứng yên), `run` (di chuyển), `sad` (thua cuộc), `win` (thắng cuộc).
-- **Player Cầu thủ:** Tích hợp các model pixel-art chất lượng cao cho **Ronaldo (CR7)**, **Messi (MES)**, và **Neymar (NEY)** với bảng màu (Palette) chuẩn hóa cho từng nhân vật.
-- **Logic:** Sử dụng `DrawPixelAction` để lọc và hiển thị frame chính xác dựa trên trạng thái hiện tại của người chơi.
+- **Cấu trúc Đa luồng (Multithreaded):** Xử lý phát âm thanh thông qua API `mciSendString` của WinMM. SFX được đẩy vào hàng đợi (`std::queue`) và xử lý bởi một luồng nền (`sfxWorker`) để đảm bảo UI không bao giờ bị đứng khi tải hoặc phát âm thanh.
+- **Quản lý trạng thái:** Tách biệt luồng nhạc nền (BGM - hỗ trợ vòng lặp) và hiệu ứng âm thanh (SFX). Có thể tùy chỉnh âm lượng (0-100%) và bật/tắt độc lập.
+
+---
+
+## Hệ thống Bot AI
+
+Bot AI (PLAYER 2) được thiết kế đặc biệt, không làm gián đoạn trải nghiệm người dùng, phân cấp thành 3 độ khó:
+
+1. **Phân Hạng Đồng (Easy):** 
+   - Lựa chọn nước đi ngẫu nhiên hoặc các ô lân cận để mô phỏng người chơi mới.
+2. **Phân Hạng Vàng (Medium):** 
+   - Sử dụng hàm đánh giá Heuristic. Quét các hướng (Ngang, Dọc, 2 Đường chéo), phát hiện các đầu hở (`openEnds`) và số quân liên tiếp để tính điểm Tấn công (Attack Score) và Phòng thủ (Defense Score).
+3. **Thách Đấu (Hard - Alpha-Beta Pruning & Zobrist Hashing):**
+   - Áp dụng thuật toán **Minimax kết hợp Alpha-Beta Pruning** với độ sâu mặc định là 5 lớp.
+   - **Transposition Table (TT):** Áp dụng **Zobrist Hashing** để lưu trữ và tra cứu các trạng thái đã đánh giá (TT size lên tới ~1 triệu mục ~ 32MB RAM). Tránh việc duyệt lại các nhánh trùng lặp, tăng đáng kể tốc độ phản hồi.
+   - **Move Ordering:** Các nước đi được tính điểm heuristic sơ bộ và sắp xếp trước khi đưa vào Alpha-Beta. Các nhánh tốt nhất được duyệt trước, tối đa hóa khả năng cắt tỉa. Nhánh tìm kiếm bị giới hạn (branching limit = 12) ở các tầng sâu để đảm bảo thời gian phản hồi `< 500ms`.
+   - **Fast Quiescence / Immediate Win:** Tối ưu O(1) kiểm tra thắng/chặn thua ngay lập tức chỉ quanh vị trí nước đi cuối, tiết kiệm tài nguyên CPU thay vì quét toàn bàn cờ O(N²).
+
+---
+
+## Cơ chế Lưu trữ & Metadata
+
+Chương trình sử dụng hệ thống **Serialization Nhị Phân (Binary)** với hiệu suất cao:
+- **Version Control:** File lưu tương thích ngược, hiện hành ở **Version 5**.
+- **Tính toàn vẹn (Magic Number):** Mỗi file sử dụng khóa `0xCA05A1E2` để xác thực file hợp lệ, chống crash khi đọc file hỏng.
+- **Lưu trữ Metadata toàn diện:** Mỗi Slot (tối đa 5 slots) lưu trữ:
+  - Tên hiển thị do người chơi tự đặt.
+  - Timestamp (Ngày/Giờ lưu tự động).
+  - Thống kê toàn ván: Chế độ, Độ khó, Điểm số, tổng thời gian.
+  - Chi tiết lượt đi: `matchHistory`, `redoStack`, trạng thái bàn cờ 20x20.
 
 ---
 
 ## Cấu trúc dự án
 
+Kiến trúc phần mềm theo dạng **Modular Procedural** (chia module nhưng không thuần OOP để tối ưu memory footprint):
+
 ```text
-Gomoku_Game_Project/
-└── src/
-    ├── ApplicationTypes/           -- Định nghĩa GameState, PlayState, Config
-    ├── GameLogic/                  -- Xử lý luật chơi, trọng tài (Rules/Engine/Engineer) và Bot AI
-    ├── RenderAPI/                  -- Lõi đồ họa: Renderer, UIComponents, Colours, UIScaler
-    ├── ScreenModules/              -- Các màn hình GUI (Menu, Play, Settings, About, Guild,...)
-    ├── SystemModules/              -- Hệ thống nền: Audio, SaveLoad, Localization, Time
-    ├── main.cpp                    -- Entry point và Game Loop chính
-    └── src.vcxproj / .filters      -- Cấu trúc project Visual Studio
+    src/
+    ├── ApplicationTypes/           -- Kiểu dữ liệu nền 
+    |   ├── GameConfig.h            -- Cấu hình Game
+    |   ├── GameConstants.h         -- Hằng số Game
+    |   ├── GameState.h             -- Trạng thái Game
+    |   └── PlayState.h             -- Trạng thái Game (Play Mode)
+    ├── GameLogic/                  -- Bộ não Game
+    |   ├── BotAI.h                 -- Bot AI
+    |   ├── GameEngine.h            -- Engine Game
+    |   ├── Rules.h                 -- Luật chơi
+    |   └── PlayerEngineer.h        -- Player Engineer
+    ├── RenderAPI/                  -- Lõi đồ họa
+    |   ├──Colours.h                -- Colours
+    |   ├──Renderer.h               -- Renderer (GDI+ setup)
+    |   ├──UIComponents.h           -- UI Components
+    |   └──UIScaler.h               -- UI Scaler
+    ├── ScreenModules/              -- Các module GUI 
+    |   ├──MenuScreen.h             -- Main Menu
+    |   ├──MatchConfigScreen.h      -- Match Config
+    |   ├──PlayScreen.h             -- Play Screen
+    |   ├──SettingsScreen.h         -- Settings
+    |   ├──LoadGameScreen.h         -- Load Game
+    |   ├──GuildScreen.h            -- Guild
+    |   └──AboutScreen.h            -- About
+    ├── SystemModules/              -- Các Subsystems
+    |   ├──AudioSystem.h            -- Audio System
+    |   ├──SaveLoadSystem.h         -- Save Load System
+    |   ├──Localization.h           -- Localization
+    |   ├──ConfigLoader.h           -- Config Loader
+    |   |──TimeSystem.h             -- Time System 
+    |   |──EngineStats.h            -- Engine Stats
+    |   └──WinApiHandler.h          -- WinApi Handler
+    |── main.cpp                    -- Vòng lặp chính, xử lý Windows Message (WndProc)
+    |── Asset/
+    |   |── audio/                  -- File BGM (.mp3) và SFX (.wav)
+    |   |── font/                   -- Font VT323
+    |   |── lang/                   -- File đa ngôn ngữ (.txt)
+    |   |── models/                 -- Sprite tọa độ Pixel Art (avatar, background)
+    |   └── save/                   -- Thư mục chứa các file slot_X.bin
+    |── README.md                   -- file hướng dẫn sử dụng
+    |── src.sln                     -- file solution
+    |── src.vcxproj                 -- file project
+    └── src.vcxproj.filters         -- file filter
 ```
-
-**Directory Asset chi tiết:**
-
-- `Asset/models/avt_XX/[action]/`: Chứa các frame pixel art theo từng hành động.
-- `Asset/models/bg/`: Các mô hình trang trí.
-- `Asset/font/`: Font pixel (VT323).
-- `Asset/save/`: Các file `slot_N.bin` (Binary format v5).
 
 ---
 
@@ -101,113 +157,65 @@ Gomoku_Game_Project/
 
 ```mermaid
 graph TD
-    A[Khởi động] --> B[Khởi tạo GDI+ & Load Fonts]
-    B --> C[Đọc GameConfig từ config.ini]
+    A[Khởi động] --> B[Khởi tạo GDI+, Font, Worker Threads]
+    B --> C[Đọc config.ini & Load Language]
     C --> D[SCREEN_MENU]
 
     D --> E[Bắt đầu] --> F[SCREEN_MATCH_CONFIG]
-    F --> G[SCREEN_PLAY]
+    F -->|Cấu hình PvP/PvE, Avatar, BoX| G[SCREEN_PLAY]
 
     D --> H[Tải băng] --> I[SCREEN_LOAD_GAME]
-    I --> G
+    I -->|Chọn Slot| G
 
     D --> J[Cài đặt sân] --> K[SCREEN_SETTING]
-    K --> D
+    K -->|Bật/Tắt VFX, BGM, FPS, Ngôn ngữ| D
 
     D --> L[Hướng dẫn/Giới thiệu]
 
     G --> M{Trong trận}
-    M --> |ESC| N[Hộp Tác Chiến - Pause]
+    M --> |ESC| N[Hộp Tác Chiến - Pause Menu]
+    N --> |Lưu Game / Cài đặt| G
+    N --> |Thoát| D
     M --> |Kết thúc| O[Màn hình tóm tắt - Summary]
     O --> |Chơi lại| G
     O --> |Thoát| D
 ```
 
-### Chi tiết luồng màn hình:
-
-- **SCREEN_MENU**: Điều hướng chính (W/S/Enter).
-- **SCREEN_MATCH_CONFIG**:
-  - Trang 1: Chọn Chế độ, PvP/PvE, Độ khó, Time, Target Score (Bo).
-  - Trang 2: Chọn Avatar (CR7, MES, NEY,...) và nhập tên.
-- **SCREEN_PLAY**:
-  - Vòng lặp: Đợi nước đi -> Kiểm tra thắng/thua -> Chuyển lượt (hoặc Bot tính toán).
-  - Hộp Tác Chiến: Lưu game, bật/tắt âm thanh, thoát.
-- **SCREEN_LOAD_GAME**: Hiển thị 5 slot lưu với đầy đủ Metadata (Ngày, giờ, tỷ số).
-
----
-
-## Cơ chế lưu trữ & Metadata
-
-Chương trình sử dụng hệ thống **Serialization** nhị phân mạnh mẽ với các đặc tính:
-
-- **Version Control:** Hiện hành tại **Version 5**, hỗ trợ đầy đủ match statistics và thông tin serie.
-- **Magic Number:** `0xCA05A1E2` để xác thực tính toàn vẹn.
-- **SaveMetadata:** Mỗi bản lưu bao gồm:
-  - Tên hiển thị tùy chỉnh (Save Name).
-  - Dấu thời gian (Timestamp) tự động.
-  - Toàn bộ lịch sử bước đi (`matchHistory`) và `redoStack`.
-  - Trạng thái bàn cờ 20x20.
-
----
-
-## Hệ thống Bot AI
-
-Bot AI (PLAYER 2) hoạt động trên một luồng riêng biệt (`std::async`) để tránh gây gián đoạn giao diện người dùng:
-
-1. **Phân Hạng Đồng (Easy):** Nước đi ngẫu nhiên, mô phỏng người chơi mới.
-2. **Phân Hạng Vàng (Medium):** Sử dụng hàm đánh giá heuristic cơ bản, ưu tiên phòng thủ và chặn các chuỗi nguy hiểm.
-3. **Thách Đấu (Hard):**
-   - **Thuật toán:** Alpha-Beta Pruning kết hợp **Zobrist Hashing**.
-   - **Tối ưu hiệu năng:**
-     - **Transposition Table (TT):** Lưu trữ 1,048,576 trạng thái đã tính toán (~32MB RAM) giúp bỏ qua các nhánh trùng lặp.
-     - **Evaluation:** Đánh giá điểm bàn cờ theo trạng thái hiện tại để chọn nước đi.
-     - **Move Ordering:** Ưu tiên duyệt các nước đi có tiềm năng cao để tối đa hóa khả năng cắt tỉa nhánh.
-     - **Branching Limit:** Giới hạn nhánh (12) tại các nút sâu để duy trì tốc độ phản hồi < 500ms.
-   - **Độ sâu tìm kiếm:** 5 lớp (có thể mở rộng tùy cấu hình).
-   - **Chiến thuật:** Phát hiện và xử lý ngay lập tức các mối đe dọa thắng/thua (Immediate Win/Block).
-
 ---
 
 ## Điều khiển
 
-### Điều hướng chung
-
-| Phím              | Chức năng                                     |
-| :---------------- | :-------------------------------------------- |
-| **W/S**           | Di chuyển lên/xuống giữa các mục              |
-| **A/D**           | Thay đổi giá trị (Âm lượng, Ngôn ngữ, Chế độ) |
-| **Enter / Space** | Xác nhận / Chọn                               |
-| **ESC**           | Quay lại / Thoát                              |
-
-### Trong trận đấu (PlayScreen)
-
-| Phím               | Chức năng                        |
-| :----------------- | :------------------------------- |
-| **WASD / Mũi tên** | Di chuyển con trỏ trên sân       |
-| **Enter / Space**  | Thực hiện cú đặt quân (Đặt bóng) |
-| **Q**              | Undo - Rút lại nước đi (PvE)     |
-| **E**              | Redo - Hoàn tác (PvE)            |
-| **ESC**            | Mở Hộp Tác Chiến (Pause Menu)    |
-| **S**              | Lưu game nhanh                   |
+| Bối Cảnh | Phím | Chức năng |
+| :--- | :--- | :--- |
+| **Menu / Settings** | `W` / `S` (Mũi tên) | Lên/Xuống giữa các mục |
+| | `A` / `D` (Trái/Phải) | Tăng/Giảm giá trị (Âm lượng, FPS, Ngôn ngữ) |
+| | `Enter` / `Space` | Xác nhận / Chọn |
+| | `ESC` | Quay lại / Thoát |
+| **Trong Trận (Play)** | `W, A, S, D` / Mũi tên | Di chuyển con trỏ trên sân |
+| | `Enter` / `Space` | Đánh quân (Đặt bóng) |
+| | `Q` | Undo - Rút lại nước đi (PvE) |
+| | `E` | Redo - Hoàn tác (PvE) |
+| | `ESC` | Mở Hộp Tác Chiến (Pause Menu) |
+| | `S` (khi Pause) | Cắt nhanh đến màn hình lưu game |
 
 ---
 
 ## Yêu cầu hệ thống & Build
 
-- **OS:** Windows 10/11 (Architecture x86).
-- **IDE:** Visual Studio 2022.
-- **Bộ công cụ:** MSVC C++17 trở lên.
-- **Thư viện:** GDI+ (Window SDK), WinMM (Multimedia).
+- **Hệ Điều Hành:** Windows 10/11.
+- **Môi trường phát triển:** Visual Studio 2022 (khuyến nghị).
+- **Bộ công cụ (Toolset):** MSVC C++17 trở lên.
+- **Thư viện nền tảng:** Windows SDK (Win32 API, GDI+, WinMM). Không yêu cầu thư viện bên thứ ba bên ngoài Windows.
 
-**Các bước build:**
-
-1. Clone repository và mở `src/src.sln`.
-2. Build Solution ở chế độ `Release` / `x86`.
+**Hướng dẫn Build:**
+1. Clone dự án.
+2. Mở file `src.sln` trong thư mục `src` bằng Visual Studio.
+3. Chuyển cấu hình build sang **Release** và nền tảng **x86** (ứng dụng biên dịch ở dạng 32-bit).
+4. Nhấn `Ctrl + Shift + B` (Build Solution) và `F5` để chạy ứng dụng.
 
 ---
 
-© 2026 Nhóm 3 - 25CTT7. Dự án được phát triển cho mục đích giáo dục.
+© 2026 Nhóm 3 - 25CTT7. Dự án được phát triển cho mục đích giáo dục thuộc Khoa Công Nghệ Thông Tin, ĐH KHTN TP.HCM.
 
-MSV: 24120260 | 24120421 | 24120428 | 24120451
-
-GVHD: Trương Toàn Thịnh.
+**Thành viên:** 24120260 | 24120421 | 24120428 | 24120451  
+**GVHD:** Trương Toàn Thịnh.
