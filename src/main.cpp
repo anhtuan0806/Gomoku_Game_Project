@@ -11,10 +11,12 @@
 #include "SystemModules/ConfigLoader.h"
 #include "SystemModules/AudioSystem.h"
 #include "SystemModules/TimeSystem.h"
+#include "SystemModules/Profiler.h"
 #include "SystemModules/Localization.h"
 #include "RenderAPI/Colours.h"
 #include "RenderAPI/UIScaler.h"
 #include "RenderAPI/Renderer.h"
+#include "RenderAPI/DirtyRect.h"
 #include "RenderAPI/UIComponents.h"
 #include "GameLogic/GameEngine.h"
 #include "SystemModules/EngineStats.h"
@@ -45,6 +47,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     // Thiết lập tỷ lệ màn hình ngay từ ban đầu
     UIScaler::Update((int)UIScaler::BASE_WIDTH, (int)UIScaler::BASE_HEIGHT);
     GlobalFont::Initialize();
+
+    // Initialize profiler if profiling_on.txt is present in workspace root
+    Profiler::InitIfRequested("D:\\Code\\Gomoku_Game_Project");
 
     // 2. Tải Cấu hình & Ngôn ngữ & Âm thanh
     LoadConfig(&g_Config, "Asset/config.ini");
@@ -114,6 +119,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         double dt = EngineStats::BeginFrame();
         g_GlobalAnimTime += (float)dt;
 
+        // profiler helpers for this frame
+        int profiler_rectCount = 0;
+        double profiler_dirtyArea = 0.0;
+
         // Cập nhật Logic
         auto updateStart = std::chrono::high_resolution_clock::now();
         bool needsLogicRedraw = false;
@@ -138,16 +147,69 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
             if (g_NeedsRedraw)
             {
-                InvalidateRect(hWnd, NULL, FALSE);
+                // Prefer partial invalidation: resolve board cells and invalidate only dirty rects
+                RECT clientRect;
+                GetClientRect(hWnd, &clientRect);
+                int w = clientRect.right - clientRect.left;
+                int h = clientRect.bottom - clientRect.top;
+
+                if (g_CurrentScreen == SCREEN_PLAY)
+                {
+                    // Compute board layout same as PlayScreen so we can resolve logical cells
+                    int availableHeight = h - UIScaler::SY(120);
+                    int availableWidth = w - UIScaler::SX(300);
+                    int maxBoardSize = availableWidth < availableHeight ? availableWidth : availableHeight;
+                    int minBoardSize = UIScaler::S(200);
+                    if (maxBoardSize < minBoardSize)
+                        maxBoardSize = minBoardSize;
+                    int dynamicCellSize = maxBoardSize / g_PlayState.boardSize;
+                    int boardPixelSize = g_PlayState.boardSize * dynamicCellSize;
+                    int startX = (w - boardPixelSize) / 2;
+                    int startY = (h - boardPixelSize) / 2 + UIScaler::SY(40);
+
+                    DirtyRect::ResolveBoardCells(dynamicCellSize, startX, startY);
+                    auto rects = DirtyRect::StealAndClear();
+                    DirtyRect::MergeAndClip(rects, clientRect);
+
+                    // Compute telemetry for profiler: rect count and total dirty area
+                    if (rects.empty())
+                    {
+                        InvalidateRect(hWnd, NULL, FALSE);
+                        profiler_rectCount = -1; // indicates full invalidate
+                        profiler_dirtyArea = (double)(w) * (double)(h);
+                    }
+                    else
+                    {
+                        double totalArea = 0.0;
+                        for (auto &r : rects)
+                        {
+                            InvalidateRect(hWnd, &r, FALSE);
+                            double rw = (double)max(0, r.right - r.left);
+                            double rh = (double)max(0, r.bottom - r.top);
+                            totalArea += rw * rh;
+                        }
+                        profiler_rectCount = (int)rects.size();
+                        profiler_dirtyArea = totalArea;
+                    }
+                }
+                else
+                {
+                    InvalidateRect(hWnd, NULL, FALSE);
+                }
+
                 UpdateWindow(hWnd);
             }
         }
 
         // Kết thúc khung hình (Throttling)
         EngineStats::EndFrame();
+
+        // Profiling: log last blit duration and dirty-rect stats if enabled
+        Profiler::LogFrame(g_LastBlitMs, profiler_rectCount, profiler_dirtyArea);
     }
 
     // 7. Giải phóng tài nguyên
+    Profiler::Shutdown();
     ShowWindow(hWnd, SW_HIDE); // Safety: ensure window is hidden before slow cleanup
 
     GlobalFont::Cleanup();
@@ -289,37 +351,155 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         auto renderStart = std::chrono::high_resolution_clock::now();
 
-        switch (g_CurrentScreen)
-        {
-        case SCREEN_MENU:
-            RenderMenuScreen(g_BackBuffer.hdcMemory, (int)g_MenuSelected, w, h);
-            break;
-        case SCREEN_PLAY:
-            RenderPlayScreen(g_BackBuffer.hdcMemory, &g_PlayState, w, h, &g_Config);
-            break;
-        case SCREEN_SETTING:
-            RenderSettingScreen(g_BackBuffer.hdcMemory, &g_Config, g_SettingSelected, w, h);
-            break;
-        case SCREEN_LOAD_GAME:
-            RenderLoadGameScreen(g_BackBuffer.hdcMemory, g_LoadSelected, g_LoadStatus, w, h);
-            break;
-        case SCREEN_MATCH_CONFIG:
-            RenderMatchConfigScreen(g_BackBuffer.hdcMemory, g_ConfigSelected, &g_PlayState, w, h);
-            break;
-        case SCREEN_GUIDE:
-            RenderGuildScreen(g_BackBuffer.hdcMemory, w, h, g_GuildPage);
-            break;
+        // Use the update region(s) provided by Windows and render/blit only those rects.
+        HRGN hUpdateRgn = CreateRectRgn(0, 0, 0, 0);
+        int rgnType = GetUpdateRgn(hWnd, hUpdateRgn, FALSE);
 
-        case SCREEN_ABOUT:
-            RenderAboutScreen(g_BackBuffer.hdcMemory, w, h);
-            break;
+        double totalBlitMs = 0.0;
+
+        if (rgnType == NULLREGION)
+        {
+            // No explicit update region — fallback to full render+blit to avoid leaving backbuffer stale
+            switch (g_CurrentScreen)
+            {
+            case SCREEN_MENU:
+                RenderMenuScreen(g_BackBuffer.hdcMemory, (int)g_MenuSelected, w, h);
+                break;
+            case SCREEN_PLAY:
+                RenderPlayScreen(g_BackBuffer.hdcMemory, &g_PlayState, w, h, &g_Config);
+                break;
+            case SCREEN_SETTING:
+                RenderSettingScreen(g_BackBuffer.hdcMemory, &g_Config, g_SettingSelected, w, h);
+                break;
+            case SCREEN_LOAD_GAME:
+                RenderLoadGameScreen(g_BackBuffer.hdcMemory, g_LoadSelected, g_LoadStatus, w, h);
+                break;
+            case SCREEN_MATCH_CONFIG:
+                RenderMatchConfigScreen(g_BackBuffer.hdcMemory, g_ConfigSelected, &g_PlayState, w, h);
+                break;
+            case SCREEN_GUIDE:
+                RenderGuildScreen(g_BackBuffer.hdcMemory, w, h, g_GuildPage);
+                break;
+            case SCREEN_ABOUT:
+                RenderAboutScreen(g_BackBuffer.hdcMemory, w, h);
+                break;
+            }
+
+            auto blitStartFull = std::chrono::high_resolution_clock::now();
+            BitBlt(hdc, 0, 0, w, h, g_BackBuffer.hdcMemory, 0, 0, SRCCOPY);
+            auto blitEndFull = std::chrono::high_resolution_clock::now();
+            totalBlitMs = std::chrono::duration<double, std::milli>(blitEndFull - blitStartFull).count();
+        }
+        else if (rgnType == ERROR)
+        {
+            // Fallback to full render+blit on error
+            switch (g_CurrentScreen)
+            {
+            case SCREEN_MENU:
+                RenderMenuScreen(g_BackBuffer.hdcMemory, (int)g_MenuSelected, w, h);
+                break;
+            case SCREEN_PLAY:
+                RenderPlayScreen(g_BackBuffer.hdcMemory, &g_PlayState, w, h, &g_Config);
+                break;
+            case SCREEN_SETTING:
+                RenderSettingScreen(g_BackBuffer.hdcMemory, &g_Config, g_SettingSelected, w, h);
+                break;
+            case SCREEN_LOAD_GAME:
+                RenderLoadGameScreen(g_BackBuffer.hdcMemory, g_LoadSelected, g_LoadStatus, w, h);
+                break;
+            case SCREEN_MATCH_CONFIG:
+                RenderMatchConfigScreen(g_BackBuffer.hdcMemory, g_ConfigSelected, &g_PlayState, w, h);
+                break;
+            case SCREEN_GUIDE:
+                RenderGuildScreen(g_BackBuffer.hdcMemory, w, h, g_GuildPage);
+                break;
+            case SCREEN_ABOUT:
+                RenderAboutScreen(g_BackBuffer.hdcMemory, w, h);
+                break;
+            }
+
+            auto blitStartFull = std::chrono::high_resolution_clock::now();
+            BitBlt(hdc, 0, 0, w, h, g_BackBuffer.hdcMemory, 0, 0, SRCCOPY);
+            auto blitEndFull = std::chrono::high_resolution_clock::now();
+            totalBlitMs = std::chrono::duration<double, std::milli>(blitEndFull - blitStartFull).count();
+        }
+        else
+        {
+            // Get region data (may contain multiple rects)
+            DWORD needed = GetRegionData(hUpdateRgn, 0, NULL);
+            if (needed == 0)
+                needed = sizeof(RGNDATA) + 16 * sizeof(RECT);
+
+            std::vector<BYTE> buf(needed);
+            RGNDATA* prd = reinterpret_cast<RGNDATA*>(buf.data());
+            DWORD got = GetRegionData(hUpdateRgn, needed, prd);
+            int rectCount = (prd && prd->rdh.nCount > 0) ? prd->rdh.nCount : 0;
+            RECT* pRects = (RECT*)(prd->Buffer);
+
+            // For non-play screens render full backbuffer once, then blit per-rect
+            bool renderedFullForNonPlay = false;
+            if (g_CurrentScreen != SCREEN_PLAY)
+            {
+                switch (g_CurrentScreen)
+                {
+                case SCREEN_MENU:
+                    RenderMenuScreen(g_BackBuffer.hdcMemory, (int)g_MenuSelected, w, h);
+                    break;
+                case SCREEN_SETTING:
+                    RenderSettingScreen(g_BackBuffer.hdcMemory, &g_Config, g_SettingSelected, w, h);
+                    break;
+                case SCREEN_LOAD_GAME:
+                    RenderLoadGameScreen(g_BackBuffer.hdcMemory, g_LoadSelected, g_LoadStatus, w, h);
+                    break;
+                case SCREEN_MATCH_CONFIG:
+                    RenderMatchConfigScreen(g_BackBuffer.hdcMemory, g_ConfigSelected, &g_PlayState, w, h);
+                    break;
+                case SCREEN_GUIDE:
+                    RenderGuildScreen(g_BackBuffer.hdcMemory, w, h, g_GuildPage);
+                    break;
+                case SCREEN_ABOUT:
+                    RenderAboutScreen(g_BackBuffer.hdcMemory, w, h);
+                    break;
+                default:
+                    break;
+                }
+                renderedFullForNonPlay = true;
+            }
+
+            for (int i = 0; i < rectCount; ++i)
+            {
+                RECT rc = pRects[i];
+                // Intersect with client area
+                RECT clipped = rc;
+                IntersectRect(&clipped, &clipped, &clientRect);
+                if (clipped.right <= clipped.left || clipped.bottom <= clipped.top)
+                    continue;
+
+                if (g_CurrentScreen == SCREEN_PLAY)
+                {
+                    // Render only the clip area into backbuffer
+                    RenderPlayScreen(g_BackBuffer.hdcMemory, &g_PlayState, w, h, &g_Config, &clipped);
+                }
+                // Blit only the updated rect from backbuffer to window
+                auto blitStart = std::chrono::high_resolution_clock::now();
+                BitBlt(hdc, clipped.left, clipped.top, clipped.right - clipped.left, clipped.bottom - clipped.top,
+                    g_BackBuffer.hdcMemory, clipped.left, clipped.top, SRCCOPY);
+                auto blitEnd = std::chrono::high_resolution_clock::now();
+                totalBlitMs += std::chrono::duration<double, std::milli>(blitEnd - blitStart).count();
+            }
+
+            // If there were no rects (shouldn't happen), fallback to full blit
+            if (rectCount == 0 && !renderedFullForNonPlay)
+            {
+                RenderPlayScreen(g_BackBuffer.hdcMemory, &g_PlayState, w, h, &g_Config, &clientRect);
+                auto blitStartFull = std::chrono::high_resolution_clock::now();
+                BitBlt(hdc, 0, 0, w, h, g_BackBuffer.hdcMemory, 0, 0, SRCCOPY);
+                auto blitEndFull = std::chrono::high_resolution_clock::now();
+                totalBlitMs = std::chrono::duration<double, std::milli>(blitEndFull - blitStartFull).count();
+            }
         }
 
-        auto blitStart = std::chrono::high_resolution_clock::now();
-        BitBlt(hdc, 0, 0, w, h, g_BackBuffer.hdcMemory, 0, 0, SRCCOPY);
-        auto blitEnd = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> blitElapsed = blitEnd - blitStart;
-        g_LastBlitMs = blitElapsed.count();
+        g_LastBlitMs = totalBlitMs;
 
         auto renderEnd = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> renderElapsed = renderEnd - renderStart;
@@ -327,6 +507,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         g_NeedsRedraw = false;
 
+        DeleteObject(hUpdateRgn);
         EndPaint(hWnd, &ps);
         break;
     }

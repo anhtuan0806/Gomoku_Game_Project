@@ -953,12 +953,20 @@ void DrawTextCentered(HDC hdc, const std::wstring &text, int posY, int rightX, C
  * @note Hàm sử dụng cả GDI+ cho hiệu ứng và GDI cho vẽ text/quân cờ; caller phải
  *       đảm bảo `g` và `hdc` hợp lệ đồng thời.
  */
-void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int cellSize, int offsetX, int offsetY)
+void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int cellSize, int offsetX, int offsetY, const RECT *clip /*= nullptr*/)
 {
     int size = state->boardSize;
     int boardPixelLength = size * cellSize;
 
-    // 1. Vẽ lưới (Grid) - GDI thuần
+    auto intersects_clip = [&](int left, int top, int right, int bottom)->bool
+    {
+        if (!clip) return true;
+        RECT r = {left, top, right, bottom};
+        RECT out;
+        return IntersectRect(&out, &r, clip) != 0;
+    };
+
+    // 1. Vẽ lưới (Grid) - GDI thuần (vẽ chỉ các đoạn cắt qua clip)
     HPEN hPen = CreatePen(PS_SOLID, max(1, UIScaler::S(2)), ToCOLORREF(Palette::White));
     HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
 
@@ -966,10 +974,18 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
     {
         int currX = offsetX + index * cellSize;
         int currY = offsetY + index * cellSize;
-        MoveToEx(hdc, offsetX, currY, NULL);
-        LineTo(hdc, offsetX + boardPixelLength, currY);
-        MoveToEx(hdc, currX, offsetY, NULL);
-        LineTo(hdc, currX, offsetY + boardPixelLength);
+        // horizontal line segment bounding box
+        if (intersects_clip(offsetX, currY - 1, offsetX + boardPixelLength, currY + 1))
+        {
+            MoveToEx(hdc, offsetX, currY, NULL);
+            LineTo(hdc, offsetX + boardPixelLength, currY);
+        }
+        // vertical
+        if (intersects_clip(currX - 1, offsetY, currX + 1, offsetY + boardPixelLength))
+        {
+            MoveToEx(hdc, currX, offsetY, NULL);
+            LineTo(hdc, currX, offsetY + boardPixelLength);
+        }
     }
     SelectObject(hdc, hOldPen);
     DeleteObject(hPen);
@@ -1002,6 +1018,9 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
         {
             int drawX = offsetX + col * cellSize;
             int drawY = offsetY + row * cellSize;
+            // Skip if outside clip
+            if (!intersects_clip(drawX, drawY, drawX + cellSize, drawY + cellSize))
+                continue;
 
             if (row == state->lastMoveRow && col == state->lastMoveCol)
             {
@@ -1017,27 +1036,30 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
     {
         int cursorX = offsetX + state->cursorCol * cellSize;
         int cursorY = offsetY + state->cursorRow * cellSize;
-        float pulse = 0.5f + sin(g_GlobalAnimTime * 8.0f) * 0.5f;
-        Gdiplus::Color cursorColor = state->isPlayer1Turn ? ToGdiColor(Palette::OrangeNormal) : ToGdiColor(Palette::CyanNormal);
+        if (intersects_clip(cursorX, cursorY, cursorX + cellSize, cursorY + cellSize))
+        {
+            float pulse = 0.5f + sin(g_GlobalAnimTime * 8.0f) * 0.5f;
+            Gdiplus::Color cursorColor = state->isPlayer1Turn ? ToGdiColor(Palette::OrangeNormal) : ToGdiColor(Palette::CyanNormal);
 
-        int glowAlpha = (int)(40 + pulse * 60);
-        SmartColor cursorSmart = {255, cursorColor.GetR(), cursorColor.GetG(), cursorColor.GetB()};
-        Gdiplus::SolidBrush *glowBrush = GetCachedBrush(ToGdiColor(WithAlpha(cursorSmart, (BYTE)glowAlpha)));
-        g.FillRectangle(glowBrush, cursorX + 1, cursorY + 1, cellSize - 1, cellSize - 1);
+            int glowAlpha = (int)(40 + pulse * 60);
+            SmartColor cursorSmart = {255, cursorColor.GetR(), cursorColor.GetG(), cursorColor.GetB()};
+            Gdiplus::SolidBrush *glowBrush = GetCachedBrush(ToGdiColor(WithAlpha(cursorSmart, (BYTE)glowAlpha)));
+            g.FillRectangle(glowBrush, cursorX + 1, cursorY + 1, cellSize - 1, cellSize - 1);
 
-        Gdiplus::Pen cornerPen(cursorColor, (Gdiplus::REAL)UIScaler::S(3));
-        int cornerLen = cellSize / 3;
-        int offset = (int)(pulse * UIScaler::S(4));
-        g.DrawLine(&cornerPen, cursorX - offset, cursorY - offset, cursorX - offset + cornerLen, cursorY - offset);
-        g.DrawLine(&cornerPen, cursorX - offset, cursorY - offset, cursorX - offset, cursorY - offset + cornerLen);
-        g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY - offset, cursorX + cellSize + offset - cornerLen, cursorY - offset);
-        g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY - offset, cursorX + cellSize + offset, cursorY - offset + cornerLen);
-        g.DrawLine(&cornerPen, cursorX - offset, cursorY + cellSize + offset, cursorX - offset + cornerLen, cursorY + cellSize + offset);
-        g.DrawLine(&cornerPen, cursorX - offset, cursorY + cellSize + offset, cursorX - offset, cursorY + cellSize + offset - cornerLen);
-        g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY + cellSize + offset, cursorX + cellSize + offset - cornerLen, cursorY + cellSize + offset);
-        g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY + cellSize + offset, cursorX + cellSize + offset, cursorY + cellSize + offset - cornerLen);
-        Gdiplus::Pen thinPen(cursorColor, 1.0f);
-        g.DrawRectangle(&thinPen, cursorX, cursorY, cellSize, cellSize);
+            Gdiplus::Pen cornerPen(cursorColor, (Gdiplus::REAL)UIScaler::S(3));
+            int cornerLen = cellSize / 3;
+            int offset = (int)(pulse * UIScaler::S(4));
+            g.DrawLine(&cornerPen, cursorX - offset, cursorY - offset, cursorX - offset + cornerLen, cursorY - offset);
+            g.DrawLine(&cornerPen, cursorX - offset, cursorY - offset, cursorX - offset, cursorY - offset + cornerLen);
+            g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY - offset, cursorX + cellSize + offset - cornerLen, cursorY - offset);
+            g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY - offset, cursorX + cellSize + offset, cursorY - offset + cornerLen);
+            g.DrawLine(&cornerPen, cursorX - offset, cursorY + cellSize + offset, cursorX - offset + cornerLen, cursorY + cellSize + offset);
+            g.DrawLine(&cornerPen, cursorX - offset, cursorY + cellSize + offset, cursorX - offset, cursorY + cellSize + offset - cornerLen);
+            g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY + cellSize + offset, cursorX + cellSize + offset - cornerLen, cursorY + cellSize + offset);
+            g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY + cellSize + offset, cursorX + cellSize + offset, cursorY + cellSize + offset - cornerLen);
+            Gdiplus::Pen thinPen(cursorColor, 1.0f);
+            g.DrawRectangle(&thinPen, cursorX, cursorY, cellSize, cellSize);
+        }
     }
 
     // 3. GIAI ĐOẠN 2 (GDI): Vẽ quân cờ (X/O) - Sau khi đã xong tất cả GDI+ để tránh Interleaving
@@ -1068,6 +1090,9 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
             int drawX = offsetX + col * cellSize;
             int drawY = offsetY + row * cellSize;
             RECT cellRect = {drawX, drawY, drawX + cellSize, drawY + cellSize};
+
+            if (!intersects_clip(cellRect.left, cellRect.top, cellRect.right, cellRect.bottom))
+                continue;
 
             if (state->board[row][col] == CELL_PLAYER1)
             {

@@ -2,6 +2,7 @@
 #include "GameRules.h"
 #include "BotAI.h" // Để gọi clearTranspositionTable()
 #include "PlayerEngineer.h"
+#include "../RenderAPI/DirtyRect.h"
 #include "../SystemModules/TimeSystem.h"
 #include "../SystemModules/AudioSystem.h"
 
@@ -124,6 +125,10 @@ void undoMove(PlayState *state)
         state->lastMoveCol = last.second;
     }
 
+    // Mark lastMove and surrounding cell as dirty after undo/redo
+    if (state->lastMoveRow >= 0 && state->lastMoveCol >= 0)
+        DirtyRect::AddCell(state->lastMoveRow, state->lastMoveCol);
+
     // Nếu ván đã kết thúc thì reopen (trừ khi muốn giữ kết thúc)
     if (state->status == MATCH_FINISHED)
     {
@@ -196,11 +201,19 @@ bool processMove(PlayState *state, int row, int col)
     if (state->status != MATCH_PLAYING || !isValidMove(state, row, col))
         return false;
 
+    int oldLastRow = state->lastMoveRow;
+    int oldLastCol = state->lastMoveCol;
+
     state->board[row][col] = state->isPlayer1Turn ? CELL_PLAYER1 : CELL_PLAYER2;
     state->lastMoveRow = row;
     state->lastMoveCol = col;
     state->matchHistory.push_back({row, col});
     state->redoStack.clear(); // Hủy nhánh redo sau khi đặt nước mới
+
+    // Mark dirty cells for partial invalidation (logical cells)
+    DirtyRect::AddCell(row, col);
+    if (oldLastRow >= 0 && oldLastCol >= 0)
+        DirtyRect::AddCell(oldLastRow, oldLastCol);
 
     if (state->isPlayer1Turn)
         state->player1.movesCount++;

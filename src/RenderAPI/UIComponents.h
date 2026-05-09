@@ -169,7 +169,7 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text, in
  * @param offsetY Tọa độ Y bắt đầu bảng (px).
  * @note Hàm sử dụng cả GDI và GDI+; caller phải đảm bảo `g` và `hdc` hợp lệ.
  */
-void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int cellSize, int offsetX, int offsetY);
+void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int cellSize, int offsetX, int offsetY, const RECT *clip = nullptr);
 
 /**
  * @brief Thiết lập màu chữ cho HDC và chế độ nền trong suốt.

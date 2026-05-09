@@ -1,4 +1,5 @@
 #include "PlayScreen.h"
+#include "../RenderAPI/DirtyRect.h"
 #include "../RenderAPI/UIComponents.h"
 #include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
@@ -380,7 +381,10 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
         {
             if (!canMove)
                 return false;
+            int oldR = state->cursorRow, oldC = state->cursorCol;
             state->cursorRow--;
+            DirtyRect::AddCell(oldR, oldC);
+            DirtyRect::AddCell(state->cursorRow, state->cursorCol);
             if (!isRepeat)
                 playSfx("sfx_move");
             lastMoveTime = now;
@@ -390,7 +394,10 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
         {
             if (!canMove)
                 return false;
+            int oldR = state->cursorRow, oldC = state->cursorCol;
             state->cursorRow++;
+            DirtyRect::AddCell(oldR, oldC);
+            DirtyRect::AddCell(state->cursorRow, state->cursorCol);
             if (!isRepeat)
                 playSfx("sfx_move");
             lastMoveTime = now;
@@ -400,7 +407,10 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
         {
             if (!canMove)
                 return false;
+            int oldR = state->cursorRow, oldC = state->cursorCol;
             state->cursorCol--;
+            DirtyRect::AddCell(oldR, oldC);
+            DirtyRect::AddCell(state->cursorRow, state->cursorCol);
             if (!isRepeat)
                 playSfx("sfx_move");
             lastMoveTime = now;
@@ -410,7 +420,10 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
         {
             if (!canMove)
                 return false;
+            int oldR = state->cursorRow, oldC = state->cursorCol;
             state->cursorCol++;
+            DirtyRect::AddCell(oldR, oldC);
+            DirtyRect::AddCell(state->cursorRow, state->cursorCol);
             if (!isRepeat)
                 playSfx("sfx_move");
             lastMoveTime = now;
@@ -521,7 +534,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
     return hasChanged;
 }
 
-void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int screenHeight, const GameConfig *config)
+void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int screenHeight, const GameConfig *config, const RECT *clip /*= nullptr*/)
 {
     // 1. Vẽ bàn cờ và thông tin trận đấu
     Gdiplus::Graphics g(hdc);
@@ -703,6 +716,10 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     int startX = (screenWidth - boardPixelSize) / 2;
     int startY = (screenHeight - boardPixelSize) / 2 + UIScaler::SY(40);
 
+    // Resolve any logical board cells collected by game logic into pixel rects
+    // so DirtyRect can be consumed by WM_PAINT or this render call.
+    DirtyRect::ResolveBoardCells(dynamicCellSize, startX, startY);
+
     HFONT hOldFont = (HFONT)SelectObject(hdc, GlobalFont::Default);
     SetBkMode(hdc, TRANSPARENT);
 
@@ -871,7 +888,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     Gdiplus::Pen pitchBorder(ToGdiColor(Theme::BoardBorder), 3);
     g.DrawRectangle(&pitchBorder, startX, startY, boardPixelSize, boardPixelSize);
 
-    DrawGameBoard(g, hdc, state, dynamicCellSize, startX, startY);
+    DrawGameBoard(g, hdc, state, dynamicCellSize, startX, startY, clip);
 
     // --- Redesigned Match Format & Turn Indicator (Scoreboard Style) ---
     std::wstring s_fmt = GetText("play_format");

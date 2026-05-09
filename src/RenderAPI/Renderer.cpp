@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include "UIScaler.h"
 #include "Colours.h"
+#include <atomic>
 
 /** @file Renderer.cpp
  *  @brief Cài đặt cho quản lý font toàn cục và lifecycle của GDI+/double buffer.
@@ -17,7 +18,7 @@ namespace GlobalFont
 // --- Globals ---
 DoubleBuffer g_BackBuffer = {0};
 ULONG_PTR g_GdiplusToken = 0;
-bool g_NeedsRedraw = true;
+std::atomic_bool g_NeedsRedraw = true;
 
 namespace GlobalFont
 {

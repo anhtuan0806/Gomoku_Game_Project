@@ -50,7 +50,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
  *  @param screenHeight Chiều cao vùng vẽ.
  *  @param config Cấu hình game để hiển thị các tuỳ chọn (ví dụ BGM state).
  */
-void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int screenHeight, const GameConfig *config);
+void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int screenHeight, const GameConfig *config, const RECT *clip = nullptr);
 
 /** @brief Wrapper input từ main loop tới Play screen.
  *  @param state Trạng thái trận đấu.

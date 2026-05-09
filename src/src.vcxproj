@@ -149,6 +149,7 @@
     <ClInclude Include="GameLogic\PlayerEngineer.h" />
     <ClInclude Include="RenderAPI\Colours.h" />
     <ClInclude Include="RenderAPI\Renderer.h" />
+    <ClInclude Include="RenderAPI\DirtyRect.h" />
     <ClInclude Include="RenderAPI\UIComponents.h" />
     <ClInclude Include="RenderAPI\UIScaler.h" />
     <ClInclude Include="ScreenModules\AboutScreen.h" />
@@ -164,6 +165,7 @@
     <ClInclude Include="SystemModules\Localization.h" />
     <ClInclude Include="SystemModules\SaveLoadSystem.h" />
     <ClInclude Include="SystemModules\TimeSystem.h" />
+    <ClInclude Include="SystemModules\Profiler.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameLogic\BotAI.cpp" />
@@ -176,6 +178,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RenderAPI\Colours.cpp" />
     <ClCompile Include="RenderAPI\Renderer.cpp" />
+    <ClCompile Include="RenderAPI\DirtyRect.cpp" />
     <ClCompile Include="RenderAPI\UIComponents.cpp" />
     <ClCompile Include="RenderAPI\UIScaler.cpp" />
     <ClCompile Include="ScreenModules\AboutScreen.cpp" />
@@ -191,6 +194,7 @@
     <ClCompile Include="SystemModules\SaveLoadSystem.cpp" />
     <ClCompile Include="SystemModules\EngineStats.cpp" />
     <ClCompile Include="SystemModules\TimeSystem.cpp" />
+    <ClCompile Include="SystemModules\Profiler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />

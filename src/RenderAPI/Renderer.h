@@ -2,6 +2,7 @@
 #define _RENDERER_H_
 #include <windows.h>
 #include <gdiplus.h>
+#include <atomic>
 #include <string>
 #pragma comment(lib, "gdiplus.lib")
 
@@ -87,6 +88,6 @@ void DeleteBuffer(DoubleBuffer &buffer);
 // --- Globals (Owned by Renderer) ---
 extern DoubleBuffer g_BackBuffer;
 extern ULONG_PTR g_GdiplusToken;
-extern bool g_NeedsRedraw;
+extern std::atomic_bool g_NeedsRedraw;
 
 #endif // _RENDERER_H_
