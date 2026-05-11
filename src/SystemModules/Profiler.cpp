@@ -10,6 +10,7 @@ namespace Profiler
     static std::mutex s_mtx;
     static bool s_enabled = false;
     static std::string s_path;
+    static const double s_minDirtyArea = 64.0; // frames with dirty area below this are filtered unless there's a spike
 
     void InitIfRequested(const std::string &workspacePath)
     {
@@ -35,6 +36,10 @@ namespace Profiler
     void LogFrame(double lastBlitMs, int rectCount, double dirtyArea)
     {
         if (!s_enabled) return;
+        // Filter: ignore empty frames or very small dirty area to reduce noise, but always log visible spikes
+        if (rectCount == 0) return;
+        if (rectCount > 0 && dirtyArea < s_minDirtyArea && lastBlitMs <= 16.0) return;
+
         std::lock_guard<std::mutex> lk(s_mtx);
         using namespace std::chrono;
         auto now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();

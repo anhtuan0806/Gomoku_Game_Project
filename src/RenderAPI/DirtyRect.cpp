@@ -90,7 +90,7 @@ namespace DirtyRect
         return false;
     }
 
-    void MergeAndClip(std::vector<RECT> &inOut, const RECT &client, int margin)
+    void MergeAndClip(std::vector<RECT> &inOut, const RECT &client, int margin, int minArea)
     {
         if (inOut.empty()) return;
         // Clip first
@@ -114,7 +114,17 @@ namespace DirtyRect
             if (!TryMergeRects(merged.back(), clipped[i], margin))
                 merged.push_back(clipped[i]);
         }
-        inOut.swap(merged);
+
+        // Prune small rects by area threshold
+        std::vector<RECT> pruned;
+        for (auto &r : merged)
+        {
+            int w = max(0, r.right - r.left);
+            int h = max(0, r.bottom - r.top);
+            if (w * h >= minArea)
+                pruned.push_back(r);
+        }
+        inOut.swap(pruned);
     }
 
     std::vector<RECT> StealAndClear()

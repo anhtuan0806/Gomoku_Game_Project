@@ -114,6 +114,9 @@
     <ClInclude Include="RenderAPI\UIScaler.h">
       <Filter>RenderAPI</Filter>
     </ClInclude>
+    <ClInclude Include="RenderAPI\DirtyRect.h">
+      <Filter>RenderAPI</Filter>
+    </ClInclude>
     <ClInclude Include="ScreenModules\AboutScreen.h">
       <Filter>ScreenModules</Filter>
     </ClInclude>
@@ -150,6 +153,9 @@
     <ClInclude Include="SystemModules\TimeSystem.h">
       <Filter>SystemModules</Filter>
     </ClInclude>
+    <ClInclude Include="SystemModules\Profiler.h">
+      <Filter>SystemModules</Filter>
+    </ClInclude>
     <ClInclude Include="ScreenModules\MatchConfigScreen.h">
       <Filter>ScreenModules</Filter>
     </ClInclude>
@@ -174,6 +180,9 @@
       <Filter>RenderAPI</Filter>
     </ClCompile>
     <ClCompile Include="RenderAPI\UIScaler.cpp">
+      <Filter>RenderAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderAPI\DirtyRect.cpp">
       <Filter>RenderAPI</Filter>
     </ClCompile>
     <ClCompile Include="ScreenModules\AboutScreen.cpp">
@@ -210,6 +219,9 @@
       <Filter>SystemModules</Filter>
     </ClCompile>
     <ClCompile Include="SystemModules\TimeSystem.cpp">
+      <Filter>SystemModules</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemModules\Profiler.cpp">
       <Filter>SystemModules</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />

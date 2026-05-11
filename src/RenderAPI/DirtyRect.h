@@ -32,7 +32,7 @@ namespace DirtyRect
     void ResolveBoardCells(int cellSize, int offsetX, int offsetY, int padding = 2);
 
     // Merge overlapping/adjacent rects and clip to client rect
-    void MergeAndClip(std::vector<RECT> &inOut, const RECT &client, int margin = 2);
+    void MergeAndClip(std::vector<RECT> &inOut, const RECT &client, int margin = 2, int minArea = 64);
 
     // Steal current pixel rects (after resolution & merge) and clear manager
     std::vector<RECT> StealAndClear();
