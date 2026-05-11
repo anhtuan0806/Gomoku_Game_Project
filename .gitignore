@@ -15,3 +15,10 @@
 
 !report
 .gitnexus
+
+src.vcxproj.user
+
+x64
+Debug
+Release
+src
