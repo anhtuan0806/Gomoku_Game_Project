@@ -1,40 +1,16 @@
-# Executables & objects
-*.exe
-*.obj
+!*.cpp
+!*.h
 
-# Debug files
-*.pdb
-*.ilk
+!*.md
 
-# Logs
-*.log
+!gitignore
 
-# Visual Studio
-.vs/
-*.suo
-*.vcxproj.user
+!.github
 
-# Build folders
-Debug/
-Release/
-x64/
-build/
+!.claude
 
-# MSBuild
-*.tlog
-*.lastbuildstate
+!docs
 
-# CMake
-CMakeFiles/
-CMakeCache.txt
-cmake-build-*/
+!src
 
-# Temp
-*.tmp
-*.cache
-
-Ibug*
-.gitnexus/
-
-docs/
-report/
+!report
