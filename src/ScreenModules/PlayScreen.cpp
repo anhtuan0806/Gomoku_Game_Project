@@ -10,6 +10,7 @@
 #include "../SystemModules/ConfigLoader.h"
 #include "../SystemModules/Localization.h"
 #include "../ApplicationTypes/GameConstants.h"
+#include "../RenderAPI/TitleBar.h"
 #include <future>
 #include <cmath>
 #include <iostream>
@@ -36,6 +37,14 @@ static MatchStatus g_PrePauseStatus = MATCH_PLAYING;
 static int g_SummarySelected = 0;
 static float g_SaveFeedbackTimer = 0.0f;
 static std::wstring g_SaveStatusMsg = L"";
+
+// Các biến trạng thái menu Pause (đã chuyển từ PlayScreen.h sang đây
+// để tránh mỗi translation unit tạo bản sao riêng khi include header).
+static int g_PauseSelected = 0;
+static PauseSubMenu g_CurrentSubMenu = SUB_MAIN;
+static int g_SaveSlotSelected = 0;
+static std::wstring g_SaveNameInput = L"";
+bool g_SaveSlotCacheValid = false;
 
 /** @brief Cập nhật logic chơi mỗi khung thời gian.
  *  @param state Trạng thái trận đấu hiện tại (được cập nhật bởi hàm).
@@ -214,6 +223,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                     playSfx("sfx_success");
                     g_SaveStatusMsg = GetText("msg_save_success");
                     g_SaveFeedbackTimer = 1.5f; // Hiện thông báo trong 1.5s
+                    g_SaveSlotCacheValid = false;
                 }
                 else
                 {
@@ -324,6 +334,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 }
                 break;
             case 3:
+                g_SaveSlotCacheValid = false;
                 g_CurrentSubMenu = SUB_SAVE_SELECT;
                 break;
             case 4:
@@ -518,6 +529,7 @@ bool ProcessPlayInput(WPARAM wParam, PlayState *state, ScreenState &currentState
                 playSfx("sfx_select");
                 g_PrePauseStatus = state->status;
                 state->status = MATCH_PAUSED;
+                g_SaveSlotCacheValid = false;
                 g_CurrentSubMenu = SUB_SAVE_SELECT;
             }
             else if (g_SummarySelected == 2)
@@ -570,13 +582,14 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         Gdiplus::SolidBrush shadowBrush2(Gdiplus::Color(210, 245, 250, 255)); // Kính trong suốt màu trắng/xanh nhạt
         g.FillRectangle(&shadowBrush2, 0, 0, screenWidth, screenHeight);
 
-        DrawPixelBanner(g, hdc, GetText("summary_title").c_str(), screenWidth / 2, UIScaler::SY(60), UIScaler::SX(600), ToCOLORREF(Palette::White), RGB(0, 100, 255), "Asset/models/bg/football.txt");
+        int titleBarH = TitleBar::GetHeightPx();
+        DrawPixelBanner(g, hdc, GetText("summary_title").c_str(), screenWidth / 2, titleBarH + UIScaler::SY(60), UIScaler::SX(600), ToCOLORREF(Palette::White), ToCOLORREF(Theme::SummaryBannerGlow), "Asset/models/bg/football.txt");
 
         int panelW = UIScaler::SX(350);
         int panelH = UIScaler::SY(450);
         int p1X = screenWidth / 2 - panelW - UIScaler::SX(40);
         int p2X = screenWidth / 2 + UIScaler::SX(40);
-        int panelY = UIScaler::SY(120);
+        int panelY = titleBarH + UIScaler::SY(120);
 
         auto drawSummaryPanel = [&](int x, const PlayerMatchInfo &playerInfo, bool isWinner, bool flipModel)
         {
@@ -703,7 +716,8 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         return;
     }
 
-    int availableHeight = screenHeight - UIScaler::SY(120);
+    int titleBarOffset = TitleBar::GetHeightPx();
+    int availableHeight = screenHeight - UIScaler::SY(120) - titleBarOffset;
     int availableWidth = screenWidth - UIScaler::SX(300);
     int maxBoardSize = availableWidth < availableHeight ? availableWidth : availableHeight;
     int minBoardSize = UIScaler::S(200);
@@ -714,11 +728,11 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     int boardPixelSize = state->boardSize * dynamicCellSize;
 
     int startX = (screenWidth - boardPixelSize) / 2;
-    int startY = (screenHeight - boardPixelSize) / 2 + UIScaler::SY(40);
+    int startY = (screenHeight - boardPixelSize) / 2 + UIScaler::SY(40) + titleBarOffset / 2;
 
-    // Resolve any logical board cells collected by game logic into pixel rects
-    // so DirtyRect can be consumed by WM_PAINT or this render call.
-    DirtyRect::ResolveBoardCells(dynamicCellSize, startX, startY);
+    // Padding phải bao phủ cursor corner bracket animation overflow
+    int cursorPadding = UIScaler::S(16);
+    DirtyRect::ResolveBoardCells(dynamicCellSize, startX, startY, cursorPadding);
 
     HFONT hOldFont = (HFONT)SelectObject(hdc, GlobalFont::Default);
     SetBkMode(hdc, TRANSPARENT);
@@ -901,7 +915,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     int scoreW = UIScaler::SX(600);
     int scoreH = UIScaler::SY(45);
     int scoreX = (screenWidth - scoreW) / 2;
-    int scoreY = UIScaler::SY(10);
+    int scoreY = titleBarOffset + UIScaler::SY(10);
 
     // Background Scoreboard Panel (Glassmorphism + Gradient)
     Gdiplus::LinearGradientBrush scoreBg(
@@ -919,13 +933,10 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     g.DrawRectangle(&scoreBorder, scoreX, scoreY, scoreW, scoreH);
 
     // Main Scoreboard Text
-    SetTextColor(hdc, ToCOLORREF(Palette::White));
-    HFONT oldF = (HFONT)SelectObject(hdc, GlobalFont::Bold);
     RECT rScore = {scoreX, scoreY, scoreX + scoreW, scoreY + scoreH};
-    DrawTextW(hdc, fullScoreText.c_str(), -1, &rScore, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
-    SelectObject(hdc, oldF);
+    DrawTextOutlined(hdc, fullScoreText, rScore, ToCOLORREF(Palette::White), RGB(0, 0, 0), GlobalFont::Bold, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
 
-    int timerY = UIScaler::SY(55);
+    int timerY = titleBarOffset + UIScaler::SY(65);
     int shakeX = 0, shakeY = 0;
     COLORREF timerColor = ToCOLORREF(Palette::CyanLight);
     bool isWarning = (state->matchType != MATCH_PVE && state->timeRemaining <= 3);
@@ -961,7 +972,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     int clockW = UIScaler::SX(320); // Further increased width for better spacing
     int clockH = UIScaler::SY(45);
     int clockX = (screenWidth - clockW) / 2 + shakeX;
-    int clockY = UIScaler::SY(62) + shakeY;
+    int clockY = timerY + shakeY;
 
     // Timer Box Background (Deep Glass)
     Gdiplus::SolidBrush timerBg(Gdiplus::Color(200, 5, 10, 20));
@@ -977,18 +988,15 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     Gdiplus::SolidBrush plateBrush(Gdiplus::Color(40, GetRValue(timerColor), GetGValue(timerColor), GetBValue(timerColor)));
     g.FillRectangle(&plateBrush, clockX + 4, clockY + 4, clockW - 8, clockH - 8);
 
-    // Draw time text centered in the digital box
-    HFONT oldT = (HFONT)SelectObject(hdc, GlobalFont::Bold);
-    SetTextColor(hdc, timerColor);
+    // Draw time text centered in the digital box with outline
     RECT rTimer = {clockX, clockY, clockX + clockW, clockY + clockH};
-    DrawTextW(hdc, timeText.c_str(), -1, &rTimer, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
-    SelectObject(hdc, oldT);
+    DrawTextOutlined(hdc, timeText, rTimer, timerColor, RGB(0, 0, 0), GlobalFont::Bold, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
 
     // Ghi chú tính năng Đi Lại
     if (state->matchType == MATCH_PVE)
     {
         std::wstring s_undo = GetText("play_undo_hint");
-        DrawTextCentered(hdc, s_undo, screenHeight - UIScaler::SY(40), screenWidth, ToCOLORREF(Palette::GrayNormal), GlobalFont::Default);
+        DrawTextCenteredOutlined(hdc, s_undo, screenHeight - UIScaler::SY(40), screenWidth, ToCOLORREF(Palette::GrayNormal), RGB(0,0,0), GlobalFont::Default);
     }
 
     SelectObject(hdc, hOldFont);
@@ -1144,19 +1152,32 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         {
             DrawTextCentered(hdc, GetText("save_title"), menuY + UIScaler::SY(40), screenWidth, ToCOLORREF(Palette::OrangeNormal), GlobalFont::Title);
 
+            static struct SaveSlotCache { std::wstring displayName; bool exists; } cachedSlots[MAX_SAVE_SLOTS];
+            static bool cacheValid = false;
+            
+            extern bool g_SaveSlotCacheValid;
+            if (!g_SaveSlotCacheValid)
+            {
+                for (int i = 0; i < MAX_SAVE_SLOTS; i++)
+                {
+                    cachedSlots[i].exists = CheckSaveExists(i + 1);
+                    if (cachedSlots[i].exists)
+                    {
+                        cachedSlots[i].displayName = GetSaveDisplayName(i + 1);
+                        if (cachedSlots[i].displayName.length() > 20)
+                            cachedSlots[i].displayName = cachedSlots[i].displayName.substr(0, 17) + L"...";
+                    }
+                    else
+                    {
+                        cachedSlots[i].displayName = GetText("save_empty");
+                    }
+                }
+                g_SaveSlotCacheValid = true;
+            }
+
             for (int i = 0; i < MAX_SAVE_SLOTS; i++)
             {
-                std::wstring displayName = GetSaveDisplayName(i + 1);
-                bool exists = CheckSaveExists(i + 1);
-                if (exists)
-                {
-                    if (displayName.length() > 20)
-                        displayName = displayName.substr(0, 17) + L"...";
-                }
-                else
-                {
-                    displayName = GetText("save_empty");
-                }
+                std::wstring displayName = cachedSlots[i].displayName;
 
                 std::wstring slotLabel = L"Slot " + std::to_wstring(i + 1) + L": " + displayName;
                 COLORREF color = (i == g_SaveSlotSelected) ? ToCOLORREF(Palette::BlueDarkest) : ToCOLORREF(Palette::GrayDarkest);
@@ -1253,7 +1274,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         DrawPixelFootball(g, ballX, ballY, UIScaler::S(40));
 
         int msgY = bannerH / 2 - UIScaler::SY(40);
-        DrawTextCentered(hdc, winMsg, msgY, screenWidth, winColor, GlobalFont::Title);
+        DrawTextCenteredOutlined(hdc, winMsg, msgY, screenWidth, winColor, RGB(0, 0, 0), GlobalFont::Title);
 
         if (g_WinAnimTime > 0.5f)
         {
@@ -1265,13 +1286,13 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     }
 }
 
-void UpdatePlayScreen(PlayState *state, ScreenState &currentState, WPARAM wParam, GameConfig *config)
+bool UpdatePlayScreen(PlayState *state, ScreenState &currentState, WPARAM wParam, GameConfig *config)
 {
     if (wParam == 0)
     {
-        return;
+        return false;
     }
-    ProcessPlayInput(wParam, state, currentState, config);
+    return ProcessPlayInput(wParam, state, currentState, config);
 }
 
 void ResetPlayScreenStatics()

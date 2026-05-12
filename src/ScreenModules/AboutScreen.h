@@ -14,7 +14,7 @@
  *  @param currentState Tham chiếu để có thể chuyển trở lại Menu.
  *  @param wParam Mã phím nhận từ vòng lặp chính.
  */
-void UpdateAboutScreen(ScreenState &currentState, WPARAM wParam);
+bool UpdateAboutScreen(ScreenState &currentState, WPARAM wParam);
 
 /** @brief Vẽ giao diện About lên `hdc`.
  *  @param hdc Device context dùng để vẽ.

@@ -948,6 +948,44 @@ void DrawTextCentered(HDC hdc, const std::wstring &text, int posY, int rightX, C
 }
 
 /**
+ * @brief Vẽ text có viền mỏng bên ngoài (outline) bằng kỹ thuật 4-offset.
+ *
+ * Vẽ text 4 lần ở offset (±1, 0) và (0, ±1) bằng màu viền,
+ * sau đó vẽ text chính ở vị trí gốc. Tạo hiệu ứng viền mỏng 1px.
+ */
+void DrawTextOutlined(HDC hdc, const std::wstring &text, RECT rect, COLORREF textColor, COLORREF outlineColor, HFONT hFont, UINT format)
+{
+    HFONT fontToUse = (hFont != nullptr) ? hFont : GlobalFont::Default;
+    HFONT hOldFont = (HFONT)SelectObject(hdc, fontToUse);
+    SetBkMode(hdc, TRANSPARENT);
+
+    // Vẽ viền: 4 lần offset ±1px theo 4 hướng
+    SetTextColor(hdc, outlineColor);
+    static const int offsets[][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    for (const auto &offset : offsets)
+    {
+        RECT offsetRect = {rect.left + offset[0], rect.top + offset[1],
+                           rect.right + offset[0], rect.bottom + offset[1]};
+        DrawTextW(hdc, text.c_str(), -1, &offsetRect, format | DT_NOPREFIX);
+    }
+
+    // Vẽ text chính lên trên
+    SetTextColor(hdc, textColor);
+    DrawTextW(hdc, text.c_str(), -1, &rect, format | DT_NOPREFIX);
+
+    SelectObject(hdc, hOldFont);
+}
+
+/**
+ * @brief Vẽ text căn giữa có viền mỏng.
+ */
+void DrawTextCenteredOutlined(HDC hdc, const std::wstring &text, int posY, int rightX, COLORREF textColor, COLORREF outlineColor, HFONT hFont, int leftX)
+{
+    RECT rect = {leftX, posY, rightX, posY + 100};
+    DrawTextOutlined(hdc, text, rect, textColor, outlineColor, hFont, DT_CENTER | DT_SINGLELINE);
+}
+
+/**
  * @brief Vẽ bảng trò chơi (grid), hiệu ứng highlight và quân cờ dựa trên `PlayState`.
  *
  * @note Hàm sử dụng cả GDI+ cho hiệu ứng và GDI cho vẽ text/quân cờ; caller phải
@@ -967,8 +1005,16 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
     };
 
     // 1. Vẽ lưới (Grid) - GDI thuần (vẽ chỉ các đoạn cắt qua clip)
-    HPEN hPen = CreatePen(PS_SOLID, max(1, UIScaler::S(2)), ToCOLORREF(Palette::White));
-    HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+    static HPEN s_hGridPen = nullptr;
+    static int s_GridPenSize = -1;
+    int currentPenSize = max(1, UIScaler::S(2));
+    if (!s_hGridPen || s_GridPenSize != currentPenSize)
+    {
+        if (s_hGridPen) DeleteObject(s_hGridPen);
+        s_hGridPen = CreatePen(PS_SOLID, currentPenSize, ToCOLORREF(Palette::White));
+        s_GridPenSize = currentPenSize;
+    }
+    HPEN hOldPen = (HPEN)SelectObject(hdc, s_hGridPen);
 
     for (int index = 0; index <= size; ++index)
     {
@@ -988,7 +1034,7 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
         }
     }
     SelectObject(hdc, hOldPen);
-    DeleteObject(hPen);
+    // DeleteObject(hPen); // Đã cache s_hGridPen, không xoá ở đây
 
     // 2. GIAI ĐOẠN 1 (GDI+): Vẽ các hiệu ứng Highlight & Animation
     // Không tạo Graphics mới ở đây, dùng đối tượng g truyền từ ngoài vào để tránh overhead
@@ -1049,14 +1095,25 @@ void DrawGameBoard(Gdiplus::Graphics &g, HDC hdc, const PlayState *state, int ce
             Gdiplus::Pen cornerPen(cursorColor, (Gdiplus::REAL)UIScaler::S(3));
             int cornerLen = cellSize / 3;
             int offset = (int)(pulse * UIScaler::S(4));
-            g.DrawLine(&cornerPen, cursorX - offset, cursorY - offset, cursorX - offset + cornerLen, cursorY - offset);
-            g.DrawLine(&cornerPen, cursorX - offset, cursorY - offset, cursorX - offset, cursorY - offset + cornerLen);
-            g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY - offset, cursorX + cellSize + offset - cornerLen, cursorY - offset);
-            g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY - offset, cursorX + cellSize + offset, cursorY - offset + cornerLen);
-            g.DrawLine(&cornerPen, cursorX - offset, cursorY + cellSize + offset, cursorX - offset + cornerLen, cursorY + cellSize + offset);
-            g.DrawLine(&cornerPen, cursorX - offset, cursorY + cellSize + offset, cursorX - offset, cursorY + cellSize + offset - cornerLen);
-            g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY + cellSize + offset, cursorX + cellSize + offset - cornerLen, cursorY + cellSize + offset);
-            g.DrawLine(&cornerPen, cursorX + cellSize + offset, cursorY + cellSize + offset, cursorX + cellSize + offset, cursorY + cellSize + offset - cornerLen);
+            Gdiplus::Point pts[16] = {
+                // Top-Left corner
+                Gdiplus::Point(cursorX - offset, cursorY - offset + cornerLen),
+                Gdiplus::Point(cursorX - offset, cursorY - offset),
+                Gdiplus::Point(cursorX - offset + cornerLen, cursorY - offset),
+                // (Break path by not drawing between corners - Gdi+ DrawLines doesn't support multiple subpaths easily without GraphicsPath,
+                // so we use DrawLines with 4 separate arrays or DrawLines with multiple calls, or we can just keep 4 DrawLines calls)
+            };
+            
+            // To batch efficiently, let's just use 4 calls of DrawLines (each drawing an L shape)
+            Gdiplus::Point tl[3] = { Gdiplus::Point(cursorX - offset, cursorY - offset + cornerLen), Gdiplus::Point(cursorX - offset, cursorY - offset), Gdiplus::Point(cursorX - offset + cornerLen, cursorY - offset) };
+            Gdiplus::Point tr[3] = { Gdiplus::Point(cursorX + cellSize + offset - cornerLen, cursorY - offset), Gdiplus::Point(cursorX + cellSize + offset, cursorY - offset), Gdiplus::Point(cursorX + cellSize + offset, cursorY - offset + cornerLen) };
+            Gdiplus::Point bl[3] = { Gdiplus::Point(cursorX - offset, cursorY + cellSize + offset - cornerLen), Gdiplus::Point(cursorX - offset, cursorY + cellSize + offset), Gdiplus::Point(cursorX - offset + cornerLen, cursorY + cellSize + offset) };
+            Gdiplus::Point br[3] = { Gdiplus::Point(cursorX + cellSize + offset - cornerLen, cursorY + cellSize + offset), Gdiplus::Point(cursorX + cellSize + offset, cursorY + cellSize + offset), Gdiplus::Point(cursorX + cellSize + offset, cursorY + cellSize + offset - cornerLen) };
+
+            g.DrawLines(&cornerPen, tl, 3);
+            g.DrawLines(&cornerPen, tr, 3);
+            g.DrawLines(&cornerPen, bl, 3);
+            g.DrawLines(&cornerPen, br, 3);
             Gdiplus::Pen thinPen(cursorColor, 1.0f);
             g.DrawRectangle(&thinPen, cursorX, cursorY, cellSize, cellSize);
         }

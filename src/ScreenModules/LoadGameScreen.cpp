@@ -30,6 +30,14 @@ static std::wstring g_EditNameBuffer = L"";
 static float g_LoadFeedbackTimer = 0.0f;
 static std::wstring g_LoadStatusMsg = L"";
 
+bool g_LoadCacheValid = false;
+struct LoadSlotCache {
+    std::wstring displayName;
+    bool exists;
+};
+static LoadSlotCache g_LoadCachedSlots[5];
+static SaveMetadata g_LoadCachedMeta[5];
+
 const int MAX_SLOTS = 5;
 const int MAX_ACTIONS = 4;
 const int BACK_BTN_INDEX = 5;
@@ -77,6 +85,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
                         playSfx("sfx_success");
                         g_LoadStatusMsg = GetText("msg_rename_success");
                         g_LoadFeedbackTimer = 1.0f;
+                        g_LoadCacheValid = false;
                         g_CurrentMode = MODE_SELECT_ACTION;
                     }
                     else
@@ -132,7 +141,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             else
             {
                 // Nếu slot có dữ liệu thì cho phép chọn hành động
-                if (CheckSaveExists(g_SelectedSlot + 1))
+                if (g_LoadCachedSlots[g_SelectedSlot].exists)
                 {
                     playSfx("sfx_select");
                     g_CurrentMode = MODE_SELECT_ACTION;
@@ -196,7 +205,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
             else if (g_SelectedAction == 1)
             { // Đổi tên
                 playSfx("sfx_select");
-                g_EditNameBuffer = GetSaveDisplayName(g_SelectedSlot + 1);
+                g_EditNameBuffer = g_LoadCachedSlots[g_SelectedSlot].displayName;
                 g_CurrentMode = MODE_EDIT_NAME;
             }
             else if (g_SelectedAction == 2)
@@ -206,6 +215,7 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
                     playSfx("sfx_success");
                     g_LoadStatusMsg = GetText("msg_delete_success");
                     g_LoadFeedbackTimer = 1.0f;
+                    g_LoadCacheValid = false;
                     g_CurrentMode = MODE_SELECT_SLOT;
                 }
                 else
@@ -286,8 +296,8 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring &statu
             continue;
         }
 
-        std::wstring displayName = GetSaveDisplayName(i + 1);
-        bool exists = CheckSaveExists(i + 1);
+        std::wstring displayName = g_LoadCachedSlots[i].displayName;
+        bool exists = g_LoadCachedSlots[i].exists;
         std::wstring slotText = exists ? displayName : GetText("save_empty");
         if (slotText.length() > 12)
             slotText = slotText.substr(0, 10) + L"...";
@@ -324,7 +334,7 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring &statu
     // Vẽ bảng hành động và chi tiết (Cột giữa)
     if (g_SelectedSlot != BACK_BTN_INDEX)
     {
-        SaveMetadata meta = GetSaveMetadata(g_SelectedSlot + 1);
+        SaveMetadata meta = g_LoadCachedMeta[g_SelectedSlot];
 
         if (meta.exists)
         {
@@ -451,12 +461,29 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring &statu
  *  @param statusMessage Tham chiếu chuỗi trạng thái trả về từ ProcessLoadGameInput.
  *  @param wParam Mã phím/flags nhận từ main loop.
  */
-void UpdateLoadGameScreen(ScreenState &currentState, PlayState *playState, int &selectedOption, std::wstring &statusMessage, WPARAM wParam)
+bool UpdateLoadGameScreen(ScreenState &currentState, PlayState *playState, int &selectedOption, std::wstring &statusMessage, WPARAM wParam)
 {
+    bool needsRedraw = false;
+    
     // Xử lý timer phản hồi
     extern float g_GlobalAnimTime;
     static double lastTime = 0;
     double dt = 0.016;
+
+    if (!g_LoadCacheValid)
+    {
+        for (int i = 0; i < MAX_SLOTS; i++)
+        {
+            g_LoadCachedSlots[i].exists = CheckSaveExists(i + 1);
+            if (g_LoadCachedSlots[i].exists)
+            {
+                g_LoadCachedSlots[i].displayName = GetSaveDisplayName(i + 1);
+                g_LoadCachedMeta[i] = GetSaveMetadata(i + 1);
+            }
+        }
+        g_LoadCacheValid = true;
+        needsRedraw = true; // Force redraw on cache refresh
+    }
 
     if (g_LoadFeedbackTimer > 0)
     {
@@ -466,9 +493,16 @@ void UpdateLoadGameScreen(ScreenState &currentState, PlayState *playState, int &
             g_LoadFeedbackTimer = 0;
             g_LoadStatusMsg = L"";
         }
+        needsRedraw = true; // Redraw to clear status text
     }
 
-    if (wParam == 0)
-        return;
-    ProcessLoadGameInput(wParam, currentState, playState, selectedOption, statusMessage);
+    if (wParam != 0)
+    {
+        if (ProcessLoadGameInput(wParam, currentState, playState, selectedOption, statusMessage))
+        {
+            needsRedraw = true;
+        }
+    }
+    
+    return needsRedraw;
 }

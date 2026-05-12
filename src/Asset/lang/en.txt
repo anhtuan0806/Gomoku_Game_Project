@@ -153,7 +153,7 @@ guide_pause=PAUSE MENU
 guide_pause_key=Press [ESC]
 
 config_page1_hint=A / D: Change  |  Enter: Next / Select  |  ESC: To Menu
-config_page2_hint=A / D: Change Avatar  |  Enter: Edit Name  |  ESC: Back to Pitch
+config_page2_hint=A / D: Change Avatar  |  Left/Right: Switch Card  |  Enter: Edit Name  |  ESC: Back to Pitch
 config_edit_hint=Type name and press Enter to seal
 config_val_caro=Caro 15x15
 config_val_ttt=Tic-Tac-Toe 3x3

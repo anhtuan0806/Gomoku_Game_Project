@@ -1,4 +1,4 @@
-﻿#ifndef SETTING_SCREEN_H
+#ifndef SETTING_SCREEN_H
 #define SETTING_SCREEN_H
 
 #include <windows.h>
@@ -20,7 +20,7 @@
  *  @param isEnterPressed true nếu nút xác nhận được nhấn.
  *  @param isRepeat true nếu phím đang được giữ để tự lặp.
  */
-void ProcessSettingInput(ScreenState &currentState, GameConfig *config, int selectedOption, int direction, bool isEnterPressed, bool isRepeat);
+bool ProcessSettingInput(ScreenState &currentState, GameConfig *config, int selectedOption, int direction, bool isEnterPressed, bool isRepeat);
 
 /** @brief Cập nhật trạng thái màn Settings.
  *  @param currentState Tham chiếu trạng thái màn.
@@ -28,7 +28,7 @@ void ProcessSettingInput(ScreenState &currentState, GameConfig *config, int sele
  *  @param selectedOption Tham chiếu chỉ mục đang chọn (được sửa trong hàm).
  *  @param keyCode Mã phím nhận từ vòng lặp chính.
  */
-void UpdateSettingScreen(ScreenState &currentState, GameConfig *config, int &selectedOption, WPARAM keyCode);
+bool UpdateSettingScreen(ScreenState &currentState, GameConfig *config, int &selectedOption, WPARAM keyCode);
 
 /** @brief Vẽ giao diện màn Settings.
  *  @param hdc Device context để vẽ.

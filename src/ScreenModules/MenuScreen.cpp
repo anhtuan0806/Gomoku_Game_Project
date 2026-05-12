@@ -22,11 +22,11 @@ const int TOTAL_MENU_ITEMS = 6;
  *  @param selectedOption Tham chiếu mục đang chọn.
  *  @param wParam Mã phím/flags từ WM_KEY/WM_CHAR.
  */
-void UpdateMenuScreen(ScreenState &currentState, int &selectedOption, WPARAM wParam)
+bool UpdateMenuScreen(ScreenState &currentState, int &selectedOption, WPARAM wParam)
 {
     if (wParam == 0)
-        return;
-    ProcessMenuInput(wParam, currentState, selectedOption);
+        return false;
+    return ProcessMenuInput(wParam, currentState, selectedOption);
 }
 
 /** @brief Xử lý phím người dùng trên màn menu.
@@ -135,7 +135,7 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
 
     DrawPixelModel(g, titleModel, screenWidth / 2, screenHeight / 4 + UIScaler::SY(20) + titleYOffset, UIScaler::S(500), titlePalette);
 
-    DrawTextCentered(hdc, L"CHAMPIONS LEAGUE", screenHeight / 4 + UIScaler::SY(75) + titleYOffset, screenWidth, ToCOLORREF(Palette::BlueDarkest), GlobalFont::Title);
+    DrawTextCenteredOutlined(hdc, L"CHAMPIONS LEAGUE", screenHeight / 4 + UIScaler::SY(75) + titleYOffset, screenWidth, ToCOLORREF(Palette::BlueDarkest), RGB(255, 255, 255), GlobalFont::Title);
 
     int startY = screenHeight / 2 + UIScaler::SY(10);
     int spacing = UIScaler::SY(55);
@@ -159,12 +159,12 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
             int wStrOffset = UIScaler::S((int)highlightedText.length() * 18 + 70);
             DrawPixelFootball(g, screenWidth / 2 - wStrOffset, currentY + UIScaler::SY(38), UIScaler::S(48));
             DrawPixelFootball(g, screenWidth / 2 + wStrOffset, currentY + UIScaler::SY(38), UIScaler::S(48));
-            DrawTextCentered(hdc, highlightedText, currentY, screenWidth, dynColor, GlobalFont::Title);
+            DrawTextCenteredOutlined(hdc, highlightedText, currentY, screenWidth, dynColor, RGB(255, 255, 255), GlobalFont::Title);
         }
         else
         {
-            DrawTextCentered(hdc, menuItems[i], currentY + UIScaler::SY(6), screenWidth, ToCOLORREF(Palette::GrayDarkest), GlobalFont::Bold);
+            DrawTextCenteredOutlined(hdc, menuItems[i], currentY + UIScaler::SY(6), screenWidth, ToCOLORREF(Palette::GrayDarkest), RGB(255, 255, 255), GlobalFont::Bold);
         }
     }
-    DrawTextCentered(hdc, GetText("menu_instruct"), screenHeight - UIScaler::SY(50), screenWidth, ToCOLORREF(Palette::GrayDark), GlobalFont::Note);
+    DrawTextCenteredOutlined(hdc, GetText("menu_instruct"), screenHeight - UIScaler::SY(50), screenWidth, ToCOLORREF(Palette::GrayDark), RGB(255, 255, 255), GlobalFont::Note);
 }

@@ -14,7 +14,7 @@
  *  @param currentState Tham chiếu trạng thái màn hình (có thể đổi về `SCREEN_MENU`).
  *  @param wParam Mã phím/flags nhận từ main loop.
  */
-void UpdateAboutScreen(ScreenState &currentState, WPARAM wParam)
+bool UpdateAboutScreen(ScreenState &currentState, WPARAM wParam)
 {
     bool isRepeat = (wParam & 0x20000) != 0;
     WPARAM key = wParam & 0xFFFF;
@@ -27,12 +27,14 @@ void UpdateAboutScreen(ScreenState &currentState, WPARAM wParam)
     if (key == VK_ESCAPE)
     {
         if (!canMove)
-            return;
+            return false;
         if (!isRepeat)
             playSfx("sfx_move");
         currentState = SCREEN_MENU;
         lastMoveTime = now;
+        return true;
     }
+    return false;
 }
 
 /** @brief Vẽ nội dung màn About: banner, thông tin nhóm và công nghệ.

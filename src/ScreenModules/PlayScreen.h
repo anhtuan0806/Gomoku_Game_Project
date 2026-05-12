@@ -21,11 +21,9 @@ enum PauseSubMenu
 	SUB_SAVE_NAME_ENTRY
 };
 
-static int g_PauseSelected = 0;
+/** @brief Số mục trong menu Pause. */
 const int TOTAL_PAUSE_ITEMS = 5;
-static PauseSubMenu g_CurrentSubMenu = SUB_MAIN;
-static int g_SaveSlotSelected = 0;
-static std::wstring g_SaveNameInput = L"";
+
 
 /** @brief Cập nhật logic trận theo delta-time.
  *  @param state Trạng thái trận đấu (`PlayState`) sẽ được cập nhật.
@@ -58,7 +56,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
  *  @param wParam Mã phím/flags nhận từ main loop.
  *  @param config Cấu hình game.
  */
-void UpdatePlayScreen(PlayState *state, ScreenState &currentState, WPARAM wParam, GameConfig *config);
+bool UpdatePlayScreen(PlayState *state, ScreenState &currentState, WPARAM wParam, GameConfig *config);
 
 /** @brief Reset các biến static của Play screen về trạng thái mặc định.
  *  Gọi khi bắt đầu hoặc kết thúc 1 phiên chơi để đảm bảo trạng thái tĩnh được tái khởi tạo.

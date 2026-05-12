@@ -153,7 +153,7 @@ guide_pause=TẠM DỪNG
 guide_pause_key=Nhấn phím [ESC]
 
 config_page1_hint=A / D: Thay đổi  |  Enter: Tiếp theo / Chọn  |  ESC: Về Menu
-config_page2_hint=A / D: Đổi Avatar  |  Enter: Sửa Tên  |  ESC: Về Cài Đặt Sân
+config_page2_hint=A / D: Đổi Avatar  |  Trái/Phải: Đổi thẻ  |  Enter: Sửa Tên  |  ESC: Về Cài Đặt Sân
 config_edit_hint=Gõ tên và ấn Enter để chốt
 config_val_caro=Caro 15x15
 config_val_ttt=Tic-Tac-Toe 3x3

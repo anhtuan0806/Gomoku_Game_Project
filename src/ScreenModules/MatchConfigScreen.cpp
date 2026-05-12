@@ -80,12 +80,14 @@ bool ValidateNames(PlayState *playState)
     return true;
 }
 
-void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, int &selectedOption, WPARAM wParam)
+bool UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, int &selectedOption, WPARAM wParam)
 {
     if (wParam == 0)
     {
-        return;
+        return false;
     }
+
+    bool changed = true;
 
     bool isChar = (wParam & 0x10000);
     wchar_t ch = (wchar_t)(wParam & 0xFFFF);
@@ -105,16 +107,16 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
                 isEditingName1 = false;
                 isEditingName2 = false;
                 ValidateNames(playState); // Kiểm tra ngay sau khi đặt tên
-                return;
+                return true;
             }
             if (wParam == VK_BACK)
             {
                 if (!target.empty())
                     target.pop_back();
-                return;
+                return true;
             }
             // Ngăn chặn các phím di chuyển (W,A,S,D, Up, Down...) bị lọt xuống dưới khi đang edit
-            return;
+            return false;
         }
         else
         {
@@ -123,13 +125,13 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             {
                 target += ch;
             }
-            return;
+            return true;
         }
     }
 
     // Trường hợp: thao tác điều hướng menu và chọn tuỳ chọn
     if (isChar)
-        return; // Không xử lý WM_CHAR khi không edit
+        return false; // Không xử lý WM_CHAR khi không edit
 
     bool isRepeat = (wParam & 0x20000) != 0;
     WPARAM rawKey = wParam & 0xFFFF;
@@ -144,16 +146,34 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
     if (rawKey == 'W' || rawKey == 'w' || rawKey == VK_UP)
     {
         if (!canMove)
-            return;
-        do
+            return false;
+
+        if (currentPage == 0)
         {
-            selectedOption = (selectedOption - 1 + totalItems) % totalItems;
-        } while (
-            (currentPage == 0 && ((selectedOption == 2 && playState->matchType == MATCH_PVP) || // Bỏ qua Độ Khó nếu PVP
-                                  (selectedOption == 3 && playState->matchType == MATCH_PVE)    // Bỏ qua Thời gian nếu PVE
-                                  )) ||
-            (currentPage == 1 && playState->matchType == MATCH_PVE && (selectedOption == 2 || selectedOption == 3)) // Bỏ qua Avatar/Tên P2 nếu PvE
-        );
+            // Trang 0: điều hướng tuần tự, bỏ qua item bị ẩn
+            do
+            {
+                selectedOption = (selectedOption - 1 + totalItems) % totalItems;
+            } while (
+                (selectedOption == 2 && playState->matchType == MATCH_PVP) ||
+                (selectedOption == 3 && playState->matchType == MATCH_PVE));
+        }
+        else
+        {
+            // Trang 1: điều hướng 2 cột
+            // Cột trái: 0 → 1 → 4,  Cột phải: 2 → 3 → 5
+            bool isPvE = (playState->matchType == MATCH_PVE);
+            switch (selectedOption)
+            {
+            case 0: selectedOption = 4; break;  // P1 Avatar → Back
+            case 1: selectedOption = 0; break;  // P1 Name → P1 Avatar
+            case 2: selectedOption = 5; break;  // P2 Avatar → Start
+            case 3: selectedOption = 2; break;  // P2 Name → P2 Avatar
+            case 4: selectedOption = 1; break;  // Back → P1 Name
+            case 5: selectedOption = isPvE ? 5 : 3; break;  // Start → P2 Name (hoặc giữ nguyên nếu PvE)
+            }
+        }
+
         if (!isRepeat)
             playSfx("sfx_move");
         lastMoveTime = now;
@@ -161,31 +181,101 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
     else if (rawKey == 'S' || rawKey == 's' || rawKey == VK_DOWN)
     {
         if (!canMove)
-            return;
-        do
+            return false;
+
+        if (currentPage == 0)
         {
-            selectedOption = (selectedOption + 1) % totalItems;
-        } while (
-            (currentPage == 0 && ((selectedOption == 2 && playState->matchType == MATCH_PVP) ||
-                                  (selectedOption == 3 && playState->matchType == MATCH_PVE))) ||
-            (currentPage == 1 && playState->matchType == MATCH_PVE && (selectedOption == 2 || selectedOption == 3)));
+            do
+            {
+                selectedOption = (selectedOption + 1) % totalItems;
+            } while (
+                (selectedOption == 2 && playState->matchType == MATCH_PVP) ||
+                (selectedOption == 3 && playState->matchType == MATCH_PVE));
+        }
+        else
+        {
+            // Trang 1: điều hướng 2 cột
+            bool isPvE = (playState->matchType == MATCH_PVE);
+            switch (selectedOption)
+            {
+            case 0: selectedOption = 1; break;  // P1 Avatar → P1 Name
+            case 1: selectedOption = 4; break;  // P1 Name → Back
+            case 2: selectedOption = 3; break;  // P2 Avatar → P2 Name
+            case 3: selectedOption = 5; break;  // P2 Name → Start
+            case 4: selectedOption = 0; break;  // Back → P1 Avatar
+            case 5: selectedOption = isPvE ? 5 : 2; break;  // Start → P2 Avatar (hoặc giữ nguyên nếu PvE)
+            }
+        }
+
         if (!isRepeat)
             playSfx("sfx_move");
         lastMoveTime = now;
     }
 
-    int dir = (rawKey == 'D' || rawKey == 'd' || rawKey == VK_RIGHT) ? 1 : ((rawKey == 'A' || rawKey == 'a' || rawKey == VK_LEFT) ? -1 : 0);
-    if (dir != 0 && !canMove)
-        return; // Throttling cho cả việc đổi giá trị (A/D)
-    if (dir != 0)
+    // Trang 0: VK_LEFT/VK_RIGHT hoạt động như A/D (thay đổi giá trị)
+    // Trang 1: VK_LEFT/VK_RIGHT + A/D đều dùng để di chuyển giữa 2 cột
+    int adjustDir = 0;
+    int navDir = 0;
+
+    if (currentPage == 0)
+    {
+        // Trang 0: cả A/D và Left/Right đều thay đổi giá trị
+        adjustDir = (rawKey == 'D' || rawKey == 'd' || rawKey == VK_RIGHT) ? 1
+                  : ((rawKey == 'A' || rawKey == 'a' || rawKey == VK_LEFT) ? -1 : 0);
+    }
+    else
+    {
+        // Trang 1: A/D thay đổi giá trị (avatar), Left/Right điều hướng cột
+        adjustDir = (rawKey == 'D' || rawKey == 'd') ? 1 : ((rawKey == 'A' || rawKey == 'a') ? -1 : 0);
+        navDir = (rawKey == VK_RIGHT) ? 1 : ((rawKey == VK_LEFT) ? -1 : 0);
+    }
+
+    if ((adjustDir != 0 || navDir != 0) && !canMove)
+        return false; // Throttling cho cả việc đổi giá trị và di chuyển trái/phải
+    if (adjustDir != 0 || navDir != 0)
         lastMoveTime = now;
+
+    if (currentPage == 1 && navDir != 0)
+    {
+        bool isPvE = (playState->matchType == MATCH_PVE);
+        int nextOption = selectedOption;
+
+        // Chuyển cột: hàng tương ứng
+        // Left col (0,1,4) ↔ Right col (2,3,5)
+        if (navDir > 0) // Sang phải
+        {
+            switch (selectedOption)
+            {
+            case 0: nextOption = isPvE ? 0 : 2; break;
+            case 1: nextOption = isPvE ? 1 : 3; break;
+            case 4: nextOption = 5; break;
+            }
+        }
+        else // Sang trái
+        {
+            switch (selectedOption)
+            {
+            case 2: nextOption = 0; break;
+            case 3: nextOption = 1; break;
+            case 5: nextOption = 4; break;
+            }
+        }
+
+        if (nextOption != selectedOption)
+        {
+            selectedOption = nextOption;
+            if (!isRepeat)
+                playSfx("sfx_move");
+        }
+        return true;
+    }
 
     if (currentPage == 0)
     {
         switch (selectedOption)
         {
         case 0: // Chế độ
-            if (dir != 0)
+            if (adjustDir != 0)
             {
                 playState->gameMode = (playState->gameMode == MODE_CARO) ? MODE_TIC_TAC_TOE : MODE_CARO;
                 if (!isRepeat)
@@ -193,7 +283,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             }
             break;
         case 1: // PvP / PvE
-            if (dir != 0)
+            if (adjustDir != 0)
             {
                 playState->matchType = (playState->matchType == MATCH_PVP) ? MATCH_PVE : MATCH_PVP;
                 if (!isRepeat)
@@ -201,37 +291,37 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             }
             break;
         case 2: // Độ khó
-            if (playState->matchType == MATCH_PVE && dir != 0)
+            if (playState->matchType == MATCH_PVE && adjustDir != 0)
             {
-                playState->difficulty += dir;
-                if (playState->difficulty < 1)
-                    playState->difficulty = 3;
-                if (playState->difficulty > 3)
-                    playState->difficulty = 1;
+                playState->difficulty += adjustDir;
+                if (playState->difficulty < BOT_DIFFICULTY_MIN)
+                    playState->difficulty = BOT_DIFFICULTY_MAX;
+                if (playState->difficulty > BOT_DIFFICULTY_MAX)
+                    playState->difficulty = BOT_DIFFICULTY_MIN;
                 if (!isRepeat)
                     playSfx("sfx_move");
             }
             break;
         case 3: // Thời gian
-            if (dir != 0)
+            if (adjustDir != 0)
             {
-                playState->countdownTime += dir * 5;
-                if (playState->countdownTime < 10)
-                    playState->countdownTime = 10;
-                if (playState->countdownTime > 60)
-                    playState->countdownTime = 60;
+                playState->countdownTime += adjustDir * COUNTDOWN_STEP_SECONDS;
+                if (playState->countdownTime < COUNTDOWN_MIN_SECONDS)
+                    playState->countdownTime = COUNTDOWN_MIN_SECONDS;
+                if (playState->countdownTime > COUNTDOWN_MAX_SECONDS)
+                    playState->countdownTime = COUNTDOWN_MAX_SECONDS;
                 if (!isRepeat)
                     playSfx("sfx_move");
             }
             break;
         case 4: // Bo
-            if (dir != 0)
+            if (adjustDir != 0)
             {
-                playState->targetScore += dir * 2;
-                if (playState->targetScore < 1)
-                    playState->targetScore = 5;
-                if (playState->targetScore > 5)
-                    playState->targetScore = 1;
+                playState->targetScore += adjustDir * TARGET_SCORE_STEP;
+                if (playState->targetScore < TARGET_SCORE_MIN)
+                    playState->targetScore = TARGET_SCORE_MAX;
+                if (playState->targetScore > TARGET_SCORE_MAX)
+                    playState->targetScore = TARGET_SCORE_MIN;
                 if (!isRepeat)
                     playSfx("sfx_move");
             }
@@ -252,9 +342,9 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
         switch (selectedOption)
         {
         case 0: // Đổi Avatar P1 (A/D)
-            if (dir != 0)
+            if (adjustDir != 0)
             {
-                sPlayer1AvatarIndex = (sPlayer1AvatarIndex + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
+                sPlayer1AvatarIndex = (sPlayer1AvatarIndex + adjustDir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
                 if (!isRepeat)
                     playSfx("sfx_move");
             }
@@ -268,9 +358,9 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             }
             break;
         case 2: // Đổi Avatar P2 (A/D)
-            if (!isPvE && dir != 0)
+            if (!isPvE && adjustDir != 0)
             {
-                sPlayer2AvatarIndex = (sPlayer2AvatarIndex + dir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
+                sPlayer2AvatarIndex = (sPlayer2AvatarIndex + adjustDir + TOTAL_HUMAN_AVATARS) % TOTAL_HUMAN_AVATARS;
                 if (!isRepeat)
                     playSfx("sfx_move");
             }
@@ -298,7 +388,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
                 if (!ValidateNames(playState))
                 {
                     playSfx("sfx_error");
-                    return;
+                    return true;
                 }
 
                 // Nếu hợp lệ thì tiến hành vào trận thông qua PlayerEngineer
@@ -328,6 +418,7 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
             break;
         }
     }
+    return changed;
 }
 
 /** @brief Vẽ một ô văn bản (căn theo cột) với font và alignment xác định.
@@ -340,15 +431,23 @@ void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, in
  *  @param font Font sử dụng (HFONT).
  *  @param format Cờ định dạng DrawText (ví dụ DT_LEFT/DT_RIGHT/DT_CENTER).
  */
-void DrawColText(HDC hdc, const std::wstring &text, int x, int y, int width, COLORREF color, HFONT font, UINT format)
+void DrawColText(HDC hdc, const std::wstring &text, int x, int y, int width, COLORREF color, HFONT font, UINT format, bool useOutline = true, COLORREF outlineColor = RGB(255, 255, 255))
 {
-    SetTextColor(hdc, color);
-    HFONT oldFont = (HFONT)SelectObject(hdc, font);
-    SetBkMode(hdc, TRANSPARENT);
     // Tăng vùng đệm chiều cao từ 42 lên 80 để các Font to (GlobalFont::Title) không bị xén đỉnh/đáy
     RECT rect = {x, y, x + width, y + UIScaler::SY(80)};
-    DrawTextW(hdc, text.c_str(), -1, &rect, format | DT_VCENTER | DT_SINGLELINE);
-    SelectObject(hdc, oldFont);
+
+    if (useOutline)
+    {
+        DrawTextOutlined(hdc, text, rect, color, outlineColor, font, format | DT_VCENTER | DT_SINGLELINE);
+    }
+    else
+    {
+        SetTextColor(hdc, color);
+        HFONT oldFont = (HFONT)SelectObject(hdc, font);
+        SetBkMode(hdc, TRANSPARENT);
+        DrawTextW(hdc, text.c_str(), -1, &rect, format | DT_VCENTER | DT_SINGLELINE);
+        SelectObject(hdc, oldFont);
+    }
 }
 
 /** @brief Vẽ toàn bộ màn hình cấu hình trận đấu.
@@ -380,7 +479,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
 
     if (currentPage == 0)
     {
-        DrawPixelBanner(g, hdc, GetText("config_page1").c_str(), screenWidth / 2, panelY + UIScaler::SY(50), panelW - UIScaler::SX(40), ToCOLORREF(Palette::White), RGB(0, 100, 255), "Asset/models/bg/gears.txt");
+        DrawPixelBanner(g, hdc, GetText("config_page1").c_str(), screenWidth / 2, panelY + UIScaler::SY(50), panelW - UIScaler::SX(40), ToCOLORREF(Palette::White), ToCOLORREF(Theme::BannerGlowBlue), "Asset/models/bg/gears.txt");
 
         int col1X = panelX + UIScaler::SX(30);
         int col1W = UIScaler::SX(320);
@@ -435,7 +534,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
     }
     else
     {
-        DrawPixelBanner(g, hdc, GetText("config_page2").c_str(), screenWidth / 2, panelY + UIScaler::SY(50), panelW - UIScaler::SX(40), ToCOLORREF(Palette::White), RGB(255, 100, 0), "Asset/models/bg/cup.txt");
+        DrawPixelBanner(g, hdc, GetText("config_page2").c_str(), screenWidth / 2, panelY + UIScaler::SY(50), panelW - UIScaler::SX(40), ToCOLORREF(Palette::White), ToCOLORREF(Theme::BannerGlowOrange), "Asset/models/bg/cup.txt");
 
         int cardW = panelW / 2 - UIScaler::SX(40);
         int cardH = UIScaler::SY(320);
@@ -462,19 +561,19 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
 
             DrawPixelAvatar(g, x + (cardW - avaSize) / 2, cardY + UIScaler::SY(30), avaSize, curType);
 
-            COLORREF avaCol = isSelected_Ava ? (isP1 ? RGB(255, 100, 0) : RGB(0, 150, 255)) : ToCOLORREF(Palette::GrayDarkest);
+            COLORREF avaCol = isSelected_Ava ? (isP1 ? ToCOLORREF(Theme::P1AccentSelected) : ToCOLORREF(Theme::P2AccentSelected)) : ToCOLORREF(Palette::GrayDarkest);
             int textY = cardY + UIScaler::SY(195);
 
             std::string avatarKey = "config_avatar_" + std::to_string(avatarIdx + 1);
             std::wstring avaName = isPvE_Bot ? L"[ " + GetText("val_locked") + L" ]" : GetText(avatarKey);
-            DrawColText(hdc, avaName, x, textY, cardW, avaCol, isSelected_Ava ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
+            DrawColText(hdc, avaName, x, textY, cardW, avaCol, isSelected_Ava ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER, false);
             if (!isPvE_Bot)
             {
                 std::wstring slotStr = L"< " + std::to_wstring(avatarIdx + 1) + L"/" + std::to_wstring(TOTAL_HUMAN_AVATARS) + L" >";
-                DrawColText(hdc, slotStr, x, textY + UIScaler::SY(28), cardW, avaCol, GlobalFont::Note, DT_CENTER);
+                DrawColText(hdc, slotStr, x, textY + UIScaler::SY(28), cardW, avaCol, GlobalFont::Note, DT_CENTER, false);
             }
 
-            COLORREF nameCol = isSelected_Name ? (isP1 ? RGB(255, 80, 0) : RGB(0, 120, 255)) : ToCOLORREF(Palette::GrayDarkest);
+            COLORREF nameCol = isSelected_Name ? (isP1 ? ToCOLORREF(Theme::P1NameSelected) : ToCOLORREF(Theme::P2NameSelected)) : ToCOLORREF(Palette::GrayDarkest);
             bool showCursor = isEditing && ((int)(g_GlobalAnimTime * 3.0f) % 2 == 0);
             std::wstring dispName = name + (isEditing ? (showCursor ? L"_" : L" ") : L"");
             DrawColText(hdc, GetText("config_pname") + L" " + dispName, x, textY + UIScaler::SY(50), cardW, nameCol, isSelected_Name ? GlobalFont::Bold : GlobalFont::Default, DT_CENTER);
@@ -500,7 +599,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
         int botY = panelY + panelH - UIScaler::SY(80);
         int halfW = panelW / 2;
 
-        COLORREF backCol = (selectedOption == 4) ? RGB(255, 0, 0) : ToCOLORREF(Palette::GrayDark);
+        COLORREF backCol = (selectedOption == 4) ? ToCOLORREF(Theme::BackButtonSelected) : ToCOLORREF(Palette::GrayDark);
         DrawColText(hdc, GetText("config_back"), panelX + UIScaler::SX(30), botY, halfW - UIScaler::SX(30), backCol, selectedOption == 4 ? GlobalFont::Bold : GlobalFont::Default, DT_LEFT);
 
         COLORREF startCol = ToCOLORREF(Palette::GreenDark);
@@ -514,7 +613,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
 
     if (!validationMsg.empty())
     {
-        DrawTextCentered(hdc, validationMsg, panelY + panelH - UIScaler::SY(45), screenWidth, RGB(255, 50, 50), GlobalFont::Bold);
+        DrawTextCentered(hdc, validationMsg, panelY + panelH - UIScaler::SY(45), screenWidth, ToCOLORREF(Theme::ValidationError), GlobalFont::Bold);
     }
 
     std::wstring hintKey = (currentPage == 0) ? GetText("config_page1_hint") : GetText("config_page2_hint");

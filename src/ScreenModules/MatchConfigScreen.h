@@ -18,7 +18,7 @@
  *  @param selectedOption Tham chiếu tới chỉ mục mục đang được chọn trong UI.
  *  @param wParam Mã phím/flags (WM_KEY/WM_CHAR encoded) do vòng lặp chính truyền vào.
  */
-void UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, int &selectedOption, WPARAM wParam);
+bool UpdateMatchConfigScreen(ScreenState &currentState, PlayState *playState, int &selectedOption, WPARAM wParam);
 
 /** @brief Vẽ màn cấu hình trận lên `hdc`.
  *  @param hdc Device context để vẽ.

@@ -1,4 +1,4 @@
-﻿#ifndef LOAD_GAME_SCREEN_H
+#ifndef LOAD_GAME_SCREEN_H
 #define LOAD_GAME_SCREEN_H
 #include "../ApplicationTypes/GameState.h"
 #include "../ApplicationTypes/PlayState.h"
@@ -37,6 +37,6 @@ void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring &statu
  *  @param statusMessage Tham chiếu chuỗi trạng thái cập nhật.
  *  @param wParam Mã phím/flags nhận từ vòng lặp chính.
  */
-void UpdateLoadGameScreen(ScreenState &currentState, PlayState *playState, int &selectedOption, std::wstring &statusMessage, WPARAM wParam);
+bool UpdateLoadGameScreen(ScreenState &currentState, PlayState *playState, int &selectedOption, std::wstring &statusMessage, WPARAM wParam);
 
 #endif // LOAD_GAME_SCREEN_H

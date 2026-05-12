@@ -1,7 +1,6 @@
 #include "EngineStats.h"
 #include "TimeSystem.h"
-#include <sstream>
-#include <iomanip>
+#include "../ApplicationTypes/GameConfig.h"
 
 /** @file EngineStats.cpp
  *  @brief Triển khai đo lường hiệu năng: quản lý mục tiêu FPS, delta time và cập nhật tiêu đề cửa sổ.
@@ -16,6 +15,7 @@ namespace EngineStats
     static double s_FPSTimer = 0.0;
     static int s_FPSFrames = 0;
     static double s_LastFPS = 0.0;
+    static bool s_FpsDirty = false;
 
     /** @brief Khởi tạo module EngineStats với mục tiêu FPS.
      *  @param targetFPS FPS mục tiêu (ví dụ 60.0)
@@ -35,6 +35,16 @@ namespace EngineStats
     /** @brief Bắt đầu một khung hình, trả về delta time (giây) kể từ khung trước. */
     double BeginFrame()
     {
+        // Ưu tiên sử dụng giới hạn FPS từ cấu hình của người dùng
+        double target = g_Config.fpsLimit > 0 ? (double)g_Config.fpsLimit : 60.0;
+        
+        // Kiểm tra nguồn điện để tự động giảm FPS nếu đang dùng pin VÀ người dùng đang bật 60FPS
+        // Nhưng nếu người dùng chủ động ép 60FPS, ta vẫn nên ưu tiên?
+        // Theo yêu cầu, nếu người dùng bật 60fps trong setting thì phải được 60fps.
+        // Do đó, ta bỏ hoàn toàn việc ép 30fps bằng pin ở đây, hoặc chỉ áp dụng nếu fpsLimit == 0 (auto).
+        // Gomoku Game Config hiện tại có 30 hoặc 60.
+        s_TargetFrameSeconds = 1.0 / target;
+
         s_FrameStartTime = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed = s_FrameStartTime - s_LastFrameTime;
         s_LastFrameTime = s_FrameStartTime;
@@ -77,12 +87,13 @@ namespace EngineStats
         }
     }
 
-    /** @brief Cập nhật tiêu đề cửa sổ với số liệu FPS và thời gian các bước.
+    /** @brief Cập nhật FPS và đánh dấu dirty để title bar tự vẽ.
      *  @param hWnd Handle cửa sổ.
      *  @param dt Delta time của khung hiện tại.
      */
     void UpdateTitleStats(HWND hWnd, double dt)
     {
+        (void)hWnd;
         s_FPSTimer += dt;
         s_FPSFrames++;
 
@@ -91,18 +102,19 @@ namespace EngineStats
             s_LastFPS = s_FPSFrames / s_FPSTimer;
             s_FPSFrames = 0;
             s_FPSTimer = 0.0;
-
-            std::wstringstream title;
-            title.setf(std::ios::fixed);
-            title.precision(1);
-            title << L"CARO: Champions League";
-            title << L" | FPS: " << (int)s_LastFPS;
-            title << L" | Upd: " << g_LastUpdateMs << L" ms";
-            title << L" | Ren: " << g_LastRenderMs << L" ms";
-            title << L" | Blt: " << g_LastBlitMs << L" ms";
-            title << L" | Slp: " << g_LastSleepMs << L" ms";
-
-            SetWindowTextW(hWnd, title.str().c_str());
+            s_FpsDirty = true;
         }
+    }
+
+    double GetLastFps()
+    {
+        return s_LastFPS;
+    }
+
+    bool ConsumeFpsDirty()
+    {
+        bool wasDirty = s_FpsDirty;
+        s_FpsDirty = false;
+        return wasDirty;
     }
 }

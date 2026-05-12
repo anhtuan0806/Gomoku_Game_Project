@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <windowsx.h>
 #include <chrono>
 #include <sstream>
 #include <string>
@@ -8,6 +9,7 @@
 #include "ApplicationTypes/GameState.h"
 #include "ApplicationTypes/PlayState.h"
 #include "ApplicationTypes/GameConfig.h"
+#include "ApplicationTypes/GameConstants.h"
 #include "SystemModules/ConfigLoader.h"
 #include "SystemModules/AudioSystem.h"
 #include "SystemModules/TimeSystem.h"
@@ -18,6 +20,7 @@
 #include "RenderAPI/Renderer.h"
 #include "RenderAPI/DirtyRect.h"
 #include "RenderAPI/UIComponents.h"
+#include "RenderAPI/TitleBar.h"
 #include "GameLogic/GameEngine.h"
 #include "SystemModules/EngineStats.h"
 
@@ -47,9 +50,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     // Thiết lập tỷ lệ màn hình ngay từ ban đầu
     UIScaler::Update((int)UIScaler::BASE_WIDTH, (int)UIScaler::BASE_HEIGHT);
     GlobalFont::Initialize();
+    TitleBar::Initialize(L"Asset/icon.png");
+    TitleBar::SetTitleText(APP_TITLE);
 
     // Initialize profiler if profiling_on.txt is present in workspace root
-    Profiler::InitIfRequested("D:\\Code\\Gomoku_Game_Project");
+    // Dùng relative path thay vì hardcoded absolute path
+    Profiler::InitIfRequested(".");
 
     // 2. Tải Cấu hình & Ngôn ngữ & Âm thanh
     LoadConfig(&g_Config, "Asset/config.ini");
@@ -66,6 +72,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     WNDCLASSW wc = {};
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WndProc;
+
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
@@ -73,15 +80,24 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     RegisterClassW(&wc);
 
     // 4. Tạo cửa sổ
+    // Sử dụng WS_OVERLAPPEDWINDOW thay vì WS_POPUP để Windows DWM
+    // áp dụng animation thu/phóng (minimize/maximize) mượt mà mặc định.
+    // WM_NCCALCSIZE (đã xử lý phía trên) sẽ lo việc giấu title bar của hệ thống.
+    DWORD windowStyle = WS_OVERLAPPEDWINDOW;
     HWND hWnd = CreateWindowExW(
-        0, CLASS_NAME, L"CARO: Champions League",
-        WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 1280, 720,
+        0, CLASS_NAME, APP_TITLE,
+        windowStyle, CW_USEDEFAULT, CW_USEDEFAULT, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT,
         NULL, NULL, hInstance, NULL);
 
     if (hWnd == NULL)
     {
         return 0;
     }
+
+    // Đảm bảo tắt hoàn toàn title bar mặc định (force apply style)
+    SetWindowLongPtr(hWnd, GWL_STYLE, windowStyle);
+    SetWindowPos(hWnd, NULL, 0, 0, 0, 0,
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
     // Thiết lập Icon cho cửa sổ từ file ảnh
     {
@@ -108,16 +124,21 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     {
         while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
-            if (msg.message == WM_QUIT) { bRunning = false; break; }
+            if (msg.message == WM_QUIT)
+            {
+                bRunning = false;
+                break;
+            }
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
 
-        if (!bRunning) break;
+        if (!bRunning)
+            break;
 
         // Bắt đầu khung hình và lấy Delta Time
         double dt = EngineStats::BeginFrame();
-        g_GlobalAnimTime += (float)dt;
+        if (ShouldAnimateScreen(g_CurrentScreen)) g_GlobalAnimTime += (float)dt;
 
         // profiler helpers for this frame
         int profiler_rectCount = 0;
@@ -139,15 +160,42 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
         // Cập nhật thông số hiệu năng lên tiêu đề cửa sổ
         EngineStats::UpdateTitleStats(hWnd, dt);
+        if (EngineStats::ConsumeFpsDirty())
+        {
+            TitleBar::UpdateFps(EngineStats::GetLastFps());
+            RECT clientRect;
+            GetClientRect(hWnd, &clientRect);
+            RECT barRect = TitleBar::GetBarRect(clientRect.right - clientRect.left);
+            DirtyRect::AddRect(barRect);
+            g_NeedsRedraw = true;
+        }
 
         if (!IsIconic(hWnd))
         {
             if (ShouldAnimateScreen(g_CurrentScreen) || needsLogicRedraw)
+            {
+                if (g_CurrentScreen == SCREEN_PLAY)
+                {
+                    DirtyRect::AddCell(g_PlayState.cursorRow, g_PlayState.cursorCol);
+                    RECT clientRect;
+                    GetClientRect(hWnd, &clientRect);
+                    int titleBarH = TitleBar::GetHeightPx();
+                    RECT hudRect = {0, 0, clientRect.right, titleBarH + UIScaler::SY(120)};
+                    DirtyRect::AddRect(hudRect);
+                }
                 g_NeedsRedraw = true;
+            }
+            static ScreenState s_LastScreen = SCREEN_MENU;
+            if (g_CurrentScreen != s_LastScreen)
+            {
+                s_LastScreen = g_CurrentScreen;
+                InvalidateRect(hWnd, NULL, FALSE);
+                DirtyRect::Clear();
+                g_NeedsRedraw = false;
+            }
 
             if (g_NeedsRedraw)
             {
-                // Prefer partial invalidation: resolve board cells and invalidate only dirty rects
                 RECT clientRect;
                 GetClientRect(hWnd, &clientRect);
                 int w = clientRect.right - clientRect.left;
@@ -155,7 +203,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
                 if (g_CurrentScreen == SCREEN_PLAY)
                 {
-                    // Compute board layout same as PlayScreen so we can resolve logical cells
                     int availableHeight = h - UIScaler::SY(120);
                     int availableWidth = w - UIScaler::SX(300);
                     int maxBoardSize = availableWidth < availableHeight ? availableWidth : availableHeight;
@@ -165,13 +212,26 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
                     int dynamicCellSize = maxBoardSize / g_PlayState.boardSize;
                     int boardPixelSize = g_PlayState.boardSize * dynamicCellSize;
                     int startX = (w - boardPixelSize) / 2;
-                    int startY = (h - boardPixelSize) / 2 + UIScaler::SY(40);
+                    int startY = (h - boardPixelSize) / 2 + UIScaler::SY(40) + TitleBar::GetHeightPx() / 2;
 
-                    DirtyRect::ResolveBoardCells(dynamicCellSize, startX, startY);
+                    RECT leftBanner = {0, startY, startX, h};
+                    RECT rightBanner = {startX + boardPixelSize, startY, w, h};
+                    DirtyRect::AddRect(leftBanner);
+                    DirtyRect::AddRect(rightBanner);
+
+                    int cursorPadding = UIScaler::S(16);
+                    DirtyRect::ResolveBoardCells(dynamicCellSize, startX, startY, cursorPadding);
                     auto rects = DirtyRect::StealAndClear();
-                    DirtyRect::MergeAndClip(rects, clientRect);
+                    
+                    if (g_PlayState.status != MATCH_PLAYING)
+                    {
+                        rects.clear(); // Force full invalidate for Pause/Summary menus
+                    }
+                    else
+                    {
+                        DirtyRect::MergeAndClip(rects, clientRect);
+                    }
 
-                    // Compute telemetry for profiler: rect count and total dirty area
                     if (rects.empty())
                     {
                         InvalidateRect(hWnd, NULL, FALSE);
@@ -214,6 +274,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
     GlobalFont::Cleanup();
     ClearUICaches();
+    TitleBar::Shutdown();
     DeleteBuffer(g_BackBuffer);
 
     if (g_FrameTimer)
@@ -234,22 +295,130 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_NCCALCSIZE:
+        // Loại bỏ hoàn toàn non-client area (title bar mặc định) cho WS_POPUP custom title bar.
+        // Nếu không xử lý, Windows vẫn giữ vùng non-client gây lệch HDC và font mapping.
+        if (wParam == TRUE)
+            return 0;
+        return DefWindowProc(hWnd, message, wParam, lParam);
+
+    case WM_GETMINMAXINFO:
+    {
+        // Ngăn cửa sổ maximize che taskbar: giới hạn kích thước tối đa theo work area.
+        MONITORINFO monitorInfo = {};
+        monitorInfo.cbSize = sizeof(MONITORINFO);
+        HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+        if (GetMonitorInfo(hMonitor, &monitorInfo))
+        {
+            MINMAXINFO *minMaxInfo = reinterpret_cast<MINMAXINFO *>(lParam);
+            RECT workArea = monitorInfo.rcWork;
+            minMaxInfo->ptMaxPosition.x = workArea.left;
+            minMaxInfo->ptMaxPosition.y = workArea.top;
+            minMaxInfo->ptMaxSize.x = workArea.right - workArea.left;
+            minMaxInfo->ptMaxSize.y = workArea.bottom - workArea.top;
+        }
+        return 0;
+    }
+
+    case WM_NCHITTEST:
+    {
+        LRESULT hit = DefWindowProc(hWnd, message, wParam, lParam);
+        if (hit == HTCLIENT)
+        {
+            POINT pt = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+            ScreenToClient(hWnd, &pt);
+            RECT clientRect;
+            GetClientRect(hWnd, &clientRect);
+            int w = clientRect.right - clientRect.left;
+            int h = clientRect.bottom - clientRect.top;
+            if (TitleBar::IsDragRegion(pt, w, h))
+                return HTCAPTION;
+        }
+        return hit;
+    }
+
+    case WM_MOUSEMOVE:
+    {
+        POINT pt = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+        RECT clientRect;
+        GetClientRect(hWnd, &clientRect);
+        int w = clientRect.right - clientRect.left;
+        int h = clientRect.bottom - clientRect.top;
+        if (TitleBar::OnMouseMove(hWnd, pt, w, h))
+            return 0;
+        break;
+    }
+
+    case WM_LBUTTONDOWN:
+    {
+        POINT pt = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+        RECT clientRect;
+        GetClientRect(hWnd, &clientRect);
+        int w = clientRect.right - clientRect.left;
+        int h = clientRect.bottom - clientRect.top;
+        if (TitleBar::OnMouseDown(hWnd, pt, w, h))
+            return 0;
+        break;
+    }
+
+    case WM_LBUTTONUP:
+    {
+        POINT pt = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+        RECT clientRect;
+        GetClientRect(hWnd, &clientRect);
+        int w = clientRect.right - clientRect.left;
+        int h = clientRect.bottom - clientRect.top;
+        if (TitleBar::OnMouseUp(hWnd, pt, w, h))
+            return 0;
+        break;
+    }
+
+    case WM_MOUSELEAVE:
+        TitleBar::OnMouseLeave(hWnd);
+        break;
+
     case WM_SIZE:
     {
-        int w = LOWORD(lParam);
-        int h = HIWORD(lParam);
-        UIScaler::Update(w, h);
-        GlobalFont::RebuildFonts();
+        // Bỏ qua khi minimize: không cần rebuild font/buffer khi cửa sổ bị ẩn.
+        if (wParam == SIZE_MINIMIZED)
+            return DefWindowProc(hWnd, message, wParam, lParam);
 
-        // Cập nhật lại Back Buffer khi kích thước cửa sổ thay đổi
+        int newWidth = LOWORD(lParam);
+        int newHeight = HIWORD(lParam);
+        if (newWidth <= 0 || newHeight <= 0)
+            return DefWindowProc(hWnd, message, wParam, lParam);
+
+        UIScaler::Update(newWidth, newHeight);
+
+        // Cập nhật buffer ngay lập tức để tránh nhấp nháy khi resize
         HDC hdc = GetDC(hWnd);
         DeleteBuffer(g_BackBuffer);
         CreateBuffer(hWnd, hdc, g_BackBuffer);
         ReleaseDC(hWnd, hdc);
 
+        // Debounce font rebuild: hủy timer cũ và đặt timer mới 50ms.
+        // Font rebuild nặng (CreateFontW x4) nên chỉ chạy sau khi user dừng resize.
+        static const UINT_PTR RESIZE_TIMER_ID = 9001;
+        KillTimer(hWnd, RESIZE_TIMER_ID);
+        SetTimer(hWnd, RESIZE_TIMER_ID, 50, nullptr);
+
         InvalidateRect(hWnd, NULL, FALSE);
         g_NeedsRedraw = true;
         return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+
+    case WM_TIMER:
+    {
+        static const UINT_PTR RESIZE_TIMER_ID = 9001;
+        if (wParam == RESIZE_TIMER_ID)
+        {
+            KillTimer(hWnd, RESIZE_TIMER_ID);
+            GlobalFont::RebuildFonts();
+            InvalidateRect(hWnd, NULL, FALSE);
+            g_NeedsRedraw = true;
+            return 0;
+        }
+        break;
     }
 
     case WM_KEYDOWN:
@@ -260,7 +429,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (g_CurrentScreen)
         {
         case SCREEN_MENU:
-            UpdateMenuScreen(g_CurrentScreen, g_MenuSelected, extendedWParam);
+            if (UpdateMenuScreen(g_CurrentScreen, g_MenuSelected, extendedWParam)) {
+                g_NeedsRedraw = true;
+            }
             if (g_CurrentScreen == SCREEN_PLAY)
             {
                 g_CurrentScreen = SCREEN_MATCH_CONFIG;
@@ -274,33 +445,46 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
 
         case SCREEN_MATCH_CONFIG:
-            UpdateMatchConfigScreen(g_CurrentScreen, &g_PlayState, g_ConfigSelected, extendedWParam);
+            if (UpdateMatchConfigScreen(g_CurrentScreen, &g_PlayState, g_ConfigSelected, extendedWParam)) {
+                g_NeedsRedraw = true;
+            }
             if (wParam == VK_ESCAPE)
             {
                 g_CurrentScreen = SCREEN_MENU;
+                g_NeedsRedraw = true;
             }
             break;
         case SCREEN_PLAY:
-            UpdatePlayScreen(&g_PlayState, g_CurrentScreen, extendedWParam, &g_Config);
+            if (UpdatePlayScreen(&g_PlayState, g_CurrentScreen, extendedWParam, &g_Config)) {
+                g_NeedsRedraw = true;
+            }
             break;
         case SCREEN_SETTING:
-            UpdateSettingScreen(g_CurrentScreen, &g_Config, g_SettingSelected, extendedWParam);
+            if (UpdateSettingScreen(g_CurrentScreen, &g_Config, g_SettingSelected, extendedWParam)) {
+                g_NeedsRedraw = true;
+            }
             break;
         case SCREEN_LOAD_GAME:
-            UpdateLoadGameScreen(g_CurrentScreen, &g_PlayState, g_LoadSelected, g_LoadStatus, extendedWParam);
+            if (UpdateLoadGameScreen(g_CurrentScreen, &g_PlayState, g_LoadSelected, g_LoadStatus, extendedWParam)) {
+                g_NeedsRedraw = true;
+            }
             break;
         case SCREEN_GUIDE:
-            UpdateGuildScreen(g_CurrentScreen, g_GuildPage, extendedWParam);
+            if (UpdateGuildScreen(g_CurrentScreen, g_GuildPage, extendedWParam)) {
+                g_NeedsRedraw = true;
+            }
             break;
 
         case SCREEN_ABOUT:
-            UpdateAboutScreen(g_CurrentScreen, extendedWParam);
+            if (UpdateAboutScreen(g_CurrentScreen, extendedWParam)) {
+                g_NeedsRedraw = true;
+            }
             break;
         case SCREEN_EXIT:
             PostQuitMessage(0);
             break;
         }
-        g_NeedsRedraw = true;
+        // Removed global g_NeedsRedraw = true; since it's now explicitly handled in case blocks
         break;
     }
 
@@ -309,16 +493,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (g_CurrentScreen)
         {
         case SCREEN_MATCH_CONFIG:
-            UpdateMatchConfigScreen(g_CurrentScreen, &g_PlayState, g_ConfigSelected, wParam | 0x10000);
+            if (UpdateMatchConfigScreen(g_CurrentScreen, &g_PlayState, g_ConfigSelected, wParam | 0x10000)) {
+                g_NeedsRedraw = true;
+            }
             break;
         case SCREEN_PLAY:
-            UpdatePlayScreen(&g_PlayState, g_CurrentScreen, wParam | 0x10000, &g_Config);
+            if (UpdatePlayScreen(&g_PlayState, g_CurrentScreen, wParam | 0x10000, &g_Config)) {
+                g_NeedsRedraw = true;
+            }
             break;
         case SCREEN_LOAD_GAME:
-            UpdateLoadGameScreen(g_CurrentScreen, &g_PlayState, g_LoadSelected, g_LoadStatus, wParam | 0x10000);
+            if (UpdateLoadGameScreen(g_CurrentScreen, &g_PlayState, g_LoadSelected, g_LoadStatus, wParam | 0x10000)) {
+                g_NeedsRedraw = true;
+            }
             break;
         }
-        g_NeedsRedraw = true;
+        // Removed global g_NeedsRedraw = true; since it's now explicitly handled in case blocks
         break;
     }
 
@@ -330,6 +520,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (IsIconic(hWnd))
         {
             EndPaint(hWnd, &ps);
+            break;
+        }
+
+        // Just to prevent double 'break; }' below:
+        if (false) {
+            g_PlayState.difficulty = 2;
             break;
         }
 
@@ -384,6 +580,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 RenderAboutScreen(g_BackBuffer.hdcMemory, w, h);
                 break;
             }
+            TitleBar::Render(g_BackBuffer.hdcMemory, w, h);
 
             auto blitStartFull = std::chrono::high_resolution_clock::now();
             BitBlt(hdc, 0, 0, w, h, g_BackBuffer.hdcMemory, 0, 0, SRCCOPY);
@@ -417,6 +614,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 RenderAboutScreen(g_BackBuffer.hdcMemory, w, h);
                 break;
             }
+            TitleBar::Render(g_BackBuffer.hdcMemory, w, h);
 
             auto blitStartFull = std::chrono::high_resolution_clock::now();
             BitBlt(hdc, 0, 0, w, h, g_BackBuffer.hdcMemory, 0, 0, SRCCOPY);
@@ -431,10 +629,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 needed = sizeof(RGNDATA) + 16 * sizeof(RECT);
 
             std::vector<BYTE> buf(needed);
-            RGNDATA* prd = reinterpret_cast<RGNDATA*>(buf.data());
+            RGNDATA *prd = reinterpret_cast<RGNDATA *>(buf.data());
             DWORD got = GetRegionData(hUpdateRgn, needed, prd);
             int rectCount = (prd && prd->rdh.nCount > 0) ? prd->rdh.nCount : 0;
-            RECT* pRects = (RECT*)(prd->Buffer);
+            RECT *pRects = (RECT *)(prd->Buffer);
 
             // For non-play screens render full backbuffer once, then blit per-rect
             bool renderedFullForNonPlay = false;
@@ -463,6 +661,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 default:
                     break;
                 }
+                TitleBar::Render(g_BackBuffer.hdcMemory, w, h);
                 renderedFullForNonPlay = true;
             }
 
@@ -479,11 +678,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     // Render only the clip area into backbuffer
                     RenderPlayScreen(g_BackBuffer.hdcMemory, &g_PlayState, w, h, &g_Config, &clipped);
+                    RECT titleBarRect = TitleBar::GetBarRect(w);
+                    RECT titleIntersect;
+                    if (IntersectRect(&titleIntersect, &clipped, &titleBarRect))
+                    {
+                        TitleBar::Render(g_BackBuffer.hdcMemory, w, h);
+                    }
                 }
                 // Blit only the updated rect from backbuffer to window
                 auto blitStart = std::chrono::high_resolution_clock::now();
                 BitBlt(hdc, clipped.left, clipped.top, clipped.right - clipped.left, clipped.bottom - clipped.top,
-                    g_BackBuffer.hdcMemory, clipped.left, clipped.top, SRCCOPY);
+                       g_BackBuffer.hdcMemory, clipped.left, clipped.top, SRCCOPY);
                 auto blitEnd = std::chrono::high_resolution_clock::now();
                 totalBlitMs += std::chrono::duration<double, std::milli>(blitEnd - blitStart).count();
             }
@@ -492,6 +697,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             if (rectCount == 0 && !renderedFullForNonPlay)
             {
                 RenderPlayScreen(g_BackBuffer.hdcMemory, &g_PlayState, w, h, &g_Config, &clientRect);
+                TitleBar::Render(g_BackBuffer.hdcMemory, w, h);
                 auto blitStartFull = std::chrono::high_resolution_clock::now();
                 BitBlt(hdc, 0, 0, w, h, g_BackBuffer.hdcMemory, 0, 0, SRCCOPY);
                 auto blitEndFull = std::chrono::high_resolution_clock::now();

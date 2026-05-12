@@ -188,6 +188,16 @@ namespace Theme
     constexpr SmartColor TitleFill = {255, 255, 220, 0};
     constexpr SmartColor TitleShadow = {150, 0, 0, 0};
 
+    // ----- Title bar tùy biến (nền trắng, chữ đen) -----
+    constexpr SmartColor TitleBarBg = {255, 255, 255, 255};
+    constexpr SmartColor TitleBarBorder = {255, 200, 200, 200};
+    constexpr SmartColor TitleBarText = {255, 30, 30, 30};
+    constexpr SmartColor TitleBarFpsText = {255, 120, 120, 120};
+    constexpr SmartColor TitleBarBtnHover = {60, 0, 0, 0};
+    constexpr SmartColor TitleBarBtnPressed = {100, 0, 0, 0};
+    constexpr SmartColor TitleBarCloseHover = {200, 255, 90, 90};
+    constexpr SmartColor TitleBarClosePressed = {255, 230, 60, 60};
+
     // ----- Màu Avatar Pixel -----
     // ----- Màu Avatar Cố định (Named Players) -----
     constexpr SmartColor AvaOutline = {255, 30, 30, 30};
@@ -287,6 +297,35 @@ namespace Theme
     constexpr SmartColor NEY_Shirt = {255, 255, 235, 59};  // ID 13
     constexpr SmartColor NEY_ShirtAcc = {255, 0, 150, 0};  // ID 18
     constexpr SmartColor NEY_Shorts = {255, 0, 80, 180};   // ID 15
+
+    // --- UI Accent Colors (dùng trong ScreenModules) ---
+
+    /** @brief Glow banner xanh dương (MatchConfigScreen trang 0). */
+    constexpr SmartColor BannerGlowBlue = {255, 0, 100, 255};
+
+    /** @brief Glow banner cam (MatchConfigScreen trang 1). */
+    constexpr SmartColor BannerGlowOrange = {255, 255, 100, 0};
+
+    /** @brief Màu nhấn Player 1 khi được chọn (avatar/name). */
+    constexpr SmartColor P1AccentSelected = {255, 255, 100, 0};
+
+    /** @brief Màu nhấn Player 2 khi được chọn (avatar/name). */
+    constexpr SmartColor P2AccentSelected = {255, 0, 150, 255};
+
+    /** @brief Màu tên Player 1 khi đang chỉnh sửa. */
+    constexpr SmartColor P1NameSelected = {255, 255, 80, 0};
+
+    /** @brief Màu tên Player 2 khi đang chỉnh sửa. */
+    constexpr SmartColor P2NameSelected = {255, 0, 120, 255};
+
+    /** @brief Màu thông báo lỗi validation (đỏ nhạt). */
+    constexpr SmartColor ValidationError = {255, 255, 50, 50};
+
+    /** @brief Nút "Quay lại" được chọn (đỏ). */
+    constexpr SmartColor BackButtonSelected = {255, 255, 0, 0};
+
+    /** @brief Summary banner glow. */
+    constexpr SmartColor SummaryBannerGlow = {255, 0, 100, 255};
 }
 
 #endif // GAME_COLORS_H

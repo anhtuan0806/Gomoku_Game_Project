@@ -1,4 +1,4 @@
-﻿#ifndef MENU_SCREEN_H
+#ifndef MENU_SCREEN_H
 #define MENU_SCREEN_H
 
 #include <windows.h>
@@ -17,7 +17,7 @@
  *  @param selectedOption Tham chiếu chỉ mục mục đang chọn trong UI.
  *  @param wParam Mã phím/flags (WM_KEY/WM_CHAR encoded).
  */
-void UpdateMenuScreen(ScreenState &currentState, int &selectedOption, WPARAM wParam);
+bool UpdateMenuScreen(ScreenState &currentState, int &selectedOption, WPARAM wParam);
 
 /** @brief Xử lý logic phím cho menu và cập nhật lựa chọn.
  *  @param wParam Mã phím/flags nhận từ vòng lặp chính.

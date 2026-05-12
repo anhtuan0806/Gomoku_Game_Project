@@ -111,6 +111,9 @@
     <ClInclude Include="RenderAPI\UIComponents.h">
       <Filter>RenderAPI</Filter>
     </ClInclude>
+    <ClInclude Include="RenderAPI\TitleBar.h">
+      <Filter>RenderAPI</Filter>
+    </ClInclude>
     <ClInclude Include="RenderAPI\UIScaler.h">
       <Filter>RenderAPI</Filter>
     </ClInclude>
@@ -177,6 +180,9 @@
       <Filter>RenderAPI</Filter>
     </ClCompile>
     <ClCompile Include="RenderAPI\UIComponents.cpp">
+      <Filter>RenderAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderAPI\TitleBar.cpp">
       <Filter>RenderAPI</Filter>
     </ClCompile>
     <ClCompile Include="RenderAPI\UIScaler.cpp">

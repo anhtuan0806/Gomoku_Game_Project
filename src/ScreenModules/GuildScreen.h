@@ -13,7 +13,7 @@
  *  @param currentPage Tham chiếu trang hiện tại (sẽ tăng/giảm khi chuyển).
  *  @param wParam Mã phím nhận từ vòng lặp chính.
  */
-void UpdateGuildScreen(ScreenState &currentState, int &currentPage, WPARAM wParam);
+bool UpdateGuildScreen(ScreenState &currentState, int &currentPage, WPARAM wParam);
 
 /** @brief Vẽ nội dung Hướng dẫn cho `currentPage`.
  *  @param hdc Device context để vẽ.

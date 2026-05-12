@@ -92,6 +92,27 @@ void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int centerX, 
 void DrawTextCentered(HDC hdc, const std::wstring &text, int posY, int rightX, COLORREF color, HFONT hFont = nullptr, int leftX = 0);
 
 /**
+ * @brief Vẽ text có viền mỏng bên ngoài để dễ đọc trên nền phức tạp.
+ *
+ * Kỹ thuật: Vẽ text 4 lần với offset ±1px bằng màu viền, sau đó vẽ text chính lên trên.
+ *
+ * @param hdc Device context.
+ * @param text Chuỗi Unicode cần vẽ.
+ * @param rect Vùng vẽ (RECT).
+ * @param textColor Màu chữ chính.
+ * @param outlineColor Màu viền.
+ * @param hFont Font sử dụng; nếu null dùng GlobalFont::Default.
+ * @param format Cờ DrawTextW (DT_CENTER | DT_SINGLELINE, v.v.).
+ */
+void DrawTextOutlined(HDC hdc, const std::wstring &text, RECT rect, COLORREF textColor, COLORREF outlineColor, HFONT hFont = nullptr, UINT format = DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+
+/**
+ * @brief Vẽ text căn giữa có viền mỏng.
+ * @param outlineColor Màu viền (mặc định đen).
+ */
+void DrawTextCenteredOutlined(HDC hdc, const std::wstring &text, int posY, int rightX, COLORREF textColor, COLORREF outlineColor, HFONT hFont = nullptr, int leftX = 0);
+
+/**
  * @brief Vẽ nền sân vận động (pitch) bằng thuật toán procedural và cache tĩnh.
  *
  * @param g Đối tượng GDI+ Graphics.

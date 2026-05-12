@@ -15,7 +15,7 @@
  *  @param currentPage Tham chiếu trang/tab hiện hành (0..2).
  *  @param wParam Mã phím/flags nhận từ main loop.
  */
-void UpdateGuildScreen(ScreenState &currentState, int &currentPage, WPARAM wParam)
+bool UpdateGuildScreen(ScreenState &currentState, int &currentPage, WPARAM wParam)
 {
     bool isRepeat = (wParam & 0x20000) != 0;
     WPARAM key = wParam & 0xFFFF;
@@ -28,37 +28,41 @@ void UpdateGuildScreen(ScreenState &currentState, int &currentPage, WPARAM wPara
     if (key == VK_ESCAPE)
     {
         if (!canMove)
-            return;
+            return false;
         if (!isRepeat)
             playSfx("sfx_move");
         currentState = SCREEN_MENU;
         currentPage = 0;
         lastMoveTime = now;
+        return true;
     }
     else if (key == VK_RIGHT || key == 'D' || key == 'd')
     {
         if (!canMove)
-            return;
+            return false;
         if (currentPage < 2)
         {
             currentPage++;
             if (!isRepeat)
                 playSfx("sfx_move");
+            lastMoveTime = now;
+            return true;
         }
-        lastMoveTime = now;
     }
     else if (key == VK_LEFT || key == 'A' || key == 'a')
     {
         if (!canMove)
-            return;
+            return false;
         if (currentPage > 0)
         {
             currentPage--;
             if (!isRepeat)
                 playSfx("sfx_move");
+            lastMoveTime = now;
+            return true;
         }
-        lastMoveTime = now;
     }
+    return false;
 }
 
 /** @brief Vẽ nội dung màn Guild/Guide theo `currentPage`.

@@ -22,11 +22,17 @@ namespace EngineStats
     /** @brief Kết thúc khung hình, thực hiện throttling để duy trì FPS mục tiêu. */
     void EndFrame();
 
-    /** @brief Cập nhật FPS và thông số lên tiêu đề cửa sổ. 
+    /** @brief Cập nhật FPS và cờ dirty (phục vụ title bar tuỳ biến).
      *  @param hWnd Handle của cửa sổ.
      *  @param dt Delta time của khung hình hiện tại.
      */
     void UpdateTitleStats(HWND hWnd, double dt);
+
+    /** @brief Lấy FPS gần nhất đã được cập nhật. */
+    double GetLastFps();
+
+    /** @brief Trả về true nếu FPS vừa được cập nhật, đồng thời reset cờ dirty. */
+    bool ConsumeFpsDirty();
 }
 
 #endif // _ENGINE_STATS_H_

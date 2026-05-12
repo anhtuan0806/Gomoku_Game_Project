@@ -23,10 +23,12 @@ const int TOTAL_SETTING_ITEMS = 8;
  *  @param isEnterPressed Flag nếu người dùng nhấn Enter.
  *  @param isRepeat Flag nếu phím đang ở trạng thái autorepeat.
  */
-void ProcessSettingInput(ScreenState &currentState, GameConfig *config, int selectedOption, int direction, bool isEnterPressed, bool isRepeat)
+bool ProcessSettingInput(ScreenState &currentState, GameConfig *config, int selectedOption, int direction, bool isEnterPressed, bool isRepeat)
 {
     if (direction == 0 && !isEnterPressed)
-        return;
+        return false;
+        
+    bool changed = true;
 
     switch (selectedOption)
     {
@@ -112,6 +114,7 @@ void ProcessSettingInput(ScreenState &currentState, GameConfig *config, int sele
         }
         break;
     }
+    return changed;
 }
 
 /** @brief Xử lý input cho màn Settings (di chuyển lựa chọn, gọi ProcessSettingInput).
@@ -120,15 +123,15 @@ void ProcessSettingInput(ScreenState &currentState, GameConfig *config, int sele
  *  @param selectedOption Tham chiếu mục đang chọn.
  *  @param keyCode Mã phím/flags (WM_KEY/WM_CHAR encoded).
  */
-void UpdateSettingScreen(ScreenState &currentState, GameConfig *config, int &selectedOption, WPARAM keyCode)
+bool UpdateSettingScreen(ScreenState &currentState, GameConfig *config, int &selectedOption, WPARAM keyCode)
 {
     if (keyCode == 0)
-        return;
+        return false;
     if (keyCode == VK_ESCAPE)
     {
         SaveConfig(config, "Asset/config.ini");
         currentState = SCREEN_MENU;
-        return;
+        return true;
     }
 
     bool isRepeat = (keyCode & 0x20000) != 0;
@@ -141,7 +144,7 @@ void UpdateSettingScreen(ScreenState &currentState, GameConfig *config, int &sel
     if (keyCode == 'W' || keyCode == VK_UP)
     {
         if (!canMove)
-            return;
+            return false;
         do
         {
             selectedOption = (selectedOption - 1 < 0) ? TOTAL_SETTING_ITEMS - 1 : selectedOption - 1;
@@ -149,12 +152,12 @@ void UpdateSettingScreen(ScreenState &currentState, GameConfig *config, int &sel
         if (!isRepeat)
             playSfx("sfx_move");
         lastMoveTime = now;
-        return;
+        return true;
     }
     else if (keyCode == 'S' || keyCode == VK_DOWN)
     {
         if (!canMove)
-            return;
+            return false;
         do
         {
             selectedOption = (selectedOption + 1 >= TOTAL_SETTING_ITEMS) ? 0 : selectedOption + 1;
@@ -162,27 +165,27 @@ void UpdateSettingScreen(ScreenState &currentState, GameConfig *config, int &sel
         if (!isRepeat)
             playSfx("sfx_move");
         lastMoveTime = now;
-        return;
+        return true;
     }
 
     int direction = 0;
     if (keyCode == 'D' || keyCode == VK_RIGHT)
     {
         if (!canMove)
-            return;
+            return false;
         direction = 1;
         lastMoveTime = now;
     }
     if (keyCode == 'A' || keyCode == VK_LEFT)
     {
         if (!canMove)
-            return;
+            return false;
         direction = -1;
         lastMoveTime = now;
     }
 
     bool isEnterPressed = (keyCode == VK_RETURN);
-    ProcessSettingInput(currentState, config, selectedOption, direction, isEnterPressed, isRepeat);
+    return ProcessSettingInput(currentState, config, selectedOption, direction, isEnterPressed, isRepeat);
 }
 
 /** @brief Vẽ ô chữ cho màn Setting (hàm tiện ích giống DrawColText ở các màn khác).
