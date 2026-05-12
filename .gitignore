@@ -10,6 +10,8 @@
 !.claude
 
 !docs
+!CODE_STYLE.md
+!PAPER.md
 
 !src
 
@@ -21,7 +23,7 @@ src.vcxproj.user
 x64
 Debug
 Release
-src
+.vs
 
 *.Identifier
 
