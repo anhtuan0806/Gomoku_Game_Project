@@ -151,6 +151,7 @@
     <ClInclude Include="RenderAPI\Renderer.h" />
     <ClInclude Include="RenderAPI\DirtyRect.h" />
     <ClInclude Include="RenderAPI\UIComponents.h" />
+    <ClInclude Include="RenderAPI\TitleBar.h" />
     <ClInclude Include="RenderAPI\UIScaler.h" />
     <ClInclude Include="ScreenModules\AboutScreen.h" />
     <ClInclude Include="ScreenModules\GuildScreen.h" />
@@ -180,6 +181,7 @@
     <ClCompile Include="RenderAPI\Renderer.cpp" />
     <ClCompile Include="RenderAPI\DirtyRect.cpp" />
     <ClCompile Include="RenderAPI\UIComponents.cpp" />
+    <ClCompile Include="RenderAPI\TitleBar.cpp" />
     <ClCompile Include="RenderAPI\UIScaler.cpp" />
     <ClCompile Include="ScreenModules\AboutScreen.cpp" />
     <ClCompile Include="ScreenModules\GuildScreen.cpp" />
