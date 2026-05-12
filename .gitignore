@@ -1,7 +1,7 @@
 !*.cpp
 !*.h
 
-!*.md
+*.md
 
 !gitignore
 
@@ -22,3 +22,9 @@ x64
 Debug
 Release
 src
+
+*.Identifier
+
+!README.md
+
+.claude
