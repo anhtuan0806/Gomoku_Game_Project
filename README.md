@@ -6,6 +6,14 @@
 
 **Caro Champions League** là một trò chơi cờ caro (Gomoku) và Tic-Tac-Toe hiệu năng cao được phát triển bằng **Modern C++ (C++17)** và **Win32 API**. Dự án tập trung vào việc tối ưu hóa hiệu suất đồ họa 2D thông qua GDI+ và xây dựng hệ thống AI thông minh dựa trên các thuật toán tìm kiếm hiện đại.
 
+## Mục lục (Table of Contents)
+- [1. Kiến trúc Hệ thống (System Architecture)](#1-kiến-trúc-hệ-thống-system-architecture)
+- [2. Pipeline Đồ họa & Rendering](#2-pipeline-đồ-họa--rendering)
+- [3. Game Logic & Thuật toán AI](#3-game-logic--thuật-toán-ai)
+- [4. Các Hệ thống Phụ trợ (Subsystems)](#4-các-hệ-thống-phụ-trợ-subsystems)
+- [5. Cấu trúc Thư mục](#5-cấu-trúc-thư-mục)
+- [6. Yêu cầu & Build](#6-yêu-cầu--build)
+
 ---
 
 ## 1. Kiến trúc Hệ thống (System Architecture)
