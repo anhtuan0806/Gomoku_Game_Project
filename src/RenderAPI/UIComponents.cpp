@@ -659,12 +659,26 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
         DrawPixelModel(g, model, bannerX + bannerW - 25, iconY, iconSize, palette);
     }
 
-    // 4. Chữ tiêu đề (Căn giữa và giới hạn vùng bao quanh)
+    // 4. Chữ tiêu đề (Căn giữa và hỗ trợ xuống dòng)
     SetTextColor(hdc, textColor);
     HFONT oldF = (HFONT)SelectObject(hdc, GlobalFont::Title);
     SetBkMode(hdc, TRANSPARENT);
-    RECT r = {bannerX + 45, bannerY, bannerX + bannerW - 45, bannerY + bannerH};
-    DrawTextW(hdc, text.c_str(), -1, &r, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+    
+    // Vùng đệm lề trái/phải 45px để tránh đè lên icon
+    RECT calcRect = {bannerX + 45, bannerY, bannerX + bannerW - 45, bannerY + bannerH};
+    
+    // Bước A: Tính toán chiều cao cần thiết cho text (DT_CALCRECT không vẽ, chỉ tính RECT)
+    DrawTextW(hdc, text.c_str(), -1, &calcRect, DT_CENTER | DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
+    
+    int textHeight = calcRect.bottom - calcRect.top;
+    
+    // Bước B: Căn giữa theo chiều dọc bằng cách tính Y offset
+    int textY = bannerY + (bannerH - textHeight) / 2;
+    
+    // Bước C: Vẽ text thực tế với tọa độ Y đã tính
+    RECT drawRect = {bannerX + 45, textY, bannerX + bannerW - 45, textY + textHeight};
+    DrawTextW(hdc, text.c_str(), -1, &drawRect, DT_CENTER | DT_WORDBREAK | DT_NOPREFIX);
+    
     SelectObject(hdc, oldF);
 }
 

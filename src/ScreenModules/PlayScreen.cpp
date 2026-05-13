@@ -22,6 +22,45 @@
 
 extern bool updateCountdown(PlayState *state, double dt);
 
+namespace
+{
+
+/** Viền / góc pixel cho panel cạnh bàn — đồng bộ phong cách với các màn có DrawPixelBanner. */
+static void DrawPlayerPanelPixelChrome(Gdiplus::Graphics &g, int x, int y, int w, int h, bool isP1, bool isTheirTurn)
+{
+    PixelLayout::AlignRectToPixelGrid(x, y, w, h);
+    const int outerPen = UIScaler::S(4);
+    Gdiplus::Pen penOuter(ToGdiColor(Palette::BrownDarkest), (Gdiplus::REAL)outerPen);
+    g.DrawRectangle(&penOuter, x, y, w, h);
+
+    COLORREF midRef = isP1 ? ToCOLORREF(Palette::OrangeDark) : ToCOLORREF(Palette::CyanDark);
+    if (isTheirTurn)
+        midRef = isP1 ? ToCOLORREF(Palette::OrangeNormal) : ToCOLORREF(Palette::CyanNormal);
+    BYTE midA = isTheirTurn ? (BYTE)255 : (BYTE)150;
+    Gdiplus::Pen penMid(Gdiplus::Color(midA, GetRValue(midRef), GetGValue(midRef), GetBValue(midRef)), 2.0f);
+    const int m = UIScaler::S(5);
+    g.DrawRectangle(&penMid, x + m, y + m, w - 2 * m, h - 2 * m);
+
+    Gdiplus::Pen penHi(ToGdiColor(WithAlpha(Palette::WhiteSoft, (BYTE)(isTheirTurn ? 100 : 55))), 1.0f);
+    const int inset = UIScaler::S(8);
+    g.DrawRectangle(&penHi, x + inset, y + inset, w - 2 * inset, h - 2 * inset);
+
+    Gdiplus::SolidBrush stud(Gdiplus::Color(midA, GetRValue(midRef), GetGValue(midRef), GetBValue(midRef)));
+    const int bolt = UIScaler::S(6);
+    const int bOff = UIScaler::S(10);
+    g.FillRectangle(&stud, x + bOff, y + bOff, bolt, bolt);
+    g.FillRectangle(&stud, x + w - bOff - bolt, y + bOff, bolt, bolt);
+    g.FillRectangle(&stud, x + bOff, y + h - bOff - bolt, bolt, bolt);
+    g.FillRectangle(&stud, x + w - bOff - bolt, y + h - bOff - bolt, bolt, bolt);
+
+    const int stripeW = UIScaler::S(3);
+    Gdiplus::SolidBrush stripe(ToGdiColor(WithAlpha(isP1 ? Palette::OrangeNormal : Palette::CyanNormal, (BYTE)(isTheirTurn ? 55 : 28))));
+    g.FillRectangle(&stripe, x + m + bolt, y + inset, stripeW, h - 2 * inset);
+    g.FillRectangle(&stripe, x + w - m - bolt - stripeW, y + inset, stripeW, h - 2 * inset);
+}
+
+} // namespace
+
 /** @file PlayScreen.cpp
  *  @brief Màn chơi chính: cập nhật logic trận đấu, xử lý input và hiển thị trạng thái trận.
  *
@@ -592,6 +631,8 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         int p1X = screenWidth / 2 - panelW - UIScaler::SX(40);
         int p2X = screenWidth / 2 + UIScaler::SX(40);
         int panelY = titleBarH + UIScaler::SY(120);
+        PixelLayout::AlignRectToPixelGrid(p1X, panelY, panelW, panelH);
+        PixelLayout::AlignRectToPixelGrid(p2X, panelY, panelW, panelH);
 
         auto drawSummaryPanel = [&](int x, const PlayerMatchInfo &playerInfo, bool isWinner, bool flipModel)
         {
@@ -739,23 +780,34 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     HFONT hOldFont = (HFONT)SelectObject(hdc, GlobalFont::Default);
     SetBkMode(hdc, TRANSPARENT);
 
-    Gdiplus::SolidBrush shadowBrush(ToGdiColor(Theme::ShadowHeavy));
     int leftTabW = startX - UIScaler::SX(20);
     int tabMarginX = UIScaler::SX(10);
-    g.FillRectangle(&shadowBrush, tabMarginX, startY, leftTabW, boardPixelSize);
+    PixelLayout::AlignRectToPixelGrid(tabMarginX, startY, leftTabW, boardPixelSize);
+
+    Gdiplus::LinearGradientBrush leftPanelGrad(
+        Gdiplus::Point(tabMarginX, startY),
+        Gdiplus::Point(tabMarginX + leftTabW, startY + boardPixelSize),
+        ToGdiColor(WithAlpha(Theme::ShadowHeavy, (BYTE)220)),
+        ToGdiColor(WithAlpha(Palette::BlueDarkest, (BYTE)200)));
+    g.FillRectangle(&leftPanelGrad, tabMarginX, startY, leftTabW, boardPixelSize);
 
     if (state->status == MATCH_PLAYING && state->isPlayer1Turn)
     {
         int alpha = (int)(30 + sin(g_GlobalAnimTime * 8.0f) * 30.0f);
         Gdiplus::SolidBrush *p1TurnPulse = GetCachedBrush(ToGdiColor(WithAlpha(Theme::P1TurnPulse, (BYTE)alpha)));
         g.FillRectangle(p1TurnPulse, tabMarginX, startY, leftTabW, boardPixelSize);
-        Gdiplus::Pen p1Pen(ToGdiColor(Theme::P1TurnBorder), 3.0f);
-        g.DrawRectangle(&p1Pen, tabMarginX, startY, leftTabW, boardPixelSize);
     }
+
+    const int kPanelTopShift = UIScaler::SY(38);
+    const int kBannerCenterY = startY + UIScaler::SY(30);
+    const int kAvatarTopY = startY + UIScaler::SY(58);
 
     int avaSize = UIScaler::S(180);
     int avaX_L = tabMarginX + (leftTabW - avaSize) / 2;
     std::wstring player1NameW = state->player1.name;
+
+    DrawPixelBanner(g, hdc, player1NameW, tabMarginX + leftTabW / 2, kBannerCenterY, leftTabW,
+                    ToCOLORREF(Palette::White), ToCOLORREF(Palette::OrangeNormal), "Asset/models/bg/football.txt");
 
     static Gdiplus::FontFamily s_fontFamily(L"Arial");
     static Gdiplus::Font s_waterFont(&s_fontFamily, 64, Gdiplus::FontStyleBold, Gdiplus::UnitPixel);
@@ -769,34 +821,34 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     }
 
     Gdiplus::SolidBrush *waterBrushL = GetCachedBrush(ToGdiColor(Theme::P1Watermark));
-    g.TranslateTransform((Gdiplus::REAL)(avaX_L + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(80)));
+    g.TranslateTransform((Gdiplus::REAL)(avaX_L + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(118)));
     g.RotateTransform(-30.0f);
     g.DrawString(player1NameW.c_str(), -1, &s_waterFont, Gdiplus::PointF(0, 0), &s_alignCenter, waterBrushL);
     g.ResetTransform();
 
-    DrawPixelAvatar(g, avaX_L, startY + UIScaler::SY(20), avaSize, decodeAvatar(state->player1.avatarPath));
+    DrawPixelAvatar(g, avaX_L, kAvatarTopY, avaSize, decodeAvatar(state->player1.avatarPath));
 
     SetTextColor(hdc, ToCOLORREF(Palette::OrangeNormal));
     SelectObject(hdc, GlobalFont::Bold);
-    RECT textRectL1 = {tabMarginX, startY + avaSize + UIScaler::SY(30), tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(70)};
-    DrawTextW(hdc, player1NameW.c_str(), -1, &textRectL1, DT_CENTER | DT_SINGLELINE);
+    RECT textRectL1 = {tabMarginX, startY + avaSize + UIScaler::SY(30) + kPanelTopShift, tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(100) + kPanelTopShift};
+    DrawTextW(hdc, player1NameW.c_str(), -1, &textRectL1, DT_CENTER | DT_WORDBREAK);
 
     SelectObject(hdc, GlobalFont::Default);
     SetTextColor(hdc, ToCOLORREF(Palette::White));
     std::wstring p1Piece = GetText("play_piece") + L"X";
-    RECT textRectL2 = {tabMarginX, startY + avaSize + UIScaler::SY(60), tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(100)};
+    RECT textRectL2 = {tabMarginX, startY + avaSize + UIScaler::SY(90) + kPanelTopShift, tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(130) + kPanelTopShift};
     DrawTextW(hdc, p1Piece.c_str(), -1, &textRectL2, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p1Wins = GetText("play_goals") + std::to_wstring(state->player1.totalWins);
-    RECT textRectL3 = {tabMarginX, startY + avaSize + UIScaler::SY(90), tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(130)};
+    RECT textRectL3 = {tabMarginX, startY + avaSize + UIScaler::SY(120) + kPanelTopShift, tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(160) + kPanelTopShift};
     DrawTextW(hdc, p1Wins.c_str(), -1, &textRectL3, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p1Moves = GetText("play_dribble") + std::to_wstring(state->player1.movesCount);
-    RECT textRectL4 = {tabMarginX, startY + avaSize + UIScaler::SY(120), tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(160)};
+    RECT textRectL4 = {tabMarginX, startY + avaSize + UIScaler::SY(150) + kPanelTopShift, tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(190) + kPanelTopShift};
     DrawTextW(hdc, p1Moves.c_str(), -1, &textRectL4, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p1MatchWins = GetText("play_bowins") + std::to_wstring(state->player1.matchWins);
-    RECT textRectL5 = {tabMarginX, startY + avaSize + UIScaler::SY(150), tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(190)};
+    RECT textRectL5 = {tabMarginX, startY + avaSize + UIScaler::SY(180) + kPanelTopShift, tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(220) + kPanelTopShift};
     DrawTextW(hdc, p1MatchWins.c_str(), -1, &textRectL5, DT_CENTER | DT_SINGLELINE);
 
     {
@@ -821,56 +873,67 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         }
 
         int animCX = tabMarginX + leftTabW / 2;
-        int animCY = startY + avaSize + UIScaler::SY(450);
+        int animCY = startY + avaSize + UIScaler::SY(450) + kPanelTopShift;
         int animSize = UIScaler::S(280);
         DrawPixelAction(g, animCX, animCY, animSize, p1State);
     }
 
+    DrawPlayerPanelPixelChrome(g, tabMarginX, startY, leftTabW, boardPixelSize, true,
+                               state->status == MATCH_PLAYING && state->isPlayer1Turn);
+
     int rightTabStartX = startX + boardPixelSize + UIScaler::SX(10);
     int rightTabW = screenWidth - rightTabStartX - tabMarginX;
-    g.FillRectangle(&shadowBrush, rightTabStartX, startY, rightTabW, boardPixelSize);
+    PixelLayout::AlignRectToPixelGrid(rightTabStartX, startY, rightTabW, boardPixelSize);
+
+    Gdiplus::LinearGradientBrush rightPanelGrad(
+        Gdiplus::Point(rightTabStartX, startY),
+        Gdiplus::Point(rightTabStartX + rightTabW, startY + boardPixelSize),
+        ToGdiColor(WithAlpha(Theme::ShadowHeavy, (BYTE)220)),
+        ToGdiColor(WithAlpha(Palette::BlueDarkest, (BYTE)200)));
+    g.FillRectangle(&rightPanelGrad, rightTabStartX, startY, rightTabW, boardPixelSize);
 
     if (state->status == MATCH_PLAYING && !state->isPlayer1Turn)
     {
         int alpha = (int)(30 + sin(g_GlobalAnimTime * 8.0f) * 30.0f);
         Gdiplus::SolidBrush *p2TurnPulse = GetCachedBrush(ToGdiColor(WithAlpha(Theme::P2TurnPulse, (BYTE)alpha)));
         g.FillRectangle(p2TurnPulse, rightTabStartX, startY, rightTabW, boardPixelSize);
-        Gdiplus::Pen p2Pen(ToGdiColor(Theme::P2TurnBorder), 3.0f);
-        g.DrawRectangle(&p2Pen, rightTabStartX, startY, rightTabW, boardPixelSize);
     }
 
     int avaX_R = rightTabStartX + (rightTabW - avaSize) / 2;
     std::wstring player2NameW = state->player2.name;
 
+    DrawPixelBanner(g, hdc, player2NameW, rightTabStartX + rightTabW / 2, kBannerCenterY, rightTabW,
+                    ToCOLORREF(Palette::White), ToCOLORREF(Palette::CyanNormal), "Asset/models/bg/whistle.txt");
+
     Gdiplus::SolidBrush *waterBrushR = GetCachedBrush(ToGdiColor(Theme::P2Watermark));
-    g.TranslateTransform((Gdiplus::REAL)(avaX_R + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(80)));
+    g.TranslateTransform((Gdiplus::REAL)(avaX_R + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(118)));
     g.RotateTransform(30.0f);
     g.DrawString(player2NameW.c_str(), -1, &s_waterFont, Gdiplus::PointF(0, 0), &s_alignCenter, waterBrushR);
     g.ResetTransform();
 
-    DrawPixelAvatar(g, avaX_R, startY + UIScaler::SY(20), avaSize, decodeAvatar(state->player2.avatarPath));
+    DrawPixelAvatar(g, avaX_R, kAvatarTopY, avaSize, decodeAvatar(state->player2.avatarPath));
 
     SetTextColor(hdc, ToCOLORREF(Palette::CyanNormal));
     SelectObject(hdc, GlobalFont::Bold);
-    RECT textRectR1 = {rightTabStartX, startY + avaSize + UIScaler::SY(30), rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(70)};
-    DrawTextW(hdc, player2NameW.c_str(), -1, &textRectR1, DT_CENTER | DT_SINGLELINE);
+    RECT textRectR1 = {rightTabStartX, startY + avaSize + UIScaler::SY(30) + kPanelTopShift, rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(100) + kPanelTopShift};
+    DrawTextW(hdc, player2NameW.c_str(), -1, &textRectR1, DT_CENTER | DT_WORDBREAK);
 
     SelectObject(hdc, GlobalFont::Default);
     SetTextColor(hdc, ToCOLORREF(Palette::White));
     std::wstring p2Piece = GetText("play_piece") + L"O";
-    RECT textRectR2 = {rightTabStartX, startY + avaSize + UIScaler::SY(60), rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(100)};
+    RECT textRectR2 = {rightTabStartX, startY + avaSize + UIScaler::SY(90) + kPanelTopShift, rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(130) + kPanelTopShift};
     DrawTextW(hdc, p2Piece.c_str(), -1, &textRectR2, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p2Wins = GetText("play_goals") + std::to_wstring(state->player2.totalWins);
-    RECT textRectR3 = {rightTabStartX, startY + avaSize + UIScaler::SY(90), rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(130)};
+    RECT textRectR3 = {rightTabStartX, startY + avaSize + UIScaler::SY(120) + kPanelTopShift, rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(160) + kPanelTopShift};
     DrawTextW(hdc, p2Wins.c_str(), -1, &textRectR3, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p2Moves = GetText("play_dribble") + std::to_wstring(state->player2.movesCount);
-    RECT textRectR4 = {rightTabStartX, startY + avaSize + UIScaler::SY(120), rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(160)};
+    RECT textRectR4 = {rightTabStartX, startY + avaSize + UIScaler::SY(150) + kPanelTopShift, rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(190) + kPanelTopShift};
     DrawTextW(hdc, p2Moves.c_str(), -1, &textRectR4, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p2MatchWins = GetText("play_bowins") + std::to_wstring(state->player2.matchWins);
-    RECT textRectR5 = {rightTabStartX, startY + avaSize + UIScaler::SY(150), rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(190)};
+    RECT textRectR5 = {rightTabStartX, startY + avaSize + UIScaler::SY(180) + kPanelTopShift, rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(220) + kPanelTopShift};
     DrawTextW(hdc, p2MatchWins.c_str(), -1, &textRectR5, DT_CENTER | DT_SINGLELINE);
 
     {
@@ -894,10 +957,13 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         }
 
         int animCX = rightTabStartX + rightTabW / 2;
-        int animCY = startY + avaSize + UIScaler::SY(450);
+        int animCY = startY + avaSize + UIScaler::SY(450) + kPanelTopShift;
         int animSize = UIScaler::S(280);
         DrawPixelAction(g, animCX, animCY, animSize, p2State);
     }
+
+    DrawPlayerPanelPixelChrome(g, rightTabStartX, startY, rightTabW, boardPixelSize, false,
+                               state->status == MATCH_PLAYING && !state->isPlayer1Turn);
 
     Gdiplus::SolidBrush *pitchBrush = GetCachedBrush(ToGdiColor(Theme::BoardPitch));
     g.FillRectangle(pitchBrush, startX, startY, boardPixelSize, boardPixelSize);
@@ -1019,6 +1085,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
         int menuX = totalStartX;
         int menuY = (screenHeight - menuH) / 2;
+        PixelLayout::AlignRectToPixelGrid(menuX, menuY, menuW, menuH);
 
         Gdiplus::SolidBrush bgBrush(ToGdiColor(Theme::GlassWhite));
         g.FillRectangle(&bgBrush, menuX, menuY, menuW, menuH);
@@ -1116,6 +1183,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
             // --- 4. Cột Hướng Dẫn Điều Khiển (Bên Phải) ---
             int guideX = menuX + menuW + gap;
+            PixelLayout::AlignRectToPixelGrid(guideX, menuY, guideW, menuH);
             g.FillRectangle(&bgBrush, guideX, menuY, guideW, menuH);
             g.DrawRectangle(&yellowBorder, guideX, menuY, guideW, menuH);
 
