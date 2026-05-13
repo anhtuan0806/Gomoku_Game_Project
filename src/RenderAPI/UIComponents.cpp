@@ -593,9 +593,9 @@ void DrawPixelClock(Gdiplus::Graphics &g, int centerX, int centerY, int size, Gd
  * Gọi overload với `iconModelPath==""`.
  */
 void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
-                     int centerX, int centerY, int panelWidth, COLORREF textColor, COLORREF glowColor)
+                     int centerX, int centerY, int panelWidth, COLORREF textColor, COLORREF glowColor, HFONT hFont)
 {
-    DrawPixelBanner(g, hdc, text, centerX, centerY, panelWidth, textColor, glowColor, "");
+    DrawPixelBanner(g, hdc, text, centerX, centerY, panelWidth, textColor, glowColor, "", hFont);
 }
 
 /**
@@ -604,10 +604,23 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
  * @param iconModelPath Đường dẫn file mô hình pixel cho icon (ví dụ: "Asset/models/bg/football.txt").
  */
 void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
-                     int centerX, int centerY, int panelWidth, COLORREF textColor, COLORREF glowColor, const std::string &iconModelPath)
+                     int centerX, int centerY, int panelWidth, COLORREF textColor, COLORREF glowColor, const std::string &iconModelPath, HFONT hFont)
 {
     int bannerW = panelWidth - UIScaler::SX(24);
-    int bannerH = UIScaler::SY(50);
+    
+    // Xác định Font sử dụng
+    HFONT fontToUse = (hFont != nullptr) ? hFont : GlobalFont::Title;
+    HFONT oldF = (HFONT)SelectObject(hdc, fontToUse);
+
+    // Bước 0: Tính toán chiều cao văn bản thực tế để điều chỉnh bannerH
+    // Vùng đệm lề trái/phải 45px để tránh đè lên icon
+    RECT calcRect = {0, 0, bannerW - 90, 0};
+    DrawTextW(hdc, text.c_str(), -1, &calcRect, DT_CENTER | DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
+    int textHeight = calcRect.bottom - calcRect.top;
+
+    // Banner tối thiểu 50px, nhưng mở rộng nếu text dài (textHeight + padding)
+    int bannerH = max(UIScaler::SY(50), textHeight + UIScaler::SY(16));
+    
     int bannerX = centerX - bannerW / 2;
     int bannerY = centerY - bannerH / 2;
 
@@ -661,21 +674,12 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
 
     // 4. Chữ tiêu đề (Căn giữa và hỗ trợ xuống dòng)
     SetTextColor(hdc, textColor);
-    HFONT oldF = (HFONT)SelectObject(hdc, GlobalFont::Title);
     SetBkMode(hdc, TRANSPARENT);
     
-    // Vùng đệm lề trái/phải 45px để tránh đè lên icon
-    RECT calcRect = {bannerX + 45, bannerY, bannerX + bannerW - 45, bannerY + bannerH};
-    
-    // Bước A: Tính toán chiều cao cần thiết cho text (DT_CALCRECT không vẽ, chỉ tính RECT)
-    DrawTextW(hdc, text.c_str(), -1, &calcRect, DT_CENTER | DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
-    
-    int textHeight = calcRect.bottom - calcRect.top;
-    
-    // Bước B: Căn giữa theo chiều dọc bằng cách tính Y offset
+    // Căn giữa theo chiều dọc bằng cách tính Y offset
     int textY = bannerY + (bannerH - textHeight) / 2;
     
-    // Bước C: Vẽ text thực tế với tọa độ Y đã tính
+    // Vẽ text thực tế với tọa độ Y đã tính
     RECT drawRect = {bannerX + 45, textY, bannerX + bannerW - 45, textY + textHeight};
     DrawTextW(hdc, text.c_str(), -1, &drawRect, DT_CENTER | DT_WORDBREAK | DT_NOPREFIX);
     

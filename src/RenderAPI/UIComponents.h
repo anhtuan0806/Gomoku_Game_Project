@@ -167,7 +167,7 @@ void DrawPixelClock(Gdiplus::Graphics &g, int centerX, int centerY, int size, Gd
 /**
  * @brief Vẽ banner tiêu đề pixel-art với text GDI và icon tùy chọn.
  *
- * @param g Đối tượng GDI+ Graphics.
+ * @param g Đối tượng GDI+ Graphics để vẽ.
  * @param hdc HDC dùng cho DrawTextW.
  * @param text Chuỗi tiêu đề (Unicode).
  * @param centerX Tọa độ X tâm banner.
@@ -175,9 +175,10 @@ void DrawPixelClock(Gdiplus::Graphics &g, int centerX, int centerY, int size, Gd
  * @param panelWidth Chiều rộng vùng banner.
  * @param textColor Màu chữ (COLORREF).
  * @param glowColor Màu glow/nhấn (COLORREF).
+ * @param hFont Font tùy chọn cho text tiêu đề.
  */
-void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text, int centerX, int centerY, int panelWidth, COLORREF textColor, COLORREF glowColor);
-void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text, int centerX, int centerY, int panelWidth, COLORREF textColor, COLORREF glowColor, const std::string &iconModelPath);
+void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text, int centerX, int centerY, int panelWidth, COLORREF textColor, COLORREF glowColor, HFONT hFont = nullptr);
+void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text, int centerX, int centerY, int panelWidth, COLORREF textColor, COLORREF glowColor, const std::string &iconModelPath, HFONT hFont = nullptr);
 
 /**
  * @brief Vẽ lại toàn bộ bảng (grid) và quân cờ dựa trên trạng thái `PlayState`.
