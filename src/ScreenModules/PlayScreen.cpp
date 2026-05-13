@@ -806,11 +806,9 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     int avaX_L = tabMarginX + (leftTabW - avaSize) / 2;
     std::wstring player1NameW = state->player1.name;
 
-    DrawPixelBanner(g, hdc, player1NameW, tabMarginX + leftTabW / 2, kBannerCenterY, leftTabW,
-                    ToCOLORREF(Palette::White), ToCOLORREF(Palette::OrangeNormal), "Asset/models/bg/football.txt", GlobalFont::Bold);
-
-    static Gdiplus::FontFamily s_fontFamily(L"Arial");
-    static Gdiplus::Font s_waterFont(&s_fontFamily, 64, Gdiplus::FontStyleBold, Gdiplus::UnitPixel);
+    // New Artistic Watermark (Drawn BEFORE banner to be behind it)
+    static Gdiplus::FontFamily s_waterFamily(L"VT323");
+    static Gdiplus::Font s_waterFont(&s_waterFamily, 90, Gdiplus::FontStyleBold, Gdiplus::UnitPixel);
     static Gdiplus::StringFormat s_alignCenter;
     static bool s_formatInit = false;
     if (!s_formatInit)
@@ -821,35 +819,34 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     }
 
     Gdiplus::SolidBrush *waterBrushL = GetCachedBrush(ToGdiColor(Theme::P1Watermark));
-    g.TranslateTransform((Gdiplus::REAL)(avaX_L + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(118)));
-    g.RotateTransform(-30.0f);
+    g.TranslateTransform((Gdiplus::REAL)(avaX_L + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(35)));
+    g.RotateTransform(-25.0f);
     g.DrawString(player1NameW.c_str(), -1, &s_waterFont, Gdiplus::PointF(0, 0), &s_alignCenter, waterBrushL);
     g.ResetTransform();
 
-    DrawPixelAvatar(g, avaX_L, kAvatarTopY, avaSize, decodeAvatar(state->player1.avatarPath));
+    // Top Banner
+    DrawPixelBanner(g, hdc, player1NameW, tabMarginX + leftTabW / 2, kBannerCenterY, leftTabW,
+                    ToCOLORREF(Palette::White), ToCOLORREF(Palette::OrangeNormal), "Asset/models/bg/football.txt", GlobalFont::Bold);
 
-    SetTextColor(hdc, ToCOLORREF(Palette::OrangeNormal));
-    SelectObject(hdc, GlobalFont::Bold);
-    RECT textRectL1 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(30) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(100) + kPanelTopShift};
-    DrawTextW(hdc, player1NameW.c_str(), -1, &textRectL1, DT_CENTER | DT_WORDBREAK);
+    DrawPixelAvatar(g, avaX_L, kAvatarTopY, avaSize, decodeAvatar(state->player1.avatarPath));
 
     SelectObject(hdc, GlobalFont::Default);
     SetTextColor(hdc, ToCOLORREF(Palette::White));
     std::wstring p1Piece = GetText("play_piece") + L"X";
-    RECT textRectL2 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(90) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(130) + kPanelTopShift};
-    DrawTextW(hdc, p1Piece.c_str(), -1, &textRectL2, DT_CENTER | DT_SINGLELINE);
+    RECT textRectL1 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(30) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(70) + kPanelTopShift};
+    DrawTextW(hdc, p1Piece.c_str(), -1, &textRectL1, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p1Wins = GetText("play_goals") + std::to_wstring(state->player1.totalWins);
-    RECT textRectL3 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(120) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(160) + kPanelTopShift};
-    DrawTextW(hdc, p1Wins.c_str(), -1, &textRectL3, DT_CENTER | DT_SINGLELINE);
+    RECT textRectL2 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(60) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(100) + kPanelTopShift};
+    DrawTextW(hdc, p1Wins.c_str(), -1, &textRectL2, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p1Moves = GetText("play_dribble") + std::to_wstring(state->player1.movesCount);
-    RECT textRectL4 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(150) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(190) + kPanelTopShift};
-    DrawTextW(hdc, p1Moves.c_str(), -1, &textRectL4, DT_CENTER | DT_SINGLELINE);
+    RECT textRectL3 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(90) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(130) + kPanelTopShift};
+    DrawTextW(hdc, p1Moves.c_str(), -1, &textRectL3, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p1MatchWins = GetText("play_bowins") + std::to_wstring(state->player1.matchWins);
-    RECT textRectL5 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(180) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(220) + kPanelTopShift};
-    DrawTextW(hdc, p1MatchWins.c_str(), -1, &textRectL5, DT_CENTER | DT_SINGLELINE);
+    RECT textRectL4 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(120) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(160) + kPanelTopShift};
+    DrawTextW(hdc, p1MatchWins.c_str(), -1, &textRectL4, DT_CENTER | DT_SINGLELINE);
 
     {
         static PlayerState p1State;
@@ -902,38 +899,33 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     int avaX_R = rightTabStartX + (rightTabW - avaSize) / 2;
     std::wstring player2NameW = state->player2.name;
 
-    DrawPixelBanner(g, hdc, player2NameW, rightTabStartX + rightTabW / 2, kBannerCenterY, rightTabW,
-                    ToCOLORREF(Palette::White), ToCOLORREF(Palette::CyanNormal), "Asset/models/bg/whistle.txt", GlobalFont::Bold);
-
     Gdiplus::SolidBrush *waterBrushR = GetCachedBrush(ToGdiColor(Theme::P2Watermark));
-    g.TranslateTransform((Gdiplus::REAL)(avaX_R + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(118)));
-    g.RotateTransform(30.0f);
+    g.TranslateTransform((Gdiplus::REAL)(avaX_R + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(35)));
+    g.RotateTransform(25.0f);
     g.DrawString(player2NameW.c_str(), -1, &s_waterFont, Gdiplus::PointF(0, 0), &s_alignCenter, waterBrushR);
     g.ResetTransform();
 
-    DrawPixelAvatar(g, avaX_R, kAvatarTopY, avaSize, decodeAvatar(state->player2.avatarPath));
+    DrawPixelBanner(g, hdc, player2NameW, rightTabStartX + rightTabW / 2, kBannerCenterY, rightTabW,
+                    ToCOLORREF(Palette::White), ToCOLORREF(Palette::CyanNormal), "Asset/models/bg/whistle.txt", GlobalFont::Bold);
 
-    SetTextColor(hdc, ToCOLORREF(Palette::CyanNormal));
-    SelectObject(hdc, GlobalFont::Bold);
-    RECT textRectR1 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(30) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(100) + kPanelTopShift};
-    DrawTextW(hdc, player2NameW.c_str(), -1, &textRectR1, DT_CENTER | DT_WORDBREAK);
+    DrawPixelAvatar(g, avaX_R, kAvatarTopY, avaSize, decodeAvatar(state->player2.avatarPath));
 
     SelectObject(hdc, GlobalFont::Default);
     SetTextColor(hdc, ToCOLORREF(Palette::White));
     std::wstring p2Piece = GetText("play_piece") + L"O";
-    RECT textRectR2 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(90) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(130) + kPanelTopShift};
+    RECT textRectR2 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(30) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(70) + kPanelTopShift};
     DrawTextW(hdc, p2Piece.c_str(), -1, &textRectR2, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p2Wins = GetText("play_goals") + std::to_wstring(state->player2.totalWins);
-    RECT textRectR3 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(120) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(160) + kPanelTopShift};
+    RECT textRectR3 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(60) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(100) + kPanelTopShift};
     DrawTextW(hdc, p2Wins.c_str(), -1, &textRectR3, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p2Moves = GetText("play_dribble") + std::to_wstring(state->player2.movesCount);
-    RECT textRectR4 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(150) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(190) + kPanelTopShift};
+    RECT textRectR4 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(90) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(130) + kPanelTopShift};
     DrawTextW(hdc, p2Moves.c_str(), -1, &textRectR4, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p2MatchWins = GetText("play_bowins") + std::to_wstring(state->player2.matchWins);
-    RECT textRectR5 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(180) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(220) + kPanelTopShift};
+    RECT textRectR5 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(120) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(160) + kPanelTopShift};
     DrawTextW(hdc, p2MatchWins.c_str(), -1, &textRectR5, DT_CENTER | DT_SINGLELINE);
 
     {
@@ -1076,9 +1068,9 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         Gdiplus::SolidBrush shadowBrush2(Gdiplus::Color(100, 255, 255, 255));
         g.FillRectangle(&shadowBrush2, 0, 0, screenWidth, screenHeight);
 
-        int menuW = UIScaler::SX(580), menuH = UIScaler::SY(500);
-        int guideW = UIScaler::SX(350);
-        int gap = UIScaler::SX(25);
+        int menuW = UIScaler::SX(620), menuH = UIScaler::SY(500);
+        int guideW = UIScaler::SX(400);
+        int gap = UIScaler::SX(30);
 
         int totalW = (g_CurrentSubMenu == SUB_MAIN) ? (menuW + gap + guideW) : menuW;
         int totalStartX = (screenWidth - totalW) / 2;
@@ -1188,7 +1180,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
             g.DrawRectangle(&yellowBorder, guideX, menuY, guideW, menuH);
 
             DrawPixelBanner(g, hdc, GetText("guide_title").c_str(), guideX + guideW / 2, menuY + UIScaler::SY(40),
-                            guideW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(0, 160, 255), "Asset/models/bg/football.txt");
+                            guideW - UIScaler::SX(20), ToCOLORREF(Palette::White), RGB(0, 160, 255), "Asset/models/bg/football.txt", GlobalFont::Bold);
 
             struct GuideItem
             {
