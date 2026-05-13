@@ -70,6 +70,7 @@ void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight)
     int panelH = UIScaler::SY(420);
     int panelX = (screenWidth - panelW) / 2;
     int panelY = UIScaler::SY(280);
+    PixelLayout::AlignRectToPixelGrid(panelX, panelY, panelW, panelH);
 
     Gdiplus::SolidBrush whitePanel(ToGdiColor(Theme::GlassWhite));
     g.FillRectangle(&whitePanel, panelX, panelY, panelW, panelH);

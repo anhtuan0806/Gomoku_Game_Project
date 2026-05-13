@@ -800,14 +800,14 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
     const int kPanelTopShift = UIScaler::SY(38);
     const int kBannerCenterY = startY + UIScaler::SY(30);
-    const int kAvatarTopY = startY + UIScaler::SY(58);
+    const int kAvatarTopY = startY + UIScaler::SY(75);
 
     int avaSize = UIScaler::S(180);
     int avaX_L = tabMarginX + (leftTabW - avaSize) / 2;
     std::wstring player1NameW = state->player1.name;
 
     DrawPixelBanner(g, hdc, player1NameW, tabMarginX + leftTabW / 2, kBannerCenterY, leftTabW,
-                    ToCOLORREF(Palette::White), ToCOLORREF(Palette::OrangeNormal), "Asset/models/bg/football.txt");
+                    ToCOLORREF(Palette::White), ToCOLORREF(Palette::OrangeNormal), "Asset/models/bg/football.txt", GlobalFont::Bold);
 
     static Gdiplus::FontFamily s_fontFamily(L"Arial");
     static Gdiplus::Font s_waterFont(&s_fontFamily, 64, Gdiplus::FontStyleBold, Gdiplus::UnitPixel);
@@ -830,25 +830,25 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
     SetTextColor(hdc, ToCOLORREF(Palette::OrangeNormal));
     SelectObject(hdc, GlobalFont::Bold);
-    RECT textRectL1 = {tabMarginX, startY + avaSize + UIScaler::SY(30) + kPanelTopShift, tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(100) + kPanelTopShift};
+    RECT textRectL1 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(30) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(100) + kPanelTopShift};
     DrawTextW(hdc, player1NameW.c_str(), -1, &textRectL1, DT_CENTER | DT_WORDBREAK);
 
     SelectObject(hdc, GlobalFont::Default);
     SetTextColor(hdc, ToCOLORREF(Palette::White));
     std::wstring p1Piece = GetText("play_piece") + L"X";
-    RECT textRectL2 = {tabMarginX, startY + avaSize + UIScaler::SY(90) + kPanelTopShift, tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(130) + kPanelTopShift};
+    RECT textRectL2 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(90) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(130) + kPanelTopShift};
     DrawTextW(hdc, p1Piece.c_str(), -1, &textRectL2, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p1Wins = GetText("play_goals") + std::to_wstring(state->player1.totalWins);
-    RECT textRectL3 = {tabMarginX, startY + avaSize + UIScaler::SY(120) + kPanelTopShift, tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(160) + kPanelTopShift};
+    RECT textRectL3 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(120) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(160) + kPanelTopShift};
     DrawTextW(hdc, p1Wins.c_str(), -1, &textRectL3, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p1Moves = GetText("play_dribble") + std::to_wstring(state->player1.movesCount);
-    RECT textRectL4 = {tabMarginX, startY + avaSize + UIScaler::SY(150) + kPanelTopShift, tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(190) + kPanelTopShift};
+    RECT textRectL4 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(150) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(190) + kPanelTopShift};
     DrawTextW(hdc, p1Moves.c_str(), -1, &textRectL4, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p1MatchWins = GetText("play_bowins") + std::to_wstring(state->player1.matchWins);
-    RECT textRectL5 = {tabMarginX, startY + avaSize + UIScaler::SY(180) + kPanelTopShift, tabMarginX + leftTabW, startY + avaSize + UIScaler::SY(220) + kPanelTopShift};
+    RECT textRectL5 = {tabMarginX, kAvatarTopY + avaSize + UIScaler::SY(180) + kPanelTopShift, tabMarginX + leftTabW, kAvatarTopY + avaSize + UIScaler::SY(220) + kPanelTopShift};
     DrawTextW(hdc, p1MatchWins.c_str(), -1, &textRectL5, DT_CENTER | DT_SINGLELINE);
 
     {
@@ -873,7 +873,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         }
 
         int animCX = tabMarginX + leftTabW / 2;
-        int animCY = startY + avaSize + UIScaler::SY(450) + kPanelTopShift;
+        int animCY = kAvatarTopY + avaSize + UIScaler::SY(450) + kPanelTopShift;
         int animSize = UIScaler::S(280);
         DrawPixelAction(g, animCX, animCY, animSize, p1State);
     }
@@ -903,7 +903,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
     std::wstring player2NameW = state->player2.name;
 
     DrawPixelBanner(g, hdc, player2NameW, rightTabStartX + rightTabW / 2, kBannerCenterY, rightTabW,
-                    ToCOLORREF(Palette::White), ToCOLORREF(Palette::CyanNormal), "Asset/models/bg/whistle.txt");
+                    ToCOLORREF(Palette::White), ToCOLORREF(Palette::CyanNormal), "Asset/models/bg/whistle.txt", GlobalFont::Bold);
 
     Gdiplus::SolidBrush *waterBrushR = GetCachedBrush(ToGdiColor(Theme::P2Watermark));
     g.TranslateTransform((Gdiplus::REAL)(avaX_R + avaSize / 2), (Gdiplus::REAL)(startY + UIScaler::SY(118)));
@@ -915,25 +915,25 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 
     SetTextColor(hdc, ToCOLORREF(Palette::CyanNormal));
     SelectObject(hdc, GlobalFont::Bold);
-    RECT textRectR1 = {rightTabStartX, startY + avaSize + UIScaler::SY(30) + kPanelTopShift, rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(100) + kPanelTopShift};
+    RECT textRectR1 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(30) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(100) + kPanelTopShift};
     DrawTextW(hdc, player2NameW.c_str(), -1, &textRectR1, DT_CENTER | DT_WORDBREAK);
 
     SelectObject(hdc, GlobalFont::Default);
     SetTextColor(hdc, ToCOLORREF(Palette::White));
     std::wstring p2Piece = GetText("play_piece") + L"O";
-    RECT textRectR2 = {rightTabStartX, startY + avaSize + UIScaler::SY(90) + kPanelTopShift, rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(130) + kPanelTopShift};
+    RECT textRectR2 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(90) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(130) + kPanelTopShift};
     DrawTextW(hdc, p2Piece.c_str(), -1, &textRectR2, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p2Wins = GetText("play_goals") + std::to_wstring(state->player2.totalWins);
-    RECT textRectR3 = {rightTabStartX, startY + avaSize + UIScaler::SY(120) + kPanelTopShift, rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(160) + kPanelTopShift};
+    RECT textRectR3 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(120) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(160) + kPanelTopShift};
     DrawTextW(hdc, p2Wins.c_str(), -1, &textRectR3, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p2Moves = GetText("play_dribble") + std::to_wstring(state->player2.movesCount);
-    RECT textRectR4 = {rightTabStartX, startY + avaSize + UIScaler::SY(150) + kPanelTopShift, rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(190) + kPanelTopShift};
+    RECT textRectR4 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(150) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(190) + kPanelTopShift};
     DrawTextW(hdc, p2Moves.c_str(), -1, &textRectR4, DT_CENTER | DT_SINGLELINE);
 
     std::wstring p2MatchWins = GetText("play_bowins") + std::to_wstring(state->player2.matchWins);
-    RECT textRectR5 = {rightTabStartX, startY + avaSize + UIScaler::SY(180) + kPanelTopShift, rightTabStartX + rightTabW, startY + avaSize + UIScaler::SY(220) + kPanelTopShift};
+    RECT textRectR5 = {rightTabStartX, kAvatarTopY + avaSize + UIScaler::SY(180) + kPanelTopShift, rightTabStartX + rightTabW, kAvatarTopY + avaSize + UIScaler::SY(220) + kPanelTopShift};
     DrawTextW(hdc, p2MatchWins.c_str(), -1, &textRectR5, DT_CENTER | DT_SINGLELINE);
 
     {
@@ -957,7 +957,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
         }
 
         int animCX = rightTabStartX + rightTabW / 2;
-        int animCY = startY + avaSize + UIScaler::SY(450) + kPanelTopShift;
+        int animCY = kAvatarTopY + avaSize + UIScaler::SY(450) + kPanelTopShift;
         int animSize = UIScaler::S(280);
         DrawPixelAction(g, animCX, animCY, animSize, p2State);
     }

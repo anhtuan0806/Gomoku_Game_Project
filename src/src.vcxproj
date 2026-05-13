@@ -148,6 +148,7 @@
     <ClInclude Include="GameLogic\GameRules.h" />
     <ClInclude Include="GameLogic\PlayerEngineer.h" />
     <ClInclude Include="RenderAPI\Colours.h" />
+    <ClInclude Include="RenderAPI\PixelLayout.h" />
     <ClInclude Include="RenderAPI\Renderer.h" />
     <ClInclude Include="RenderAPI\DirtyRect.h" />
     <ClInclude Include="RenderAPI\UIComponents.h" />
