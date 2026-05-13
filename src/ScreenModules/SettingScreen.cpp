@@ -3,6 +3,7 @@
 #include "../RenderAPI/UIComponents.h"
 #include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
+#include "../RenderAPI/PixelLayout.h"
 #include "../SystemModules/AudioSystem.h"
 #include "../SystemModules/ConfigLoader.h"
 #include "../SystemModules/EngineStats.h"
@@ -215,13 +216,14 @@ void DrawColTextSetting(HDC hdc, const std::wstring &text, int x, int y, int wid
 void RenderSettingScreen(HDC hdc, const GameConfig *config, int selectedOption, int screenWidth, int screenHeight)
 {
     Gdiplus::Graphics g(hdc);
-    g.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
+    PixelLayout::ApplyPixelArtBlit(g);
     DrawProceduralStadium(g, screenWidth, screenHeight);
 
     int panelW = UIScaler::SX(720);
     int panelH = UIScaler::SY(680);
     int panelX = (screenWidth - panelW) / 2;
     int panelY = (screenHeight - panelH) / 2 - UIScaler::SY(10);
+    PixelLayout::AlignRectToPixelGrid(panelX, panelY, panelW, panelH);
 
     Gdiplus::SolidBrush whitePanel(ToGdiColor(Theme::GlassWhite));
     g.FillRectangle(&whitePanel, panelX, panelY, panelW, panelH);
@@ -251,7 +253,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig *config, int selectedOption, 
 
         if (i == selectedOption)
         {
-            int rCol = (int)(180 + sin(g_GlobalAnimTime * 12.0f) * 75);
+            int rCol = (int)(180 + PixelLayout::SinSmoothedSigned(g_GlobalAnimTime, 12.f) * 75);
             valColor = RGB(255, max(0, min(255, 255 - rCol)), 0);
         }
 
@@ -304,7 +306,7 @@ void RenderSettingScreen(HDC hdc, const GameConfig *config, int selectedOption, 
             COLORREF btnColor = ToCOLORREF(Palette::BlueDarkest);
             if (i == selectedOption)
             {
-                int gCol = (int)(150 + sin(g_GlobalAnimTime * 15.0f) * 105);
+                int gCol = (int)(150 + PixelLayout::SinSmoothedSigned(g_GlobalAnimTime, 15.f) * 105);
                 btnColor = RGB(max(0, min(255, 255 - gCol)), 100, 255);
                 Gdiplus::SolidBrush btnBg(Gdiplus::Color(80, 0, 120, 255));
                 g.FillRectangle(&btnBg, panelX + UIScaler::SX(60), yPos + UIScaler::SY(4), panelW - UIScaler::SX(120), spacing - UIScaler::SY(8));

@@ -2,6 +2,7 @@
 #include "../RenderAPI/UIComponents.h"
 #include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
+#include "../RenderAPI/PixelLayout.h"
 #include "../GameLogic/GameEngine.h"
 #include "../SystemModules/Localization.h"
 #include "../SystemModules/AudioSystem.h"
@@ -461,7 +462,7 @@ void DrawColText(HDC hdc, const std::wstring &text, int x, int y, int width, COL
 void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *config, int screenWidth, int screenHeight)
 {
     Gdiplus::Graphics g(hdc);
-    g.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
+    PixelLayout::ApplyPixelArtBlit(g);
 
     DrawProceduralStadium(g, screenWidth, screenHeight);
 
@@ -471,6 +472,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
     int panelH = UIScaler::SY(500);
     int panelX = (screenWidth - panelW) / 2;
     int panelY = (screenHeight - panelH) / 2 - UIScaler::SY(10);
+    PixelLayout::AlignRectToPixelGrid(panelX, panelY, panelW, panelH);
 
     g.FillRectangle(&whitePanel, panelX, panelY, panelW, panelH);
 
@@ -514,7 +516,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
 
             if (isSelected)
             {
-                int rCol = (int)(180 + sin(g_GlobalAnimTime * 12.0f) * 75);
+                int rCol = (int)(180 + PixelLayout::SinSmoothedSigned(g_GlobalAnimTime, 12.f) * 75);
                 valColor = RGB(255, max(0, min(255, 255 - rCol)), 0);
             }
 
@@ -527,7 +529,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
         COLORREF nextColor = ToCOLORREF(Palette::BlueDarkest);
         if (selectedOption == 5)
         {
-            int gCol = (int)(150 + sin(g_GlobalAnimTime * 15.0f) * 105);
+            int gCol = (int)(150 + PixelLayout::SinSmoothedSigned(g_GlobalAnimTime, 15.f) * 105);
             nextColor = RGB(max(0, min(255, 255 - gCol)), 100, 255);
         }
         DrawTextCentered(hdc, GetText("config_next").c_str(), startY + 5 * spacing + UIScaler::SY(40), screenWidth, nextColor, (selectedOption == 5) ? GlobalFont::Title : GlobalFont::Bold);
@@ -552,7 +554,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
 
             if (isSelected_Ava || isSelected_Name)
             {
-                int alpha = (int)(60 + sin(g_GlobalAnimTime * 8.0f) * 40);
+                int alpha = (int)(60 + PixelLayout::SinSmoothedSigned(g_GlobalAnimTime, 8.f) * 40);
                 Gdiplus::Color glowCol = isP1 ? ToGdiColor(WithAlpha(Palette::OrangeNormal, (BYTE)alpha)) : ToGdiColor(WithAlpha(Palette::CyanNormal, (BYTE)alpha));
                 Gdiplus::SolidBrush glowB(glowCol);
                 float glowSize = avaSize * 1.1f;
@@ -605,7 +607,7 @@ void RenderMatchConfigScreen(HDC hdc, int selectedOption, const PlayState *confi
         COLORREF startCol = ToCOLORREF(Palette::GreenDark);
         if (selectedOption == 5)
         {
-            int gCol = (int)(150 + sin(g_GlobalAnimTime * 20.0f) * 105);
+            int gCol = (int)(150 + PixelLayout::SinSmoothedSigned(g_GlobalAnimTime, 20.f) * 105);
             startCol = RGB(0, max(0, min(255, gCol)), 0);
         }
         DrawColText(hdc, GetText("config_start"), panelX, botY, panelW - UIScaler::SX(30), startCol, selectedOption == 5 ? GlobalFont::Title : GlobalFont::Bold, DT_RIGHT);

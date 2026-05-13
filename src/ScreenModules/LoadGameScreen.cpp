@@ -2,6 +2,7 @@
 #include "../RenderAPI/UIComponents.h"
 #include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
+#include "../RenderAPI/PixelLayout.h"
 #include "../SystemModules/SaveLoadSystem.h"
 #include "../SystemModules/AudioSystem.h"
 #include "../SystemModules/Localization.h"
@@ -249,13 +250,14 @@ bool ProcessLoadGameInput(WPARAM wParam, ScreenState &currentState, PlayState *p
 void RenderLoadGameScreen(HDC hdc, int selectedOption, const std::wstring &statusMessage, int screenWidth, int screenHeight)
 {
     Gdiplus::Graphics g(hdc);
-    g.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
+    PixelLayout::ApplyPixelArtBlit(g);
     DrawProceduralStadium(g, screenWidth, screenHeight);
 
     int panelW = UIScaler::SX(900);
     int panelH = UIScaler::SY(540);
     int panelX = (screenWidth - panelW) / 2;
     int panelY = (screenHeight - panelH) / 2;
+    PixelLayout::AlignRectToPixelGrid(panelX, panelY, panelW, panelH);
 
     Gdiplus::SolidBrush bgBrush(ToGdiColor(Theme::GlassWhite));
     g.FillRectangle(&bgBrush, panelX, panelY, panelW, panelH);

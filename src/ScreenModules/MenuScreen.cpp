@@ -4,6 +4,7 @@
 #include "../SystemModules/Localization.h"
 #include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
+#include "../RenderAPI/PixelLayout.h"
 #include <cmath>
 #include <map>
 
@@ -113,13 +114,14 @@ bool ProcessMenuInput(WPARAM wParam, ScreenState &currentState, int &selectedOpt
 void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHeight)
 {
     Gdiplus::Graphics g(hdc);
+    PixelLayout::ApplyPixelArtBlit(g);
 
     // 0. Nền sân vận động (showFlashes=true: chỉ Menu mới có hiệu ứng tia chớp khán đài)
     DrawProceduralStadium(g, screenWidth, screenHeight, true);
     Gdiplus::SolidBrush lightGlassBrush(Gdiplus::Color(80, 255, 255, 255));
     g.FillRectangle(&lightGlassBrush, 0, 0, screenWidth, screenHeight);
 
-    int cupYOffset = UIScaler::SY((int)(sin(g_GlobalAnimTime * 2.5f) * 10.0f));
+    int cupYOffset = UIScaler::SY((int)(PixelLayout::SinSmoothedSigned(g_GlobalAnimTime, 2.5f) * 10.0f));
     DrawPixelTrophy(g, screenWidth / 2, screenHeight / 4 - UIScaler::SY(85) + cupYOffset, UIScaler::S(100));
 
     static PixelModel titleModel;
@@ -131,7 +133,7 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
         titlePalette[2] = ToGdiColor(Theme::TitleFill);
         titlePalette[3] = ToGdiColor(Theme::TitleShadow);
     }
-    int titleYOffset = UIScaler::SY((int)(sin(g_GlobalAnimTime * 2.0f) * 6.0f));
+    int titleYOffset = UIScaler::SY((int)(PixelLayout::SinSmoothedSigned(g_GlobalAnimTime, 2.0f) * 6.0f));
 
     DrawPixelModel(g, titleModel, screenWidth / 2, screenHeight / 4 + UIScaler::SY(20) + titleYOffset, UIScaler::S(500), titlePalette);
 
@@ -153,7 +155,7 @@ void RenderMenuScreen(HDC hdc, int selectedOption, int screenWidth, int screenHe
             std::wstring highlightedText = std::wstring(menuItems[i]);
 
             // Hiệu ứng màu nhấp nháy cho mục đang chọn (Xanh lam -> Cyan)
-            int gCol = (int)(180 + sin(g_GlobalAnimTime * 8.0f) * 75);
+            int gCol = (int)(180 + PixelLayout::SinSmoothedSigned(g_GlobalAnimTime, 8.f) * 75);
             COLORREF dynColor = RGB(0, max(0, min(255, gCol)), 255);
 
             int wStrOffset = UIScaler::S((int)highlightedText.length() * 18 + 70);

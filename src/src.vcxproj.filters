@@ -120,6 +120,9 @@
     <ClInclude Include="RenderAPI\DirtyRect.h">
       <Filter>RenderAPI</Filter>
     </ClInclude>
+    <ClInclude Include="RenderAPI\PixelLayout.h">
+      <Filter>RenderAPI</Filter>
+    </ClInclude>
     <ClInclude Include="ScreenModules\AboutScreen.h">
       <Filter>ScreenModules</Filter>
     </ClInclude>

@@ -1,6 +1,7 @@
 #include "UIComponents.h"
 #include "UIScaler.h"
 #include "Colours.h"
+#include "PixelLayout.h"
 #include "../ApplicationTypes/GameConfig.h"
 #include <map>
 #include <cmath>
@@ -183,8 +184,7 @@ void DrawPixelModel(Gdiplus::Graphics &g, const PixelModel &model, int centerX, 
     if (cachedBitmap)
     {
         // --- High Performance Rendering Settings ---
-        g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
-        g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf);
+        PixelLayout::ApplyPixelArtBlit(g);
 
         // Vẽ bitmap đã cache ra tâm centerX, centerY
         g.DrawImage(cachedBitmap, centerX - (int)cachedBitmap->GetWidth() / 2, centerY - (int)cachedBitmap->GetHeight() / 2);
@@ -422,7 +422,7 @@ void DrawPixelAvatar(Gdiplus::Graphics &g, int centerX, int centerY, int size, i
     Gdiplus::Bitmap *cachedBitmap = g_AvatarCache[cacheKey];
     if (cachedBitmap)
     {
-        g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
+        PixelLayout::ApplyPixelArtBlit(g);
         g.DrawImage(cachedBitmap, (float)centerX, (float)centerY);
     }
 }
@@ -475,7 +475,7 @@ void DrawPixelFootball(Gdiplus::Graphics &g, int centerX, int centerY, int size)
     {
         float pulse = 1.0f + sin(g_GlobalAnimTime * 15.0f) * 0.05f;
         int scaledSize = (int)(size * pulse);
-        g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
+        PixelLayout::ApplyPixelArtBlit(g);
         g.DrawImage(cachedBitmap, centerX - scaledSize / 2, centerY - scaledSize / 2, scaledSize, scaledSize);
     }
 }
@@ -523,7 +523,7 @@ void DrawPixelTrophy(Gdiplus::Graphics &g, int centerX, int centerY, int size)
     Gdiplus::Bitmap *cachedBitmap = g_TrophyCache[size];
     if (cachedBitmap)
     {
-        g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
+        PixelLayout::ApplyPixelArtBlit(g);
         g.DrawImage(cachedBitmap, centerX - size / 2, centerY - size / 2, size, size);
     }
 }
@@ -582,7 +582,7 @@ void DrawPixelClock(Gdiplus::Graphics &g, int centerX, int centerY, int size, Gd
     {
         float pulse = 0.8f + sin(g_GlobalAnimTime * 8.0f) * 0.2f;
         int scaledSize = (int)(size * (0.95f + pulse * 0.05f));
-        g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
+        PixelLayout::ApplyPixelArtBlit(g);
         g.DrawImage(cachedBitmap, centerX - scaledSize / 2, centerY - scaledSize / 2, scaledSize, scaledSize);
     }
 }
@@ -620,7 +620,7 @@ void DrawPixelBanner(Gdiplus::Graphics &g, HDC hdc, const std::wstring &text,
     g.FillRectangle(&gradBrush, bannerX, bannerY, bannerW, bannerH);
 
     // 2. Đường viền sáng pulse
-    float pulse = 0.6f + sin(g_GlobalAnimTime * 6.0f) * 0.4f;
+    float pulse = 0.6f + PixelLayout::SinSmoothedSigned(g_GlobalAnimTime, 6.f) * 0.4f;
     BYTE lineA = (BYTE)(180 + pulse * 75);
     BYTE gr = GetRValue(glowColor);
     BYTE gg = GetGValue(glowColor);
@@ -699,8 +699,7 @@ static void DrawPixelStadiumBackground(Gdiplus::Graphics &g, int screenWidth, in
 
         stadiumCache = new Gdiplus::Bitmap(screenWidth, screenHeight, PixelFormat32bppARGB);
         Gdiplus::Graphics bg(stadiumCache);
-        bg.SetSmoothingMode(Gdiplus::SmoothingModeNone);
-        bg.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
+        PixelLayout::ApplyPixelArtBlit(bg);
 
         const int scaleX = (screenWidth + stadiumModel.width - 1) / stadiumModel.width;
         const int scaleY = (screenHeight + stadiumModel.height - 1) / stadiumModel.height;
@@ -736,7 +735,7 @@ static void DrawPixelStadiumBackground(Gdiplus::Graphics &g, int screenWidth, in
 
     if (stadiumCache)
     {
-        g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
+        PixelLayout::ApplyPixelArtBlit(g);
         g.DrawImage(stadiumCache, 0, 0);
     }
 }
@@ -1228,7 +1227,7 @@ void DrawPixelAction(Gdiplus::Graphics &g, int centerX, int centerY, int size, P
 
             if (g_ActionCache.find(cacheKey) != g_ActionCache.end() && g_ActionCache[cacheKey] != nullptr)
             {
-                g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
+                PixelLayout::ApplyPixelArtBlit(g);
                 g.DrawImage(g_ActionCache[cacheKey], centerX - (int)g_ActionCache[cacheKey]->GetWidth() / 2, centerY - (int)g_ActionCache[cacheKey]->GetHeight() / 2);
                 return;
             }
@@ -1299,7 +1298,7 @@ void DrawPixelAction(Gdiplus::Graphics &g, int centerX, int centerY, int size, P
     Gdiplus::Bitmap *cachedBitmap = g_ActionCache[cacheKey];
     if (cachedBitmap)
     {
-        g.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
+        PixelLayout::ApplyPixelArtBlit(g);
         g.DrawImage(cachedBitmap, centerX - (int)cachedBitmap->GetWidth() / 2, centerY - (int)cachedBitmap->GetHeight() / 2);
     }
 }

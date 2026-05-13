@@ -4,6 +4,7 @@
 #include "../RenderAPI/UIComponents.h"
 #include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
+#include "../RenderAPI/PixelLayout.h"
 #include <string>
 
 /** @file GuildScreen.cpp
@@ -74,6 +75,7 @@ bool UpdateGuildScreen(ScreenState &currentState, int &currentPage, WPARAM wPara
 void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPage)
 {
     Gdiplus::Graphics g(hdc);
+    PixelLayout::ApplyPixelArtBlit(g);
 
     DrawProceduralStadium(g, screenWidth, screenHeight);
     Gdiplus::SolidBrush whiteGlassBrush(Gdiplus::Color(60, 255, 255, 255));
@@ -87,6 +89,7 @@ void RenderGuildScreen(HDC hdc, int screenWidth, int screenHeight, int currentPa
     int panelH = UIScaler::SY(480);
     int panelX = (screenWidth - panelW) / 2;
     int panelY = UIScaler::SY(135);
+    PixelLayout::AlignRectToPixelGrid(panelX, panelY, panelW, panelH);
 
     int colW = panelW / 2;
     int colPadding = UIScaler::SX(35);

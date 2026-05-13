@@ -3,6 +3,7 @@
 #include "../RenderAPI/UIComponents.h"
 #include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
+#include "../RenderAPI/PixelLayout.h"
 #include "../GameLogic/GameEngine.h"
 #include "../GameLogic/BotAI.h"
 #include "../SystemModules/AudioSystem.h"
@@ -550,6 +551,7 @@ void RenderPlayScreen(HDC hdc, const PlayState *state, int screenWidth, int scre
 {
     // 1. Vẽ bàn cờ và thông tin trận đấu
     Gdiplus::Graphics g(hdc);
+    PixelLayout::ApplyPixelArtBlit(g);
 
     // Nền sân vận động Procedural
     DrawProceduralStadium(g, screenWidth, screenHeight, false, false);

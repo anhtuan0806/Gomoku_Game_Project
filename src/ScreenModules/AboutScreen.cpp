@@ -2,6 +2,7 @@
 #include "../RenderAPI/UIComponents.h"
 #include "../RenderAPI/UIScaler.h"
 #include "../RenderAPI/Colours.h"
+#include "../RenderAPI/PixelLayout.h"
 #include "../SystemModules/Localization.h"
 #include "../SystemModules/AudioSystem.h"
 #include <string>
@@ -45,6 +46,7 @@ bool UpdateAboutScreen(ScreenState &currentState, WPARAM wParam)
 void RenderAboutScreen(HDC hdc, int screenWidth, int screenHeight)
 {
     Gdiplus::Graphics g(hdc);
+    PixelLayout::ApplyPixelArtBlit(g);
 
     // 1. Nền sân vận động
     DrawProceduralStadium(g, screenWidth, screenHeight);

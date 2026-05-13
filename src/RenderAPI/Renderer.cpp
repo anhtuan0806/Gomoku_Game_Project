@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include "UIScaler.h"
 #include "Colours.h"
+#include "PixelLayout.h"
 #include "../ApplicationTypes/GameConstants.h"
 #include <atomic>
 #include <string>
@@ -182,19 +183,19 @@ namespace GlobalFont
 
         // VT323 chỉ có 1 weight (Regular). Sử dụng FW_NORMAL cho tất cả
         // để Windows luôn ánh xạ đúng VT323 thay vì fallback sang font hệ thống.
-        Default = CreateFontW(UIScaler::S(FONT_SIZE_DEFAULT), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        Default = CreateFontW(PixelLayout::QuantizedFontPixelHeight(UIScaler::S(FONT_SIZE_DEFAULT)), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                               DEFAULT_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
                               CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, FONT_FAMILY_NAME);
 
-        Bold = CreateFontW(UIScaler::S(FONT_SIZE_BOLD), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        Bold = CreateFontW(PixelLayout::QuantizedFontPixelHeight(UIScaler::S(FONT_SIZE_BOLD)), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                            DEFAULT_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
                            CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, FONT_FAMILY_NAME);
 
-        Title = CreateFontW(UIScaler::S(FONT_SIZE_TITLE), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        Title = CreateFontW(PixelLayout::QuantizedFontPixelHeight(UIScaler::S(FONT_SIZE_TITLE)), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                             DEFAULT_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
                             CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, FONT_FAMILY_NAME);
 
-        Note = CreateFontW(UIScaler::S(FONT_SIZE_NOTE), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        Note = CreateFontW(PixelLayout::QuantizedFontPixelHeight(UIScaler::S(FONT_SIZE_NOTE)), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                            DEFAULT_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
                            CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, FONT_FAMILY_NAME);
     }
