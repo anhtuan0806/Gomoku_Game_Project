@@ -1,11 +1,15 @@
+/** @file SaveLoadSystem.cpp
+ *  @brief Triển khai hệ thống lưu/tải ván chơi.
+ */
 #include "SaveLoadSystem.h"
 #include "../ApplicationTypes/GameConstants.h"
+#include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <windows.h>
-#include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <windows.h>
+
 // Magic number để kiểm tra file hợp lệ (tránh load file rác)
 static const uint32_t SAVE_MAGIC = 0xCA05A1E2;
 static const uint32_t SAVE_VERSION = 5;
@@ -15,168 +19,144 @@ static const uint32_t SAVE_VERSION = 5;
  * @brief Hàm nội bộ để serialize/deserialize các kiểu chuỗi, vector và POD.
  * @{ */
 
-/** @brief Ghi std::wstring vào file (đầu tiên ghi chiều dài, sau đó ghi dữ liệu).
+/** @brief Ghi std::wstring vào file (đầu tiên ghi chiều dài, sau đó ghi dữ
+ * liệu).
  */
-static void WriteWStr(std::ofstream &f, const std::wstring &s)
-{
-    uint32_t len = (uint32_t)s.size();
-    f.write(reinterpret_cast<const char *>(&len), sizeof(len));
-    if (len > 0)
-    {
-        f.write(reinterpret_cast<const char *>(s.data()), len * sizeof(wchar_t));
-    }
+static void WriteWStr(std::ofstream &f, const std::wstring &s) {
+  uint32_t len = (uint32_t)s.size();
+  f.write(reinterpret_cast<const char *>(&len), sizeof(len));
+  if (len > 0) {
+    f.write(reinterpret_cast<const char *>(s.data()), len * sizeof(wchar_t));
+  }
 }
 
-/** @brief Đọc std::wstring từ file; trả về false nếu lỗi hoặc kích thước vượt ngưỡng.
+/** @brief Đọc std::wstring từ file; trả về false nếu lỗi hoặc kích thước vượt
+ * ngưỡng.
  */
-static bool ReadWStr(std::ifstream &f, std::wstring &s)
-{
-    uint32_t len = 0;
-    if (!f.read(reinterpret_cast<char *>(&len), sizeof(len)))
-    {
-        return false;
-    }
-    if (len > 4096)
-    {
-        return false; // Giới hạn bảo vệ chống file lỗi
-    }
-    s.resize(len);
-    if (len > 0 && !f.read(reinterpret_cast<char *>(&s[0]), len * sizeof(wchar_t)))
-    {
-        return false;
-    }
-    return true;
+static bool ReadWStr(std::ifstream &f, std::wstring &s) {
+  uint32_t len = 0;
+  if (!f.read(reinterpret_cast<char *>(&len), sizeof(len))) {
+    return false;
+  }
+  if (len > 4096) {
+    return false; // Giới hạn bảo vệ chống file lỗi
+  }
+  s.resize(len);
+  if (len > 0 &&
+      !f.read(reinterpret_cast<char *>(&s[0]), len * sizeof(wchar_t))) {
+    return false;
+  }
+  return true;
 }
 
 /** @brief Ghi std::string (đầu tiên ghi chiều dài) */
-static void WriteStr(std::ofstream &f, const std::string &s)
-{
-    uint32_t len = (uint32_t)s.size();
-    f.write(reinterpret_cast<const char *>(&len), sizeof(len));
-    if (len > 0)
-    {
-        f.write(s.data(), len);
-    }
+static void WriteStr(std::ofstream &f, const std::string &s) {
+  uint32_t len = (uint32_t)s.size();
+  f.write(reinterpret_cast<const char *>(&len), sizeof(len));
+  if (len > 0) {
+    f.write(s.data(), len);
+  }
 }
 
 /** @brief Đọc std::string từ file; trả về false nếu lỗi. */
-static bool ReadStr(std::ifstream &f, std::string &s)
-{
-    uint32_t len = 0;
-    if (!f.read(reinterpret_cast<char *>(&len), sizeof(len)))
-    {
-        return false;
-    }
-    if (len > 4096)
-    {
-        return false;
-    }
-    s.resize(len);
-    if (len > 0 && !f.read(&s[0], len))
-    {
-        return false;
-    }
-    return true;
+static bool ReadStr(std::ifstream &f, std::string &s) {
+  uint32_t len = 0;
+  if (!f.read(reinterpret_cast<char *>(&len), sizeof(len))) {
+    return false;
+  }
+  if (len > 4096) {
+    return false;
+  }
+  s.resize(len);
+  if (len > 0 && !f.read(&s[0], len)) {
+    return false;
+  }
+  return true;
 }
 
 /** @brief Ghi vector POD ra file (ghi length + raw data) */
 template <typename T>
-static void WriteVec(std::ofstream &f, const std::vector<T> &v)
-{
-    uint32_t len = (uint32_t)v.size();
-    f.write(reinterpret_cast<const char *>(&len), sizeof(len));
-    if (len > 0)
-    {
-        f.write(reinterpret_cast<const char *>(v.data()), len * sizeof(T));
-    }
+static void WriteVec(std::ofstream &f, const std::vector<T> &v) {
+  uint32_t len = (uint32_t)v.size();
+  f.write(reinterpret_cast<const char *>(&len), sizeof(len));
+  if (len > 0) {
+    f.write(reinterpret_cast<const char *>(v.data()), len * sizeof(T));
+  }
 }
 
-/** @brief Đọc vector POD từ file; trả về false nếu lỗi hoặc kích thước quá lớn. */
-template <typename T>
-static bool ReadVec(std::ifstream &f, std::vector<T> &v)
-{
-    uint32_t len = 0;
-    if (!f.read(reinterpret_cast<char *>(&len), sizeof(len)))
-    {
-        return false;
-    }
-    if (len > 100000)
-    {
-        return false; // Giới hạn bảo vệ
-    }
-    v.resize(len);
-    if (len > 0 && !f.read(reinterpret_cast<char *>(v.data()), len * sizeof(T)))
-    {
-        return false;
-    }
-    return true;
+/** @brief Đọc vector POD từ file; trả về false nếu lỗi hoặc kích thước quá lớn.
+ */
+template <typename T> static bool ReadVec(std::ifstream &f, std::vector<T> &v) {
+  uint32_t len = 0;
+  if (!f.read(reinterpret_cast<char *>(&len), sizeof(len))) {
+    return false;
+  }
+  if (len > 100000) {
+    return false; // Giới hạn bảo vệ
+  }
+  v.resize(len);
+  if (len > 0 && !f.read(reinterpret_cast<char *>(v.data()), len * sizeof(T))) {
+    return false;
+  }
+  return true;
 }
 
 /** @} */
 
 // ---------- Serialize PlayerMatchInfo ----------
 
-/** @brief Ghi thông tin `PlayerMatchInfo` vào file (phiên bản hỗ trợ nhiều trường theo version). */
-static void WritePlayer(std::ofstream &f, const PlayerMatchInfo &p)
-{
-    WriteWStr(f, p.name);
-    WriteStr(f, p.avatarPath);
-    f.write(&p.piece, sizeof(p.piece));
-    f.write(reinterpret_cast<const char *>(&p.totalWins), sizeof(p.totalWins));
-    f.write(reinterpret_cast<const char *>(&p.matchWins), sizeof(p.matchWins));
-    f.write(reinterpret_cast<const char *>(&p.movesCount), sizeof(p.movesCount));
-    f.write(reinterpret_cast<const char *>(&p.maxTurnTime), sizeof(p.maxTurnTime));
-    f.write(reinterpret_cast<const char *>(&p.totalTimePossessed), sizeof(p.totalTimePossessed));
+/** @brief Ghi thông tin `PlayerMatchInfo` vào file (phiên bản hỗ trợ nhiều
+ * trường theo version). */
+static void WritePlayer(std::ofstream &f, const PlayerMatchInfo &p) {
+  WriteWStr(f, p.name);
+  WriteStr(f, p.avatarPath);
+  f.write(&p.piece, sizeof(p.piece));
+  f.write(reinterpret_cast<const char *>(&p.totalWins), sizeof(p.totalWins));
+  f.write(reinterpret_cast<const char *>(&p.matchWins), sizeof(p.matchWins));
+  f.write(reinterpret_cast<const char *>(&p.movesCount), sizeof(p.movesCount));
+  f.write(reinterpret_cast<const char *>(&p.maxTurnTime),
+          sizeof(p.maxTurnTime));
+  f.write(reinterpret_cast<const char *>(&p.totalTimePossessed),
+          sizeof(p.totalTimePossessed));
 }
 
 /** @brief Đọc `PlayerMatchInfo` từ file theo `version` lưu trữ.
  *  @return false nếu lỗi đọc.
  */
-static bool ReadPlayer(std::ifstream &f, PlayerMatchInfo &p, uint32_t version)
-{
-    if (!ReadWStr(f, p.name))
-    {
-        return false;
-    }
-    if (!ReadStr(f, p.avatarPath))
-    {
-        return false;
-    }
-    if (!f.read(&p.piece, sizeof(p.piece)))
-    {
-        return false;
-    }
-    if (!f.read(reinterpret_cast<char *>(&p.totalWins), sizeof(p.totalWins)))
-    {
-        return false;
-    }
-    if (version >= 5)
-    {
-        if (!f.read(reinterpret_cast<char *>(&p.matchWins), sizeof(p.matchWins)))
-            return false;
-    }
-    else
-    {
-        p.matchWins = 0;
-    }
-    if (!f.read(reinterpret_cast<char *>(&p.movesCount), sizeof(p.movesCount)))
-    {
-        return false;
-    }
-    if (!f.read(reinterpret_cast<char *>(&p.maxTurnTime), sizeof(p.maxTurnTime)))
-    {
-        return false;
-    }
-    if (version >= 5)
-    {
-        if (!f.read(reinterpret_cast<char *>(&p.totalTimePossessed), sizeof(p.totalTimePossessed)))
-            return false;
-    }
-    else
-    {
-        p.totalTimePossessed = 0.0f;
-    }
-    return true;
+static bool ReadPlayer(std::ifstream &f, PlayerMatchInfo &p, uint32_t version) {
+  if (!ReadWStr(f, p.name)) {
+    return false;
+  }
+  if (!ReadStr(f, p.avatarPath)) {
+    return false;
+  }
+  if (!f.read(&p.piece, sizeof(p.piece))) {
+    return false;
+  }
+  if (!f.read(reinterpret_cast<char *>(&p.totalWins), sizeof(p.totalWins))) {
+    return false;
+  }
+  if (version >= 5) {
+    if (!f.read(reinterpret_cast<char *>(&p.matchWins), sizeof(p.matchWins)))
+      return false;
+  } else {
+    p.matchWins = 0;
+  }
+  if (!f.read(reinterpret_cast<char *>(&p.movesCount), sizeof(p.movesCount))) {
+    return false;
+  }
+  if (!f.read(reinterpret_cast<char *>(&p.maxTurnTime),
+              sizeof(p.maxTurnTime))) {
+    return false;
+  }
+  if (version >= 5) {
+    if (!f.read(reinterpret_cast<char *>(&p.totalTimePossessed),
+                sizeof(p.totalTimePossessed)))
+      return false;
+  } else {
+    p.totalTimePossessed = 0.0f;
+  }
+  return true;
 }
 
 // ---------- Public API ----------
@@ -185,352 +165,368 @@ static bool ReadPlayer(std::ifstream &f, PlayerMatchInfo &p, uint32_t version)
  * @brief Lưu toàn bộ trạng thái `PlayState` vào file `filename`.
  * @return true nếu lưu thành công.
  */
-bool SaveMatchData(const PlayState *state, const std::wstring &filename)
-{
-    CreateDirectoryW(L"Asset", NULL);
-    CreateDirectoryW(L"Asset/save", NULL);
+bool SaveMatchData(const PlayState *state, const std::wstring &filename) {
+  CreateDirectoryW(L"Asset", NULL);
+  CreateDirectoryW(L"Asset/save", NULL);
 
-    std::filesystem::path savePath(filename);
-    std::ofstream file(savePath, std::ios::binary);
-    if (!file.is_open())
-    {
-        return false;
-    }
+  std::filesystem::path savePath(filename);
+  std::ofstream file(savePath, std::ios::binary);
+  if (!file.is_open()) {
+    return false;
+  }
 
-    file.write(reinterpret_cast<const char *>(&SAVE_MAGIC), sizeof(SAVE_MAGIC));
-    file.write(reinterpret_cast<const char *>(&SAVE_VERSION), sizeof(SAVE_VERSION));
+  file.write(reinterpret_cast<const char *>(&SAVE_MAGIC), sizeof(SAVE_MAGIC));
+  file.write(reinterpret_cast<const char *>(&SAVE_VERSION),
+             sizeof(SAVE_VERSION));
 
-    // Serialise Save Name
-    WriteWStr(file, state->saveName);
+  // Serialise Save Name
+  WriteWStr(file, state->saveName);
 
-    // Capture and write Timestamp
-    std::wstring ts = state->saveTimestamp;
-    if (ts.empty())
-    {
-        auto t = std::time(nullptr);
-        struct tm tm_buf;
-        localtime_s(&tm_buf, &t);
-        std::wstringstream wss;
-        // Format: Day/Month/Year Hour:Minute
-        wss << std::setfill(L'0') << std::setw(2) << tm_buf.tm_mday << L"/"
-            << std::setfill(L'0') << std::setw(2) << (tm_buf.tm_mon + 1) << L"/"
-            << (tm_buf.tm_year + 1900) << L" "
-            << std::setfill(L'0') << std::setw(2) << tm_buf.tm_hour << L":"
-            << std::setfill(L'0') << std::setw(2) << tm_buf.tm_min;
-        ts = wss.str();
-    }
-    WriteWStr(file, ts);
+  // Capture and write Timestamp
+  std::wstring ts = state->saveTimestamp;
+  if (ts.empty()) {
+    auto t = std::time(nullptr);
+    struct tm tm_buf;
+    localtime_s(&tm_buf, &t);
+    std::wstringstream wss;
+    // Format: Day/Month/Year Hour:Minute
+    wss << std::setfill(L'0') << std::setw(2) << tm_buf.tm_mday << L"/"
+        << std::setfill(L'0') << std::setw(2) << (tm_buf.tm_mon + 1) << L"/"
+        << (tm_buf.tm_year + 1900) << L" " << std::setfill(L'0') << std::setw(2)
+        << tm_buf.tm_hour << L":" << std::setfill(L'0') << std::setw(2)
+        << tm_buf.tm_min;
+    ts = wss.str();
+  }
+  WriteWStr(file, ts);
 
-    // POD fields
-    file.write(reinterpret_cast<const char *>(&state->gameMode), sizeof(state->gameMode));
-    file.write(reinterpret_cast<const char *>(&state->matchType), sizeof(state->matchType));
-    file.write(reinterpret_cast<const char *>(&state->isPlayer1Turn), sizeof(state->isPlayer1Turn));
-    file.write(reinterpret_cast<const char *>(&state->countdownTime), sizeof(state->countdownTime));
-    file.write(reinterpret_cast<const char *>(&state->timeRemaining), sizeof(state->timeRemaining));
-    file.write(reinterpret_cast<const char *>(&state->boardSize), sizeof(state->boardSize));
-    file.write(reinterpret_cast<const char *>(state->board), sizeof(state->board));
-    file.write(reinterpret_cast<const char *>(&state->cursorRow), sizeof(state->cursorRow));
-    file.write(reinterpret_cast<const char *>(&state->cursorCol), sizeof(state->cursorCol));
-    file.write(reinterpret_cast<const char *>(&state->lastMoveRow), sizeof(state->lastMoveRow));
-    file.write(reinterpret_cast<const char *>(&state->lastMoveCol), sizeof(state->lastMoveCol));
-    file.write(reinterpret_cast<const char *>(&state->status), sizeof(state->status));
-    file.write(reinterpret_cast<const char *>(&state->winner), sizeof(state->winner));
-    file.write(reinterpret_cast<const char *>(&state->difficulty), sizeof(state->difficulty));
-    file.write(reinterpret_cast<const char *>(&state->targetScore), sizeof(state->targetScore));
-    file.write(reinterpret_cast<const char *>(&state->matchDuration), sizeof(state->matchDuration));
-    file.write(reinterpret_cast<const char *>(&state->player1TotalTimeLeft), sizeof(state->player1TotalTimeLeft));
-    file.write(reinterpret_cast<const char *>(&state->player2TotalTimeLeft), sizeof(state->player2TotalTimeLeft));
-    file.write(reinterpret_cast<const char *>(&state->isMatchTimed), sizeof(state->isMatchTimed));
+  // POD fields
+  file.write(reinterpret_cast<const char *>(&state->gameMode),
+             sizeof(state->gameMode));
+  file.write(reinterpret_cast<const char *>(&state->matchType),
+             sizeof(state->matchType));
+  file.write(reinterpret_cast<const char *>(&state->isPlayer1Turn),
+             sizeof(state->isPlayer1Turn));
+  file.write(reinterpret_cast<const char *>(&state->countdownTime),
+             sizeof(state->countdownTime));
+  file.write(reinterpret_cast<const char *>(&state->timeRemaining),
+             sizeof(state->timeRemaining));
+  file.write(reinterpret_cast<const char *>(&state->boardSize),
+             sizeof(state->boardSize));
+  file.write(reinterpret_cast<const char *>(state->board),
+             sizeof(state->board));
+  file.write(reinterpret_cast<const char *>(&state->cursorRow),
+             sizeof(state->cursorRow));
+  file.write(reinterpret_cast<const char *>(&state->cursorCol),
+             sizeof(state->cursorCol));
+  file.write(reinterpret_cast<const char *>(&state->lastMoveRow),
+             sizeof(state->lastMoveRow));
+  file.write(reinterpret_cast<const char *>(&state->lastMoveCol),
+             sizeof(state->lastMoveCol));
+  file.write(reinterpret_cast<const char *>(&state->status),
+             sizeof(state->status));
+  file.write(reinterpret_cast<const char *>(&state->winner),
+             sizeof(state->winner));
+  file.write(reinterpret_cast<const char *>(&state->difficulty),
+             sizeof(state->difficulty));
+  file.write(reinterpret_cast<const char *>(&state->targetScore),
+             sizeof(state->targetScore));
+  file.write(reinterpret_cast<const char *>(&state->matchDuration),
+             sizeof(state->matchDuration));
+  file.write(reinterpret_cast<const char *>(&state->player1TotalTimeLeft),
+             sizeof(state->player1TotalTimeLeft));
+  file.write(reinterpret_cast<const char *>(&state->player2TotalTimeLeft),
+             sizeof(state->player2TotalTimeLeft));
+  file.write(reinterpret_cast<const char *>(&state->isMatchTimed),
+             sizeof(state->isMatchTimed));
 
-    // Dynamic fields
-    WritePlayer(file, state->player1);
-    WritePlayer(file, state->player2);
-    WriteVec(file, state->winningCells);
-    WriteVec(file, state->matchHistory);
-    WriteVec(file, state->redoStack);
+  // Dynamic fields
+  WritePlayer(file, state->player1);
+  WritePlayer(file, state->player2);
+  WriteVec(file, state->winningCells);
+  WriteVec(file, state->matchHistory);
+  WriteVec(file, state->redoStack);
 
-    file.close();
-    return true;
+  file.close();
+  return true;
 }
 
 /**
  * @brief Tải trạng thái ván chơi từ file `filename` vào `state`.
  * @return true nếu load thành công.
  */
-bool LoadMatchData(PlayState *state, const std::wstring &filename)
-{
-    std::filesystem::path loadPath(filename);
-    std::ifstream file(loadPath, std::ios::binary);
-    if (!file.is_open())
-    {
-        return false;
-    }
+bool LoadMatchData(PlayState *state, const std::wstring &filename) {
+  std::filesystem::path loadPath(filename);
+  std::ifstream file(loadPath, std::ios::binary);
+  if (!file.is_open()) {
+    return false;
+  }
 
-    uint32_t magic = 0, version = 0;
-    file.read(reinterpret_cast<char *>(&magic), sizeof(magic));
-    file.read(reinterpret_cast<char *>(&version), sizeof(version));
+  uint32_t magic = 0, version = 0;
+  file.read(reinterpret_cast<char *>(&magic), sizeof(magic));
+  file.read(reinterpret_cast<char *>(&version), sizeof(version));
 
-    if (magic != SAVE_MAGIC || version < 3)
-    {
-        file.close();
-        return false;
-    }
-
-    // Read Save Name
-    if (!ReadWStr(file, state->saveName))
-    {
-        return false;
-    }
-
-    // Read Timestamp
-    if (version >= 4)
-    {
-        if (!ReadWStr(file, state->saveTimestamp))
-            return false;
-    }
-    else
-    {
-        state->saveTimestamp = L"N/A (Bản cũ)";
-    }
-
-    // POD fields
-    if (!file.read(reinterpret_cast<char *>(&state->gameMode), sizeof(state->gameMode)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->matchType), sizeof(state->matchType)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->isPlayer1Turn), sizeof(state->isPlayer1Turn)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->countdownTime), sizeof(state->countdownTime)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->timeRemaining), sizeof(state->timeRemaining)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->boardSize), sizeof(state->boardSize)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(state->board), sizeof(state->board)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->cursorRow), sizeof(state->cursorRow)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->cursorCol), sizeof(state->cursorCol)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->lastMoveRow), sizeof(state->lastMoveRow)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->lastMoveCol), sizeof(state->lastMoveCol)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->status), sizeof(state->status)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->winner), sizeof(state->winner)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->difficulty), sizeof(state->difficulty)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->targetScore), sizeof(state->targetScore)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->matchDuration), sizeof(state->matchDuration)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->player1TotalTimeLeft), sizeof(state->player1TotalTimeLeft)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->player2TotalTimeLeft), sizeof(state->player2TotalTimeLeft)))
-        return false;
-    if (!file.read(reinterpret_cast<char *>(&state->isMatchTimed), sizeof(state->isMatchTimed)))
-        return false;
-
-    // Dynamic fields
-    if (!ReadPlayer(file, state->player1, version))
-        return false;
-    if (!ReadPlayer(file, state->player2, version))
-        return false;
-    if (!ReadVec(file, state->winningCells))
-        return false;
-    if (!ReadVec(file, state->matchHistory))
-        return false;
-    if (!ReadVec(file, state->redoStack))
-        return false;
-
+  if (magic != SAVE_MAGIC || version < 3) {
     file.close();
-    return true;
+    return false;
+  }
+
+  // Read Save Name
+  if (!ReadWStr(file, state->saveName)) {
+    return false;
+  }
+
+  // Read Timestamp
+  if (version >= 4) {
+    if (!ReadWStr(file, state->saveTimestamp))
+      return false;
+  } else {
+    state->saveTimestamp = L"N/A (Bản cũ)";
+  }
+
+  // POD fields
+  if (!file.read(reinterpret_cast<char *>(&state->gameMode),
+                 sizeof(state->gameMode)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->matchType),
+                 sizeof(state->matchType)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->isPlayer1Turn),
+                 sizeof(state->isPlayer1Turn)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->countdownTime),
+                 sizeof(state->countdownTime)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->timeRemaining),
+                 sizeof(state->timeRemaining)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->boardSize),
+                 sizeof(state->boardSize)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(state->board), sizeof(state->board)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->cursorRow),
+                 sizeof(state->cursorRow)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->cursorCol),
+                 sizeof(state->cursorCol)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->lastMoveRow),
+                 sizeof(state->lastMoveRow)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->lastMoveCol),
+                 sizeof(state->lastMoveCol)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->status),
+                 sizeof(state->status)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->winner),
+                 sizeof(state->winner)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->difficulty),
+                 sizeof(state->difficulty)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->targetScore),
+                 sizeof(state->targetScore)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->matchDuration),
+                 sizeof(state->matchDuration)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->player1TotalTimeLeft),
+                 sizeof(state->player1TotalTimeLeft)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->player2TotalTimeLeft),
+                 sizeof(state->player2TotalTimeLeft)))
+    return false;
+  if (!file.read(reinterpret_cast<char *>(&state->isMatchTimed),
+                 sizeof(state->isMatchTimed)))
+    return false;
+
+  // Dynamic fields
+  if (!ReadPlayer(file, state->player1, version))
+    return false;
+  if (!ReadPlayer(file, state->player2, version))
+    return false;
+  if (!ReadVec(file, state->winningCells))
+    return false;
+  if (!ReadVec(file, state->matchHistory))
+    return false;
+  if (!ReadVec(file, state->redoStack))
+    return false;
+
+  file.close();
+  return true;
 }
 
 /** @brief Trả về đường dẫn lưu file cho `slot`. */
-std::wstring GetSavePath(int slot)
-{
-    return L"Asset/save/slot_" + std::to_wstring(slot) + L".bin";
+std::wstring GetSavePath(int slot) {
+  return L"Asset/save/slot_" + std::to_wstring(slot) + L".bin";
 }
 
 /** @brief Kiểm tra xem file save tại `slot` có tồn tại hay không. */
-bool CheckSaveExists(int slot)
-{
-    DWORD dwAttrib = GetFileAttributesW(GetSavePath(slot).c_str());
-    return (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+bool CheckSaveExists(int slot) {
+  DWORD dwAttrib = GetFileAttributesW(GetSavePath(slot).c_str());
+  return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+          !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }
 
 /** @brief Xóa file save tại `slot`. */
-bool DeleteSave(int slot)
-{
-    if (!CheckSaveExists(slot))
-        return false;
-    std::filesystem::path p(GetSavePath(slot));
-    return std::filesystem::remove(p);
+bool DeleteSave(int slot) {
+  if (!CheckSaveExists(slot))
+    return false;
+  std::filesystem::path p(GetSavePath(slot));
+  return std::filesystem::remove(p);
 }
 
 /** @brief Đổi tên save trong `slot` (giữ nguyên timestamp). */
-bool RenameSave(int slot, const std::wstring &newName)
-{
-    if (!CheckSaveExists(slot))
-        return false;
+bool RenameSave(int slot, const std::wstring &newName) {
+  if (!CheckSaveExists(slot))
+    return false;
 
-    PlayState temp;
-    if (!LoadMatchData(&temp, GetSavePath(slot)))
-    {
-        return false;
-    }
+  PlayState temp;
+  if (!LoadMatchData(&temp, GetSavePath(slot))) {
+    return false;
+  }
 
-    temp.saveName = newName.substr(0, MAX_SAVE_NAME_LEN);
-    // Khi đổi tên, ta dùng lại saveTimestamp cũ chứ không cập nhật mới
-    return SaveMatchData(&temp, GetSavePath(slot));
+  temp.saveName = newName.substr(0, MAX_SAVE_NAME_LEN);
+  // Khi đổi tên, ta dùng lại saveTimestamp cũ chứ không cập nhật mới
+  return SaveMatchData(&temp, GetSavePath(slot));
 }
 
 /** @brief Lấy tên hiển thị (display name) cho save tại `slot`.
  *  @return Chuỗi rỗng nếu không tồn tại.
  */
-std::wstring GetSaveDisplayName(int slot)
-{
-    if (!CheckSaveExists(slot))
-        return L"";
+std::wstring GetSaveDisplayName(int slot) {
+  if (!CheckSaveExists(slot))
+    return L"";
 
-    std::filesystem::path loadPath(GetSavePath(slot));
-    std::ifstream file(loadPath, std::ios::binary);
-    if (!file.is_open())
-        return L"";
+  std::filesystem::path loadPath(GetSavePath(slot));
+  std::ifstream file(loadPath, std::ios::binary);
+  if (!file.is_open())
+    return L"";
 
-    uint32_t magic = 0, version = 0;
-    file.read(reinterpret_cast<char *>(&magic), sizeof(magic));
-    file.read(reinterpret_cast<char *>(&version), sizeof(version));
+  uint32_t magic = 0, version = 0;
+  file.read(reinterpret_cast<char *>(&magic), sizeof(magic));
+  file.read(reinterpret_cast<char *>(&version), sizeof(version));
 
-    if (magic != SAVE_MAGIC || version < 3)
-    {
-        file.close();
-        return L"Bản lưu cũ (v" + std::to_wstring(version) + L")";
-    }
-
-    std::wstring name;
-    if (ReadWStr(file, name))
-    {
-        file.close();
-        return name;
-    }
-
+  if (magic != SAVE_MAGIC || version < 3) {
     file.close();
-    return L"File lỗi";
+    return L"Bản lưu cũ (v" + std::to_wstring(version) + L")";
+  }
+
+  std::wstring name;
+  if (ReadWStr(file, name)) {
+    file.close();
+    return name;
+  }
+
+  file.close();
+  return L"File lỗi";
 }
 
-/** @brief Lấy metadata tóm tắt của save tại `slot` (dùng cho UI danh sách save).
- *  @return SaveMetadata với `.exists` = false nếu file không tồn tại hoặc không hợp lệ.
+/** @brief Lấy metadata tóm tắt của save tại `slot` (dùng cho UI danh sách
+ * save).
+ *  @return SaveMetadata với `.exists` = false nếu file không tồn tại hoặc không
+ * hợp lệ.
  */
-SaveMetadata GetSaveMetadata(int slot)
-{
-    SaveMetadata meta;
-    meta.exists = false;
-    meta.version = 0;
+SaveMetadata GetSaveMetadata(int slot) {
+  SaveMetadata meta;
+  meta.exists = false;
+  meta.version = 0;
 
-    if (!CheckSaveExists(slot))
-        return meta;
+  if (!CheckSaveExists(slot))
+    return meta;
 
-    std::filesystem::path loadPath(GetSavePath(slot));
-    std::ifstream file(loadPath, std::ios::binary);
-    if (!file.is_open())
-        return meta;
+  std::filesystem::path loadPath(GetSavePath(slot));
+  std::ifstream file(loadPath, std::ios::binary);
+  if (!file.is_open())
+    return meta;
 
-    uint32_t magic = 0, version = 0;
-    file.read(reinterpret_cast<char *>(&magic), sizeof(magic));
-    file.read(reinterpret_cast<char *>(&version), sizeof(version));
+  uint32_t magic = 0, version = 0;
+  file.read(reinterpret_cast<char *>(&magic), sizeof(magic));
+  file.read(reinterpret_cast<char *>(&version), sizeof(version));
 
-    if (magic != SAVE_MAGIC)
-    {
-        file.close();
-        return meta;
-    }
-
-    meta.exists = true;
-    meta.version = version;
-
-    if (version < 3)
-    {
-        meta.name = L"Bản cũ (v" + std::to_wstring(version) + L")";
-        meta.timestamp = L"N/A";
-        file.close();
-        return meta;
-    }
-
-    ReadWStr(file, meta.name);
-
-    if (version >= 4)
-    {
-        ReadWStr(file, meta.timestamp);
-    }
-    else
-    {
-        meta.timestamp = L"N/A (Bản cũ)";
-    }
-
-    // Read basic meta for v3/v4
-    file.read(reinterpret_cast<char *>(&meta.mode), sizeof(meta.mode));
-    file.read(reinterpret_cast<char *>(&meta.type), sizeof(meta.type));
-
-    // Skip POD fields to get wins
-    int unusedInt;
-    bool unusedBool;
-    int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE];
-    float unusedFloat;
-    file.read(reinterpret_cast<char *>(&unusedBool), sizeof(unusedBool));
-    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
-    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
-    file.read(reinterpret_cast<char *>(&meta.boardSize), sizeof(meta.boardSize));
-    file.read(reinterpret_cast<char *>(board), sizeof(board));
-    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
-    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
-    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
-    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
-    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
-    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
-    file.read(reinterpret_cast<char *>(&meta.difficulty), sizeof(meta.difficulty));
-    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
-    file.read(reinterpret_cast<char *>(&unusedFloat), sizeof(unusedFloat));
-    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
-    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
-    file.read(reinterpret_cast<char *>(&unusedBool), sizeof(unusedBool));
-
-    // Player 1
-    std::wstring player1Name;
-    std::string player1AvatarPath;
-    char player1Piece;
-    PlayerMatchInfo tempPlayer1{};
-    ReadWStr(file, player1Name);
-    ReadStr(file, player1AvatarPath);
-    file.read(&player1Piece, sizeof(player1Piece));
-    file.read(reinterpret_cast<char *>(&meta.p1Wins), sizeof(meta.p1Wins));
-    // skip matchWins
-    if (version >= 5)
-    {
-        int dummy = 0;
-        file.read(reinterpret_cast<char *>(&dummy), sizeof(dummy));
-    }
-    // movesCount + maxTurnTime
-    file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
-    file.read(reinterpret_cast<char *>(&unusedFloat), sizeof(unusedFloat));
-    // skip totalTimePossessed
-    if (version >= 5)
-    {
-        float dummyP = 0;
-        file.read(reinterpret_cast<char *>(&dummyP), sizeof(dummyP));
-    }
-
-    std::wstring player2Name;
-    std::string player2AvatarPath;
-    char player2Piece;
-    ReadWStr(file, player2Name);
-    ReadStr(file, player2AvatarPath);
-    file.read(&player2Piece, sizeof(player2Piece));
-    file.read(reinterpret_cast<char *>(&meta.p2Wins), sizeof(meta.p2Wins));
-
+  if (magic != SAVE_MAGIC) {
     file.close();
     return meta;
+  }
+
+  meta.exists = true;
+  meta.version = version;
+
+  if (version < 3) {
+    meta.name = L"Bản cũ (v" + std::to_wstring(version) + L")";
+    meta.timestamp = L"N/A";
+    file.close();
+    return meta;
+  }
+
+  ReadWStr(file, meta.name);
+
+  if (version >= 4) {
+    ReadWStr(file, meta.timestamp);
+  } else {
+    meta.timestamp = L"N/A (Bản cũ)";
+  }
+
+  // Read basic meta for v3/v4
+  file.read(reinterpret_cast<char *>(&meta.mode), sizeof(meta.mode));
+  file.read(reinterpret_cast<char *>(&meta.type), sizeof(meta.type));
+
+  // Skip POD fields to get wins
+  int unusedInt;
+  bool unusedBool;
+  int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE];
+  float unusedFloat;
+  file.read(reinterpret_cast<char *>(&unusedBool), sizeof(unusedBool));
+  file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+  file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+  file.read(reinterpret_cast<char *>(&meta.boardSize), sizeof(meta.boardSize));
+  file.read(reinterpret_cast<char *>(board), sizeof(board));
+  file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+  file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+  file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+  file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+  file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+  file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+  file.read(reinterpret_cast<char *>(&meta.difficulty),
+            sizeof(meta.difficulty));
+  file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+  file.read(reinterpret_cast<char *>(&unusedFloat), sizeof(unusedFloat));
+  file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+  file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+  file.read(reinterpret_cast<char *>(&unusedBool), sizeof(unusedBool));
+
+  // Player 1
+  std::wstring player1Name;
+  std::string player1AvatarPath;
+  char player1Piece;
+  PlayerMatchInfo tempPlayer1{};
+  ReadWStr(file, player1Name);
+  ReadStr(file, player1AvatarPath);
+  file.read(&player1Piece, sizeof(player1Piece));
+  file.read(reinterpret_cast<char *>(&meta.p1Wins), sizeof(meta.p1Wins));
+  // skip matchWins
+  if (version >= 5) {
+    int dummy = 0;
+    file.read(reinterpret_cast<char *>(&dummy), sizeof(dummy));
+  }
+  // movesCount + maxTurnTime
+  file.read(reinterpret_cast<char *>(&unusedInt), sizeof(unusedInt));
+  file.read(reinterpret_cast<char *>(&unusedFloat), sizeof(unusedFloat));
+  // skip totalTimePossessed
+  if (version >= 5) {
+    float dummyP = 0;
+    file.read(reinterpret_cast<char *>(&dummyP), sizeof(dummyP));
+  }
+
+  std::wstring player2Name;
+  std::string player2AvatarPath;
+  char player2Piece;
+  ReadWStr(file, player2Name);
+  ReadStr(file, player2AvatarPath);
+  file.read(&player2Piece, sizeof(player2Piece));
+  file.read(reinterpret_cast<char *>(&meta.p2Wins), sizeof(meta.p2Wins));
+
+  file.close();
+  return meta;
 }

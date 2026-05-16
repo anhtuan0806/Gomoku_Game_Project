@@ -1,3 +1,6 @@
+/** @file UIComponents.cpp
+ *  @brief Triển khai các thành phần giao diện tái sử dụng.
+ */
 #include "UIComponents.h"
 #include "UIScaler.h"
 #include "Colours.h"

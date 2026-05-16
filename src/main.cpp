@@ -1,3 +1,6 @@
+/** @file main.cpp
+ *  @brief Điểm khởi đầu của ứng dụng, chứa vòng lặp trò chơi chính và xử lý cửa sổ Win32.
+ */
 #include <windows.h>
 #include <windowsx.h>
 #include <chrono>
@@ -484,7 +487,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PostQuitMessage(0);
             break;
         }
-        // Removed global g_NeedsRedraw = true; since it's now explicitly handled in case blocks
         break;
     }
 
@@ -508,7 +510,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             break;
         }
-        // Removed global g_NeedsRedraw = true; since it's now explicitly handled in case blocks
         break;
     }
 
@@ -523,11 +524,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         }
 
-        // Just to prevent double 'break; }' below:
-        if (false) {
-            g_PlayState.difficulty = 2;
-            break;
-        }
+
 
         RECT clientRect;
         GetClientRect(hWnd, &clientRect);

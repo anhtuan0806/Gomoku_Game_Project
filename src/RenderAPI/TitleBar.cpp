@@ -1,3 +1,6 @@
+/** @file TitleBar.cpp
+ *  @brief Triển khai thanh tiêu đề tùy chỉnh (Custom Title Bar).
+ */
 #include "TitleBar.h"
 #include "Colours.h"
 #include "UIScaler.h"

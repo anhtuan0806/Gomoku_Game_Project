@@ -1,3 +1,6 @@
+/** @file GameState.cpp
+ *  @brief Quản lý trạng thái màn hình và chuyển cảnh.
+ */
 #include "GameState.h"
 #include "GameConfig.h"
 #include "PlayState.h"

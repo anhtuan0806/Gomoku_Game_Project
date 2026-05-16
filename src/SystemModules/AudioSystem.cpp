@@ -317,5 +317,4 @@ void sfxWorker()
         mciSendStringA(playCmd.c_str(), NULL, 0, NULL);
     }
 }
-
-// Temporary PascalCase wrappers removed; use canonical API (`playBgm`, `playSfx`, etc.).
+

@@ -1,3 +1,6 @@
+/** @file Profiler.cpp
+ *  @brief Triển khai công cụ đo đạc hiệu năng.
+ */
 #include "Profiler.h"
 #include <fstream>
 #include <chrono>

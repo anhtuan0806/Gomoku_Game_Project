@@ -1,3 +1,6 @@
+/** @file DirtyRect.cpp
+ *  @brief Triển khai namespace DirtyRect xử lý vẽ lại một phần màn hình.
+ */
 #include "DirtyRect.h"
 #include <algorithm>
 

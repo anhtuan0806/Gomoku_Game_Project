@@ -1,3 +1,6 @@
+/** @file Profiler.h
+ *  @brief Giao diện công cụ đo đạc hiệu năng.
+ */
 #ifndef _PROFILER_H_
 #define _PROFILER_H_
 #include <string>
